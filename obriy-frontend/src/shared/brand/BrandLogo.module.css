@@ -1,0 +1,87 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mark {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 50%;
+  transition:
+    color var(--duration-theme) var(--ease-standard),
+    border-color var(--duration-theme) var(--ease-standard),
+    transform var(--duration-fast) ease;
+}
+
+.mark::before {
+  position: absolute;
+  inset: 4px;
+  content: '';
+  border: 1px solid color-mix(in srgb, var(--color-accent), transparent 42%);
+  border-radius: 50%;
+}
+
+.orbit {
+  position: absolute;
+  inset: 8px;
+  border: 1px dashed currentColor;
+  border-radius: 50%;
+  opacity: 0.62;
+  animation: orbit 28s linear infinite;
+}
+
+.mark svg {
+  z-index: 1;
+  width: 25px;
+  height: 25px;
+  fill: currentColor;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-accent), transparent 55%));
+}
+
+.wordmark {
+  overflow: visible;
+  padding: 0.02em 0 0.08em;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 29px;
+  font-weight: 500;
+  line-height: 1.08;
+  white-space: nowrap;
+  transition: color var(--duration-theme) var(--ease-standard);
+}
+
+.large {
+  gap: 15px;
+}
+
+.large .mark {
+  width: 60px;
+  height: 60px;
+}
+
+.large .mark svg {
+  width: 31px;
+  height: 31px;
+}
+
+.large .wordmark {
+  font-size: 35px;
+}
+
+.brand:hover .mark {
+  transform: rotate(4deg);
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}

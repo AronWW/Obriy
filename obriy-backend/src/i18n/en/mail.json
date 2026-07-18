@@ -1,0 +1,18 @@
+{
+  "verification": {
+    "subject": "Verify your Obriy email",
+    "text": "Welcome to Obriy. Verify your email: {link}",
+    "title": "Welcome to Obriy",
+    "description": "Confirm your email to activate your account.",
+    "action": "Verify email",
+    "footer": "This link expires in {ttl} hours."
+  },
+  "passwordReset": {
+    "subject": "Reset your Obriy password",
+    "text": "Reset your Obriy password: {link}",
+    "title": "Password reset",
+    "description": "Use the button below to choose a new password.",
+    "action": "Reset password",
+    "footer": "This link expires in {ttl} minutes. Ignore this email if you did not request it."
+  }
+}

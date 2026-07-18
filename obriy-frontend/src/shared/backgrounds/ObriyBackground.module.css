@@ -1,0 +1,563 @@
+.background {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transition: opacity var(--duration-theme) var(--ease-standard), transform var(--duration-theme) var(--ease-standard);
+}
+
+.day {
+  z-index: 1;
+  opacity: 1;
+  background:
+    radial-gradient(circle at 77% 14%, rgb(255 252 235 / 78%) 0%, rgb(255 246 220 / 38%) 9%, rgb(245 239 221 / 16%) 19%, transparent 31%),
+    linear-gradient(180deg, #78a4b7 0%, #9bc0cb 34%, #c4d7d2 68%, #dcded0 100%);
+}
+
+.dayGrid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(90deg, rgb(69 89 86 / 10%) 1px, transparent 1px),
+    linear-gradient(rgb(69 89 86 / 8%) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: linear-gradient(to bottom, black, transparent 72%);
+}
+
+.dayScene {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dayScene path,
+.dayScene circle,
+.dayScene rect {
+  vector-effect: non-scaling-stroke;
+}
+
+.celestialSun {
+  fill: none;
+  stroke: #d4a24f;
+  stroke-width: 1;
+  opacity: 0.55;
+  transform-origin: 1160px 272px;
+  animation: slowSpin 72s linear infinite;
+}
+
+.celestialSun .sunCore {
+  fill: #fff7d6;
+  stroke: #d4a24f;
+  filter: drop-shadow(0 0 24px rgb(255 237 173 / 90%));
+}
+
+.cloud {
+  fill: url('#cloud-paint');
+  stroke: rgb(101 122 119 / 13%);
+  stroke-width: 0.7;
+  filter: url('#cloud-soft');
+}
+
+.cloudFar {
+  opacity: 0.38;
+  animation: cloudDrift 26s ease-in-out infinite alternate;
+}
+
+.cloudMid {
+  opacity: 0.46;
+  animation: cloudDrift 34s ease-in-out infinite alternate-reverse;
+}
+
+.horizonGlow circle {
+  fill: url('#horizon-glow');
+}
+
+.horizonGlow path {
+  fill: none;
+  stroke: #d9a64f;
+  stroke-width: 1;
+  opacity: 0.34;
+}
+
+.mountainsBack {
+  fill: url('#mountain');
+  opacity: 0.62;
+}
+
+.mountainsFront {
+  fill: #6f8790;
+  opacity: 0.54;
+}
+
+.water {
+  fill: url('#water');
+}
+
+.waterLines {
+  fill: none;
+  stroke: #fff7da;
+  stroke-width: 1;
+  opacity: 0.56;
+}
+
+.horizonSun {
+  fill: #fff8dc;
+  stroke: #d19b42;
+  stroke-width: 1;
+  filter: drop-shadow(0 0 28px rgb(255 224 143 / 90%));
+}
+
+.horizonSun path {
+  fill: none;
+  opacity: 0.65;
+}
+
+.temple,
+.lighthouse,
+.coastDetails {
+  fill: none;
+  stroke: #7d6644;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.78;
+}
+
+.temple {
+  fill: rgb(224 204 166 / 44%);
+}
+
+.lighthouse {
+  fill: rgb(230 213 178 / 46%);
+}
+
+.coastDetails {
+  stroke: #9a733d;
+  opacity: 0.55;
+}
+
+.night {
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(-10px) scale(1.01);
+  background: radial-gradient(circle at 78% 16%, rgb(63 89 119 / 22%), transparent 30%), linear-gradient(180deg, #06101b 0%, #091727 58%, #10243a 100%);
+}
+
+:global(:root[data-theme='night']) .day {
+  opacity: 0;
+  transform: translateY(12px) scale(1.01);
+}
+
+:global(:root[data-theme='night']) .night {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.paperGrid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.52;
+  background-image: linear-gradient(90deg, rgb(157 84 40 / 8%) 1px, transparent 1px), linear-gradient(rgb(157 84 40 / 7%) 1px, transparent 1px);
+  background-size: 88px 88px;
+}
+
+.dayOrb,
+.moon {
+  position: absolute;
+  z-index: 3;
+  top: clamp(24px, 5vw, 74px);
+  right: clamp(112px, 20vw, 360px);
+  width: clamp(108px, 14vw, 178px);
+  height: clamp(108px, 14vw, 178px);
+  border-radius: 50%;
+}
+
+.dayOrb {
+  opacity: 0.96;
+  border: 1px solid rgb(157 110 56 / 27%);
+  box-shadow:
+    0 0 22px rgb(255 249 220 / 72%),
+    0 0 52px rgb(255 238 194 / 30%),
+    0 0 96px rgb(255 250 229 / 16%);
+}
+
+.dayOrb::before,
+.dayOrb::after,
+.dayOrb span {
+  position: absolute;
+  content: '';
+  border-radius: 50%;
+}
+
+.dayOrb::before {
+  inset: 17%;
+  background: radial-gradient(circle at 38% 34%, #fff4c8 0%, #efcb72 54%, #dca44f 100%);
+  box-shadow:
+    0 0 18px rgb(255 242 199 / 68%),
+    0 0 40px rgb(238 195 112 / 24%);
+}
+
+.dayOrb::after {
+  inset: 30%;
+  border: 1px solid rgb(255 248 221 / 76%);
+  background: radial-gradient(circle, rgb(255 246 207 / 34%), transparent 70%);
+}
+
+.dayOrb span {
+  inset: -15%;
+  border: 1px dashed rgb(137 88 45 / 22%);
+  animation: slowSpin 52s linear infinite;
+}
+
+.coastalHorizon {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: clamp(220px, 29vh, 310px);
+  overflow: visible;
+}
+
+.lighthouseScene {
+  position: absolute;
+  z-index: 4;
+  right: clamp(-18px, -0.7vw, -7px);
+  bottom: 0;
+  width: clamp(138px, 10.5vw, 180px);
+  height: auto;
+  overflow: visible;
+}
+
+.sharedMountainBack {
+  fill: #bcc9b8;
+  opacity: 1;
+}
+
+.sharedMountainFront {
+  fill: #789794;
+  opacity: 1;
+}
+
+.sharedSea {
+  fill: #89b3bb;
+  opacity: 0.86;
+}
+
+.seaLines {
+  fill: none;
+  stroke: #e9e5d8;
+  stroke-width: 1;
+  opacity: 0.58;
+}
+
+.lighthouseCliff {
+  fill: #80745e;
+  stroke: #685943;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.78;
+}
+
+.sharedLighthouse {
+  fill: rgb(224 218 202 / 78%);
+  stroke: #67563d;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+
+.lighthouseGlow {
+  fill: #bd8a43;
+  stroke: none;
+  opacity: 0.04;
+}
+
+.lighthouseLamp {
+  fill: #a87436;
+  stroke: none;
+  opacity: 0.38;
+}
+
+.risingSun {
+  stroke: none;
+}
+
+.risingSunAuraWide {
+  fill: #dfad55;
+  opacity: 0.035;
+  filter: blur(12px);
+}
+
+.dawnHaze {
+  fill: #dba653;
+  opacity: 0.1;
+  filter: blur(24px);
+}
+
+.risingSunAura {
+  fill: #e5b75f;
+  opacity: 0.11;
+  filter: blur(6px);
+}
+
+.risingSunCore {
+  fill: #e7bc68;
+  opacity: 0.24;
+  filter: drop-shadow(0 0 18px rgb(236 190 103 / 32%));
+}
+
+:global(:root[data-theme='night']) .sharedMountainBack {
+  fill: #142e46;
+  opacity: 1;
+}
+
+:global(:root[data-theme='night']) .sharedMountainFront {
+  fill: #0b2135;
+  opacity: 1;
+}
+
+:global(:root[data-theme='night']) .sharedSea {
+  fill: #0c2a40;
+  opacity: 0.86;
+}
+
+:global(:root[data-theme='night']) .seaLines {
+  stroke: #4f7890;
+  opacity: 0.28;
+}
+
+:global(:root[data-theme='night']) .lighthouseCliff {
+  fill: #132a3a;
+  stroke: #8b7148;
+  opacity: 0.9;
+}
+
+:global(:root[data-theme='night']) .sharedLighthouse {
+  fill: rgb(19 40 54 / 86%);
+  stroke: #c6944a;
+  opacity: 0.88;
+}
+
+:global(:root[data-theme='night']) .lighthouseGlow {
+  fill: #ffd15f;
+  opacity: 0.52;
+  filter: blur(10px);
+}
+
+:global(:root[data-theme='night']) .lighthouseLamp {
+  fill: #ffd447;
+  opacity: 1;
+  filter:
+    drop-shadow(0 0 7px rgb(255 221 91 / 100%))
+    drop-shadow(0 0 17px rgb(255 190 48 / 84%));
+}
+
+.atlas {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: #9d5428;
+}
+
+.atlas line,
+.atlas path,
+.atlas circle { vector-effect: non-scaling-stroke; }
+
+.ghostConstellation {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.1;
+  stroke-dasharray: 4 12;
+  opacity: 0.16;
+}
+
+.ghostConstellation circle { fill: #eee7d8; stroke-dasharray: none; opacity: 0.7; }
+.hillBack { fill: #ddd0b3; opacity: 0.55; }
+.hillFront { fill: #cdba95; opacity: 0.88; }
+
+.contourGroup {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.05;
+  stroke-dasharray: 3 8;
+  opacity: 0.4;
+}
+
+.hatchedSummit { fill: url('#obriy-hatch'); stroke: none; opacity: 0.5; }
+.route, .routeSpur { fill: none; stroke: #b7612c; stroke-linecap: round; }
+.route { stroke-width: 1.7; stroke-dasharray: 7 9; opacity: 0.78; }
+.routeSpur { stroke-width: 1.3; stroke-dasharray: 4 7; opacity: 0.5; }
+.mapPoints circle { fill: #eee7d8; stroke: #b7612c; stroke-width: 2; opacity: 0.8; }
+
+.flag,
+.mapTower,
+.mapHouse,
+.mapGrove {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.6;
+}
+
+.endStar { fill: #b7612c; opacity: 0.7; }
+.scale { fill: none; stroke: currentColor; stroke-width: 1; opacity: 0.42; }
+.scale text { fill: #665f52; stroke: none; font-family: var(--font-display); font-size: 12px; }
+.frameTicks { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: 0.34; }
+
+.compass {
+  position: absolute;
+  z-index: 3;
+  right: clamp(-76px, -3vw, -24px);
+  bottom: clamp(-94px, -6vw, -52px);
+  width: clamp(250px, 28vw, 390px);
+  height: auto;
+  fill: none;
+  stroke: #9d5428;
+  stroke-width: 1.2;
+  opacity: 0.6;
+}
+
+.compassFill { fill: #9d5428; stroke: none; opacity: 0.08; }
+
+.nightGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 14% 30%, rgb(96 126 154 / 9%), transparent 28%), radial-gradient(circle at 70% 68%, rgb(52 85 116 / 10%), transparent 34%);
+}
+
+.starField { position: absolute; inset: 0; opacity: 0.75; }
+.star {
+  position: absolute;
+  top: var(--star-y);
+  left: var(--star-x);
+  width: var(--star-size);
+  height: var(--star-size);
+  border-radius: 50%;
+  background: #fff2c8;
+  box-shadow: 0 0 8px rgb(255 226 164 / 52%);
+  animation: twinkle 4.8s ease-in-out var(--star-delay) infinite;
+}
+
+.moon {
+  opacity: 0.78;
+  border: 1px solid rgb(213 162 85 / 30%);
+  box-shadow:
+    0 0 34px rgb(230 207 151 / 20%),
+    0 0 84px rgb(199 173 111 / 14%);
+}
+.moon::before, .moon::after, .moon span { position: absolute; content: ''; border-radius: 50%; }
+.moon::before { inset: 17%; background: #c9b98f; box-shadow: 0 0 52px rgb(234 209 153 / 32%); }
+.moon::after { top: 23%; left: 42%; width: 40%; height: 40%; background: #08131f; }
+.moon span { inset: -15%; border: 1px dashed rgb(213 162 85 / 18%); animation: slowSpin 52s linear infinite reverse; }
+
+.constellation {
+  position: absolute;
+  top: 15%;
+  left: 7%;
+  width: min(41vw, 620px);
+  height: auto;
+  overflow: visible;
+  fill: none;
+  stroke: #e6c987;
+  stroke-width: 1;
+  stroke-dasharray: 3 11;
+  opacity: 0.2;
+}
+
+.constellation circle { fill: #fff2c8; stroke: none; filter: drop-shadow(0 0 6px rgb(255 226 164 / 65%)); }
+.sigil { position: absolute; color: #f6d899; font-family: Georgia, serif; line-height: 1; text-shadow: 0 0 20px rgb(244 206 127 / 32%); animation: drift 7s ease-in-out infinite; }
+.sigilOne { top: 10%; right: 5%; font-size: clamp(40px, 5vw, 74px); opacity: 0.42; }
+.sigilTwo { top: 43%; left: 4%; font-size: clamp(30px, 4vw, 58px); opacity: 0.62; animation-delay: -2.1s; }
+.sigilThree { right: 34%; bottom: 26%; font-size: clamp(24px, 3vw, 42px); opacity: 0.45; animation-delay: -4s; }
+
+.nightHills {
+  position: absolute;
+  right: -4%;
+  bottom: -9%;
+  left: -4%;
+  height: 42%;
+  background: #102a43;
+  clip-path: polygon(0 71%, 11% 61%, 20% 73%, 33% 49%, 43% 68%, 56% 43%, 67% 66%, 79% 51%, 90% 63%, 100% 47%, 100% 100%, 0 100%);
+  opacity: 0.62;
+}
+
+.nightHills::after {
+  position: absolute;
+  inset: 22% 0 0;
+  content: '';
+  background: #081725;
+  clip-path: polygon(0 74%, 13% 61%, 24% 75%, 38% 49%, 52% 72%, 67% 48%, 82% 68%, 100% 43%, 100% 100%, 0 100%);
+}
+
+.noise {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  opacity: 0.09;
+  background-image: url("data:image/svg+xml,%3Csvg width='180' height='180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+:global(:root[data-theme='night']) .noise { opacity: 0.2; mix-blend-mode: soft-light; }
+.vignette { position: absolute; z-index: 5; inset: 0; background: linear-gradient(90deg, rgb(37 30 20 / 5%), transparent 35%, transparent 76%, rgb(37 30 20 / 5%)); }
+:global(:root[data-theme='night']) .vignette { background: linear-gradient(90deg, rgb(0 0 0 / 14%), transparent 38%, transparent 76%, rgb(0 0 0 / 12%)); }
+
+@keyframes twinkle { 0%, 100% { opacity: 0.34; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.25); } }
+@keyframes drift { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-7px) rotate(3deg); } }
+@keyframes slowSpin { to { transform: rotate(360deg); } }
+@keyframes cloudDrift { to { transform: translateX(24px); } }
+
+@media (max-width: 760px) {
+  .dayScene {
+    left: 50%;
+    width: 1180px;
+    max-width: none;
+    transform: translateX(-50%);
+  }
+
+  .celestialSun {
+    opacity: 0.38;
+  }
+
+  .temple,
+  .lighthouse {
+    opacity: 0.54;
+  }
+
+  .dayOrb, .moon { top: 20px; right: 30px; width: 112px; height: 112px; }
+  .coastalHorizon { left: 50%; width: 1120px; max-width: none; height: 238px; transform: translateX(-50%); }
+  .lighthouseScene { right: -7px; width: clamp(96px, 27vw, 118px); }
+  .atlas { top: auto; bottom: 0; left: 50%; width: 1040px; max-width: none; height: 86%; transform: translateX(-50%); }
+  .ghostConstellation, .scale { display: none; }
+  .contourGroup { opacity: 0.28; }
+  .compass { right: -54px; bottom: -46px; width: 210px; opacity: 0.35; }
+  .constellation { top: 18%; left: -10%; width: 94vw; }
+  .sigilOne { display: none; }
+  .sigilTwo { top: 48%; left: 7%; }
+  .sigilThree { right: 21%; bottom: 21%; }
+  .nightHills { height: 31%; }
+}
+
+@media (max-width: 430px) {
+  .atlas { left: 43%; width: 940px; height: 80%; }
+  .paperGrid { background-size: 62px 62px; }
+}

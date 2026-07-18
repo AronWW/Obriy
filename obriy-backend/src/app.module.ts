@@ -1,0 +1,53 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
+import {
+  AcceptLanguageResolver,
+  I18nJsonLoader,
+  I18nModule,
+} from 'nestjs-i18n';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { PrismaModule } from '../prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
+import { CommonModule } from './common/common.module';
+import { UsersModule } from './users/users.module';
+import { validateEnvironment } from './config/env.validation';
+
+const i18nPath = existsSync(join(__dirname, 'i18n'))
+  ? join(__dirname, 'i18n')
+  : join(__dirname, '..', 'i18n');
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnvironment }),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    ScheduleModule.forRoot(),
+    I18nModule.forRoot({
+      fallbackLanguage: 'uk',
+      loader: I18nJsonLoader,
+      loaderOptions: {
+        path: i18nPath,
+        watch: true,
+      },
+      resolvers: [AcceptLanguageResolver],
+    }),
+    PrismaModule,
+    CommonModule,
+    AuthModule,
+    UsersModule,
+  ],
+  controllers: [AppController],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
+})
+export class AppModule {}

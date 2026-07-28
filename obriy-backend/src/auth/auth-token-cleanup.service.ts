@@ -28,7 +28,7 @@ export class AuthTokenCleanupService {
       this.getNumberConfig('REFRESH_TOKEN_RETENTION_DAYS', 30),
     );
 
-    const [verification, passwordReset, oauth, refresh] =
+    const [verification, passwordReset, oauth, oauthRegistration, refresh] =
       await this.prisma.$transaction([
         this.prisma.emailVerificationToken.deleteMany({
           where: {
@@ -48,6 +48,12 @@ export class AuthTokenCleanupService {
             OR: [{ usedAt: { not: null } }, { expiresAt: { lt: now } }],
           },
         }),
+        this.prisma.oAuthRegistrationTicket.deleteMany({
+          where: {
+            createdAt: { lt: oauthCutoff },
+            OR: [{ usedAt: { not: null } }, { expiresAt: { lt: now } }],
+          },
+        }),
         this.prisma.refreshToken.deleteMany({
           where: {
             createdAt: { lt: refreshCutoff },
@@ -57,7 +63,11 @@ export class AuthTokenCleanupService {
       ]);
 
     const total =
-      verification.count + passwordReset.count + oauth.count + refresh.count;
+      verification.count +
+      passwordReset.count +
+      oauth.count +
+      oauthRegistration.count +
+      refresh.count;
     if (total > 0) {
       this.logger.log(`Removed ${total} expired or used auth tokens.`);
     }

@@ -1,0 +1,66 @@
+.header {
+  margin-bottom: 26px;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 9px;
+  color: var(--color-accent-hover);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 31px;
+  font-weight: 600;
+  line-height: 1.18;
+}
+
+.subtitle {
+  margin: 10px 0 0;
+  color: var(--color-text-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.formOptions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -5px;
+}
+
+.textLink {
+  color: var(--color-accent-hover);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.textLink:hover {
+  color: var(--color-accent);
+}
+
+.registerPrompt {
+  margin: 21px 0 0;
+  padding-top: 18px;
+  color: var(--color-text-soft);
+  border-top: 1px solid var(--color-border);
+  font-size: 13px;
+  text-align: center;
+}
+
+.registerPrompt .textLink {
+  margin-left: 5px;
+}

@@ -18,19 +18,20 @@
   z-index: 1;
   opacity: 1;
   background:
-    radial-gradient(circle at 77% 14%, rgb(255 252 235 / 78%) 0%, rgb(255 246 220 / 38%) 9%, rgb(245 239 221 / 16%) 19%, transparent 31%),
-    linear-gradient(180deg, #78a4b7 0%, #9bc0cb 34%, #c4d7d2 68%, #dcded0 100%);
+    radial-gradient(circle at 77% 14%, rgb(255 247 215 / 54%) 0%, rgb(244 224 178 / 20%) 10%, rgb(235 215 177 / 7%) 20%, transparent 31%),
+    radial-gradient(ellipse at 26% 8%, rgb(246 249 247 / 38%), transparent 35%),
+    linear-gradient(180deg, #abcbe0 0%, #cbdde7 37%, #e3e6e2 70%, #f0dfc6 100%);
 }
 
 .dayGrid {
   position: absolute;
   inset: 0;
-  opacity: 0.16;
+  opacity: 0.12;
   background-image:
-    linear-gradient(90deg, rgb(69 89 86 / 10%) 1px, transparent 1px),
-    linear-gradient(rgb(69 89 86 / 8%) 1px, transparent 1px);
-  background-size: 96px 96px;
-  mask-image: linear-gradient(to bottom, black, transparent 72%);
+    linear-gradient(90deg, rgb(55 89 120 / 8%) 1px, transparent 1px),
+    linear-gradient(rgb(55 89 120 / 6%) 1px, transparent 1px);
+  background-size: 192px 192px;
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 60%), transparent 70%);
 }
 
 .dayScene {
@@ -43,7 +44,8 @@
 
 .dayScene path,
 .dayScene circle,
-.dayScene rect {
+.dayScene rect,
+.dayScene ellipse {
   vector-effect: non-scaling-stroke;
 }
 
@@ -64,19 +66,76 @@
 
 .cloud {
   fill: url('#cloud-paint');
-  stroke: rgb(101 122 119 / 13%);
+  stroke: rgb(72 101 124 / 18%);
   stroke-width: 0.7;
   filter: url('#cloud-soft');
 }
 
 .cloudFar {
-  opacity: 0.38;
+  opacity: 0.5;
   animation: cloudDrift 26s ease-in-out infinite alternate;
 }
 
 .cloudMid {
-  opacity: 0.46;
+  opacity: 0.58;
   animation: cloudDrift 34s ease-in-out infinite alternate-reverse;
+}
+
+.cloudEtching {
+  fill: none;
+  stroke: #536f83;
+  stroke-width: 0.75;
+  stroke-dasharray: 2 7;
+  opacity: 0.16;
+  animation: cloudDrift 34s ease-in-out infinite alternate;
+}
+
+.balloon {
+  fill: none;
+  stroke: #385f7a;
+  stroke-width: 1.05;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.46;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: balloonFloat 8s ease-in-out infinite;
+}
+
+.balloonEnvelope {
+  stroke-width: 1.25;
+}
+
+.balloonOchre .balloonEnvelope {
+  fill: #ddb467;
+  fill-opacity: 0.62;
+}
+
+.balloonBlue {
+  opacity: 0.32;
+  animation-delay: -3.2s;
+}
+
+.balloonBlue .balloonEnvelope {
+  fill: #7fa9c5;
+  fill-opacity: 0.52;
+}
+
+.balloonSeams {
+  fill: none;
+  opacity: 0.62;
+}
+
+.balloonRopes {
+  fill: none;
+  stroke: #6d5a43;
+  stroke-width: 0.9;
+}
+
+.balloonBasket {
+  fill: #8b6c47;
+  fill-opacity: 0.74;
+  stroke: #6d5237;
 }
 
 .horizonGlow circle {
@@ -96,7 +155,7 @@
 }
 
 .mountainsFront {
-  fill: #6f8790;
+  fill: #687f94;
   opacity: 0.54;
 }
 
@@ -184,12 +243,12 @@
 }
 
 .dayOrb {
-  opacity: 0.96;
-  border: 1px solid rgb(157 110 56 / 27%);
+  opacity: 0.82;
+  border: 1px solid rgb(157 110 56 / 22%);
   box-shadow:
-    0 0 22px rgb(255 249 220 / 72%),
-    0 0 52px rgb(255 238 194 / 30%),
-    0 0 96px rgb(255 250 229 / 16%);
+    0 0 20px rgb(255 249 220 / 42%),
+    0 0 48px rgb(255 238 194 / 18%),
+    0 0 84px rgb(255 250 229 / 8%);
 }
 
 .dayOrb::before,
@@ -202,16 +261,16 @@
 
 .dayOrb::before {
   inset: 17%;
-  background: radial-gradient(circle at 38% 34%, #fff4c8 0%, #efcb72 54%, #dca44f 100%);
+  background: radial-gradient(circle at 38% 34%, #f8e7b7 0%, #e8c476 56%, #d19f50 100%);
   box-shadow:
-    0 0 18px rgb(255 242 199 / 68%),
-    0 0 40px rgb(238 195 112 / 24%);
+    0 0 16px rgb(255 242 199 / 38%),
+    0 0 34px rgb(238 195 112 / 14%);
 }
 
 .dayOrb::after {
   inset: 30%;
-  border: 1px solid rgb(255 248 221 / 76%);
-  background: radial-gradient(circle, rgb(255 246 207 / 34%), transparent 70%);
+  border: 1px solid rgb(255 248 221 / 52%);
+  background: radial-gradient(circle, rgb(255 246 207 / 22%), transparent 70%);
 }
 
 .dayOrb span {
@@ -241,44 +300,93 @@
   overflow: visible;
 }
 
+.compactHorizon .coastalHorizon {
+  bottom: -18px;
+  height: clamp(170px, 22vh, 230px);
+}
+
+.compactHorizon .lighthouseScene {
+  right: clamp(-13px, -0.5vw, -5px);
+  bottom: -7px;
+  width: clamp(104px, 8vw, 142px);
+}
+
 .sharedMountainBack {
-  fill: #bcc9b8;
+  fill: #92afc1;
   opacity: 1;
 }
 
 .sharedMountainFront {
-  fill: #789794;
+  fill: #557d98;
   opacity: 1;
 }
 
 .sharedSea {
-  fill: #89b3bb;
-  opacity: 0.86;
+  fill: #4b87ad;
+  opacity: 0.9;
 }
 
 .seaLines {
   fill: none;
-  stroke: #e9e5d8;
+  stroke: #e9e8dc;
   stroke-width: 1;
-  opacity: 0.58;
+  opacity: 0.48;
+}
+
+.dayVessels {
+  fill: none;
+  stroke: #244f6c;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.68;
+}
+
+.dayVessel {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: vesselBob 6s ease-in-out infinite;
+}
+
+.vesselTwo {
+  animation-delay: -2.1s;
+}
+
+.vesselThree {
+  animation-delay: -4.2s;
+}
+
+.vesselHull {
+  fill: #435f70;
+  fill-opacity: 0.84;
+}
+
+.vesselSail {
+  fill: #f7efdc;
+  fill-opacity: 0.8;
+}
+
+.vesselRigging {
+  fill: none;
+  stroke-width: 1;
 }
 
 .lighthouseCliff {
-  fill: #80745e;
+  fill: #776f5d;
   stroke: #685943;
   stroke-width: 1.2;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.78;
+  opacity: 0.95;
 }
 
 .sharedLighthouse {
-  fill: rgb(224 218 202 / 78%);
+  fill: #eee5d3;
   stroke: #67563d;
   stroke-width: 1.25;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .lighthouseGlow {
@@ -291,34 +399,6 @@
   fill: #a87436;
   stroke: none;
   opacity: 0.38;
-}
-
-.risingSun {
-  stroke: none;
-}
-
-.risingSunAuraWide {
-  fill: #dfad55;
-  opacity: 0.035;
-  filter: blur(12px);
-}
-
-.dawnHaze {
-  fill: #dba653;
-  opacity: 0.1;
-  filter: blur(24px);
-}
-
-.risingSunAura {
-  fill: #e5b75f;
-  opacity: 0.11;
-  filter: blur(6px);
-}
-
-.risingSunCore {
-  fill: #e7bc68;
-  opacity: 0.24;
-  filter: drop-shadow(0 0 18px rgb(236 190 103 / 32%));
 }
 
 :global(:root[data-theme='night']) .sharedMountainBack {
@@ -525,6 +605,8 @@
 @keyframes drift { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-7px) rotate(3deg); } }
 @keyframes slowSpin { to { transform: rotate(360deg); } }
 @keyframes cloudDrift { to { transform: translateX(24px); } }
+@keyframes balloonFloat { 0%, 100% { transform: translateY(0) rotate(-0.6deg); } 50% { transform: translateY(-8px) rotate(0.8deg); } }
+@keyframes vesselBob { 0%, 100% { transform: translateY(0) rotate(-0.35deg); } 50% { transform: translateY(-2px) rotate(0.35deg); } }
 
 @media (max-width: 760px) {
   .dayScene {
@@ -534,8 +616,17 @@
     transform: translateX(-50%);
   }
 
+  .dayBalloons,
+  .dayVessels {
+    display: none;
+  }
+
   .celestialSun {
     opacity: 0.38;
+  }
+
+  .balloonOchre {
+    opacity: 0.54;
   }
 
   .temple,

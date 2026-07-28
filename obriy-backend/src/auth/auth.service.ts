@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -10,7 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import { I18nService } from 'nestjs-i18n';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
-import { Locale, UserRole, UserStatus } from '@prisma/client';
+import { Locale, Prisma, UserRole, UserStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../common/types/auth-user.type';
 import { JwtPayload } from '../common/types/jwt-payload.type';
@@ -25,6 +27,7 @@ import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { OAuthStateService } from './oauth-state.service';
 import { GoogleProfile } from './types/google-profile.type';
+import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
 
 type TokenPair = {
   accessToken: string;
@@ -37,6 +40,14 @@ type TokenUser = {
   role: UserRole;
   status: UserStatus;
 };
+
+type UserWithProfile = Prisma.UserGetPayload<{
+  include: { profile: true };
+}>;
+
+export type GoogleCallbackResult =
+  | { type: 'SESSION'; code: string }
+  | { type: 'REGISTRATION_REQUIRED'; code: string };
 
 @Injectable()
 export class AuthService {
@@ -80,7 +91,7 @@ export class AuthService {
           },
         });
 
-        await this.sendVerificationLink(
+        const retryAfterSeconds = await this.sendVerificationLink(
           existingUser.id,
           email,
           dto.preferredLocale ??
@@ -92,6 +103,7 @@ export class AuthService {
           code: 'EMAIL_VERIFICATION_SENT',
           message: this.t('auth.emailVerificationSent'),
           email,
+          retryAfterSeconds,
         });
       }
 
@@ -119,7 +131,7 @@ export class AuthService {
       },
     });
 
-    await this.sendVerificationLink(
+    const retryAfterSeconds = await this.sendVerificationLink(
       user.id,
       email,
       dto.preferredLocale ?? Locale.UK,
@@ -129,6 +141,7 @@ export class AuthService {
       code: 'EMAIL_VERIFICATION_SENT',
       message: this.t('auth.emailVerificationSent'),
       email,
+      retryAfterSeconds,
     });
   }
 
@@ -168,7 +181,7 @@ export class AuthService {
     }
 
     if (user.status === UserStatus.PENDING || !user.emailVerifiedAt) {
-      await this.sendVerificationLink(
+      const retryAfterSeconds = await this.sendVerificationLink(
         user.id,
         user.email,
         user.profile?.preferredLocale ?? Locale.UK,
@@ -178,6 +191,7 @@ export class AuthService {
         code: 'EMAIL_VERIFICATION_REQUIRED',
         message: this.t('auth.errors.emailVerificationRequired'),
         email: user.email,
+        retryAfterSeconds,
       });
     }
 
@@ -328,6 +342,10 @@ export class AuthService {
         code: 'EMAIL_VERIFICATION_SENT',
         message: this.t('auth.emailVerificationSent'),
         email,
+        retryAfterSeconds: this.getNumberConfig(
+          'EMAIL_SEND_COOLDOWN_SECONDS',
+          60,
+        ),
       });
     }
 
@@ -339,7 +357,24 @@ export class AuthService {
       });
     }
 
-    await this.sendVerificationLink(
+    const cooldownSeconds = await this.getEmailCooldownSeconds(
+      'verification',
+      user.id,
+    );
+
+    if (cooldownSeconds > 0) {
+      throw new HttpException(
+        {
+          code: 'EMAIL_VERIFICATION_COOLDOWN',
+          message: this.t('auth.errors.emailVerificationCooldown'),
+          email,
+          retryAfterSeconds: cooldownSeconds,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const retryAfterSeconds = await this.sendVerificationLink(
       user.id,
       user.email,
       user.profile?.preferredLocale ?? Locale.UK,
@@ -349,6 +384,7 @@ export class AuthService {
       code: 'EMAIL_VERIFICATION_SENT',
       message: this.t('auth.emailVerificationSent'),
       email,
+      retryAfterSeconds,
     });
   }
 
@@ -359,7 +395,7 @@ export class AuthService {
       include: { profile: true },
     });
 
-    if (user?.passwordHash && user.status === UserStatus.ACTIVE) {
+    if (user?.status === UserStatus.ACTIVE && user.emailVerifiedAt) {
       await this.sendPasswordResetLink(
         user.id,
         user.email,
@@ -421,8 +457,9 @@ export class AuthService {
   async handleGoogleCallback(
     profile: GoogleProfile,
     state: string | undefined,
-  ): Promise<string> {
-    const { role } = this.oauthStateService.verify(state);
+    expectedState: string | undefined,
+  ): Promise<GoogleCallbackResult> {
+    const oauthState = this.oauthStateService.verify(state, expectedState);
 
     if (!profile.email || !profile.emailVerified) {
       throw new UnauthorizedException({
@@ -431,71 +468,150 @@ export class AuthService {
       });
     }
 
-    const [userByGoogleId, userByEmail] = await Promise.all([
-      this.prisma.user.findUnique({ where: { googleId: profile.googleId } }),
-      this.prisma.user.findUnique({ where: { email: profile.email } }),
-    ]);
+    const normalizedProfile = {
+      ...profile,
+      email: this.normalizeEmail(profile.email),
+    };
+    const existingUser = await this.findGoogleUser(normalizedProfile);
 
-    if (userByGoogleId && userByEmail && userByGoogleId.id !== userByEmail.id) {
-      throw new ConflictException({
-        code: 'GOOGLE_ACCOUNT_CONFLICT',
-        message: this.t('auth.errors.googleAccountConflict'),
+    if (existingUser) {
+      const user = await this.prisma.$transaction((tx) =>
+        this.linkExistingGoogleUser(
+          tx,
+          existingUser,
+          normalizedProfile,
+          oauthState.locale,
+        ),
+      );
+
+      return {
+        type: 'SESSION',
+        code: await this.createOAuthExchangeCode(user.id),
+      };
+    }
+
+    if (oauthState.intent === 'LOGIN') {
+      return {
+        type: 'REGISTRATION_REQUIRED',
+        code: await this.createOAuthRegistrationTicket(
+          normalizedProfile,
+          oauthState.locale,
+        ),
+      };
+    }
+
+    if (!oauthState.role) {
+      throw new BadRequestException({
+        code: 'INVALID_OAUTH_STATE',
+        message: this.t('auth.errors.invalidOAuthState'),
       });
     }
 
-    const existingUser = userByGoogleId ?? userByEmail;
-    if (existingUser?.status === UserStatus.SUSPENDED) {
-      throw new ForbiddenException({
-        code: 'USER_SUSPENDED',
-        message: this.t('auth.errors.userSuspended'),
-      });
-    }
-
-    if (existingUser?.googleId && existingUser.googleId !== profile.googleId) {
-      throw new ConflictException({
-        code: 'GOOGLE_ACCOUNT_CONFLICT',
-        message: this.t('auth.errors.googleAccountConflict'),
-      });
-    }
-
-    const user = existingUser
-      ? await this.prisma.user.update({
-          where: { id: existingUser.id },
-          data: {
-            googleId: profile.googleId,
-            status: UserStatus.ACTIVE,
-            emailVerifiedAt: existingUser.emailVerifiedAt ?? new Date(),
-            profile: {
-              update: {
-                avatarUrl: profile.avatarUrl,
-              },
-            },
+    this.assertRegistrableRole(oauthState.role);
+    const user = await this.prisma.user.create({
+      data: {
+        email: normalizedProfile.email,
+        googleId: normalizedProfile.googleId,
+        role: oauthState.role,
+        status: UserStatus.ACTIVE,
+        emailVerifiedAt: new Date(),
+        profile: {
+          create: {
+            displayName:
+              normalizedProfile.displayName ||
+              this.getDefaultDisplayName(normalizedProfile.email),
+            avatarUrl: normalizedProfile.avatarUrl,
+            preferredLocale: oauthState.locale,
           },
-        })
-      : await this.prisma.user.create({
-          data: {
-            email: profile.email,
-            googleId: profile.googleId,
-            role,
-            status: UserStatus.ACTIVE,
-            emailVerifiedAt: new Date(),
-            profile: {
-              create: {
-                displayName:
-                  profile.displayName ||
-                  this.getDefaultDisplayName(profile.email),
-                avatarUrl: profile.avatarUrl,
-              },
-            },
-          },
-        });
-
-    await this.prisma.emailVerificationToken.updateMany({
-      where: { userId: user.id, usedAt: null },
-      data: { usedAt: new Date() },
+        },
+      },
+      include: { profile: true },
     });
 
-    return this.createOAuthExchangeCode(user.id);
+    return {
+      type: 'SESSION',
+      code: await this.createOAuthExchangeCode(user.id),
+    };
+  }
+
+  async completeGoogleRegistration(
+    dto: CompleteGoogleRegistrationDto,
+  ): Promise<AuthResponseDto & { refreshToken: string }> {
+    this.assertRegistrableRole(dto.role);
+    const now = new Date();
+    const tokenHash = this.hashToken(dto.code);
+
+    const user = await this.prisma.$transaction(async (tx) => {
+      const ticket = await tx.oAuthRegistrationTicket.findUnique({
+        where: { tokenHash },
+      });
+
+      if (!ticket || ticket.usedAt || ticket.expiresAt <= now) {
+        throw this.invalidOAuthRegistrationTicket();
+      }
+
+      const consumed = await tx.oAuthRegistrationTicket.updateMany({
+        where: { id: ticket.id, usedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
+      });
+      if (consumed.count !== 1) {
+        throw this.invalidOAuthRegistrationTicket();
+      }
+
+      const profile: GoogleProfile = {
+        googleId: ticket.googleId,
+        email: ticket.email,
+        emailVerified: true,
+        displayName: ticket.displayName,
+        ...(ticket.avatarUrl ? { avatarUrl: ticket.avatarUrl } : {}),
+      };
+      const [userByGoogleId, userByEmail] = await Promise.all([
+        tx.user.findUnique({
+          where: { googleId: ticket.googleId },
+          include: { profile: true },
+        }),
+        tx.user.findUnique({
+          where: { email: ticket.email },
+          include: { profile: true },
+        }),
+      ]);
+      const existingUser = this.resolveGoogleUser(
+        userByGoogleId,
+        userByEmail,
+        profile,
+      );
+      const locale = dto.preferredLocale ?? ticket.locale;
+
+      if (existingUser) {
+        return this.linkExistingGoogleUser(tx, existingUser, profile, locale);
+      }
+
+      return tx.user.create({
+        data: {
+          email: ticket.email,
+          googleId: ticket.googleId,
+          role: dto.role,
+          status: UserStatus.ACTIVE,
+          emailVerifiedAt: now,
+          profile: {
+            create: {
+              displayName:
+                ticket.displayName || this.getDefaultDisplayName(ticket.email),
+              avatarUrl: ticket.avatarUrl,
+              preferredLocale: locale,
+            },
+          },
+        },
+        include: { profile: true },
+      });
+    });
+
+    const tokens = await this.issueTokenPair(user);
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: this.usersService.toPrivateProfile(user),
+    };
   }
 
   async exchangeOAuthCode(
@@ -592,9 +708,13 @@ export class AuthService {
     userId: string,
     email: string,
     locale: Locale,
-  ): Promise<void> {
-    if (await this.isEmailOnCooldown('verification', userId)) {
-      return;
+  ): Promise<number> {
+    const remainingCooldown = await this.getEmailCooldownSeconds(
+      'verification',
+      userId,
+    );
+    if (remainingCooldown > 0) {
+      return remainingCooldown;
     }
 
     const token = this.generateOpaqueToken();
@@ -630,6 +750,8 @@ export class AuthService {
       where: { userId, id: { not: storedToken.id }, usedAt: null },
       data: { usedAt: new Date() },
     });
+
+    return this.getNumberConfig('EMAIL_SEND_COOLDOWN_SECONDS', 60);
   }
 
   private async sendPasswordResetLink(
@@ -637,7 +759,7 @@ export class AuthService {
     email: string,
     locale: Locale,
   ): Promise<void> {
-    if (await this.isEmailOnCooldown('password-reset', userId)) {
+    if ((await this.getEmailCooldownSeconds('password-reset', userId)) > 0) {
       return;
     }
 
@@ -672,6 +794,135 @@ export class AuthService {
     });
   }
 
+  private async findGoogleUser(
+    profile: GoogleProfile,
+  ): Promise<UserWithProfile | null> {
+    const [userByGoogleId, userByEmail] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { googleId: profile.googleId },
+        include: { profile: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { email: profile.email },
+        include: { profile: true },
+      }),
+    ]);
+
+    return this.resolveGoogleUser(userByGoogleId, userByEmail, profile);
+  }
+
+  private resolveGoogleUser(
+    userByGoogleId: UserWithProfile | null,
+    userByEmail: UserWithProfile | null,
+    profile: GoogleProfile,
+  ): UserWithProfile | null {
+    if (userByGoogleId && userByEmail && userByGoogleId.id !== userByEmail.id) {
+      throw new ConflictException({
+        code: 'GOOGLE_ACCOUNT_CONFLICT',
+        message: this.t('auth.errors.googleAccountConflict'),
+      });
+    }
+
+    const existingUser = userByGoogleId ?? userByEmail;
+    if (existingUser?.status === UserStatus.SUSPENDED) {
+      throw new ForbiddenException({
+        code: 'USER_SUSPENDED',
+        message: this.t('auth.errors.userSuspended'),
+      });
+    }
+
+    if (existingUser?.googleId && existingUser.googleId !== profile.googleId) {
+      throw new ConflictException({
+        code: 'GOOGLE_ACCOUNT_CONFLICT',
+        message: this.t('auth.errors.googleAccountConflict'),
+      });
+    }
+
+    return existingUser;
+  }
+
+  private async linkExistingGoogleUser(
+    tx: Prisma.TransactionClient,
+    existingUser: UserWithProfile,
+    profile: GoogleProfile,
+    fallbackLocale: Locale,
+  ): Promise<UserWithProfile> {
+    const avatarUpdate =
+      existingUser.profile?.avatarUrl || !profile.avatarUrl
+        ? {}
+        : { avatarUrl: profile.avatarUrl };
+    const user = await tx.user.update({
+      where: { id: existingUser.id },
+      data: {
+        googleId: profile.googleId,
+        status: UserStatus.ACTIVE,
+        emailVerifiedAt: existingUser.emailVerifiedAt ?? new Date(),
+        profile: {
+          upsert: {
+            create: {
+              displayName:
+                profile.displayName ||
+                this.getDefaultDisplayName(existingUser.email),
+              avatarUrl: profile.avatarUrl,
+              preferredLocale: fallbackLocale,
+            },
+            update: avatarUpdate,
+          },
+        },
+      },
+      include: { profile: true },
+    });
+
+    await tx.emailVerificationToken.updateMany({
+      where: { userId: user.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
+    return user;
+  }
+
+  private async createOAuthRegistrationTicket(
+    profile: GoogleProfile,
+    locale: Locale,
+  ): Promise<string> {
+    const code = this.generateOpaqueToken();
+    const now = new Date();
+
+    await this.prisma.$transaction([
+      this.prisma.oAuthRegistrationTicket.updateMany({
+        where: {
+          usedAt: null,
+          OR: [{ googleId: profile.googleId }, { email: profile.email }],
+        },
+        data: { usedAt: now },
+      }),
+      this.prisma.oAuthRegistrationTicket.create({
+        data: {
+          tokenHash: this.hashToken(code),
+          googleId: profile.googleId,
+          email: profile.email,
+          displayName:
+            profile.displayName || this.getDefaultDisplayName(profile.email),
+          avatarUrl: profile.avatarUrl,
+          locale,
+          expiresAt: this.addMinutes(
+            now,
+            this.getNumberConfig('OAUTH_REGISTRATION_TTL_MINUTES', 10),
+          ),
+        },
+      }),
+    ]);
+
+    return code;
+  }
+
+  private invalidOAuthRegistrationTicket(): UnauthorizedException {
+    return new UnauthorizedException({
+      code: 'INVALID_OAUTH_REGISTRATION_TICKET',
+      message: this.t('auth.errors.invalidOAuthRegistrationTicket'),
+    });
+  }
+
   private async createOAuthExchangeCode(userId: string): Promise<string> {
     const code = this.generateOpaqueToken();
     await this.prisma.oAuthExchangeCode.create({
@@ -688,26 +939,36 @@ export class AuthService {
     return code;
   }
 
-  private async isEmailOnCooldown(
+  private async getEmailCooldownSeconds(
     type: 'verification' | 'password-reset',
     userId: string,
-  ): Promise<boolean> {
-    const createdAfter = this.addSeconds(
-      new Date(),
-      -this.getNumberConfig('EMAIL_SEND_COOLDOWN_SECONDS', 60),
+  ): Promise<number> {
+    const cooldownSeconds = this.getNumberConfig(
+      'EMAIL_SEND_COOLDOWN_SECONDS',
+      60,
     );
     const token =
       type === 'verification'
         ? await this.prisma.emailVerificationToken.findFirst({
-            where: { userId, createdAt: { gt: createdAfter } },
-            select: { id: true },
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true },
           })
         : await this.prisma.passwordResetToken.findFirst({
-            where: { userId, createdAt: { gt: createdAfter } },
-            select: { id: true },
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true },
           });
 
-    return token !== null;
+    if (!token) {
+      return 0;
+    }
+
+    const elapsedSeconds = (Date.now() - token.createdAt.getTime()) / 1000;
+    return Math.max(
+      0,
+      Math.min(cooldownSeconds, Math.ceil(cooldownSeconds - elapsedSeconds)),
+    );
   }
 
   private revokeAllRefreshTokens(userId: string): Promise<{ count: number }> {

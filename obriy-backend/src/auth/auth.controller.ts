@@ -23,9 +23,10 @@ import {
   ApiOperation,
   ApiQuery,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { CookieOptions, Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import type { AuthUser } from '../common/types/auth-user.type';
@@ -43,6 +44,8 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import type { GoogleProfile } from './types/google-profile.type';
 import { GoogleOAuthExceptionFilter } from './filters/google-oauth-exception.filter';
 import { AuthErrorDto } from './dto/auth-error.dto';
+import { AuthCookieService } from './auth-cookie.service';
+import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
 
 type CookieRequest = Request & {
   cookies?: unknown;
@@ -58,6 +61,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly authCookieService: AuthCookieService,
   ) {}
 
   @ApiOperation({ summary: 'Register a student, teacher, or parent account' })
@@ -82,7 +86,7 @@ export class AuthController {
   ): Promise<AuthResponseDto> {
     const result = await this.authService.login(dto);
 
-    this.setRefreshCookie(response, result.refreshToken);
+    this.authCookieService.setRefreshToken(response, result.refreshToken);
 
     return new AuthResponseDto({
       accessToken: result.accessToken,
@@ -103,10 +107,10 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<AuthResponseDto> {
     const result = await this.authService.refresh(
-      this.getRefreshCookie(request),
+      this.authCookieService.getRefreshToken(request),
     );
 
-    this.setRefreshCookie(response, result.refreshToken);
+    this.authCookieService.setRefreshToken(response, result.refreshToken);
 
     return new AuthResponseDto({
       accessToken: result.accessToken,
@@ -123,10 +127,10 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<AuthMessageDto> {
     const result = await this.authService.logout(
-      this.getRefreshCookie(request),
+      this.authCookieService.getRefreshToken(request),
     );
 
-    this.clearRefreshCookie(response);
+    this.authCookieService.clearRefreshToken(response);
 
     return result;
   }
@@ -143,7 +147,7 @@ export class AuthController {
   ): Promise<AuthMessageDto> {
     const result = await this.authService.logoutAll(user);
 
-    this.clearRefreshCookie(response);
+    this.authCookieService.clearRefreshToken(response);
 
     return result;
   }
@@ -184,6 +188,10 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Resend an email verification link' })
   @ApiCreatedResponse({ type: AuthMessageDto })
+  @ApiTooManyRequestsResponse({
+    description: 'The 60-second email cooldown is still active.',
+    type: AuthErrorDto,
+  })
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('resend-verification')
   resendVerification(
@@ -202,10 +210,17 @@ export class AuthController {
     return this.authService.getMe(user);
   }
 
-  @ApiOperation({ summary: 'Start Google OAuth for a selected role' })
-  @ApiQuery({ name: 'role', enum: ['STUDENT', 'TEACHER', 'PARENT'] })
+  @ApiOperation({ summary: 'Start a Google login or registration flow' })
+  @ApiQuery({ name: 'intent', enum: ['LOGIN', 'REGISTER'] })
+  @ApiQuery({
+    name: 'role',
+    enum: ['STUDENT', 'TEACHER', 'PARENT'],
+    required: false,
+  })
+  @ApiQuery({ name: 'locale', enum: ['UK', 'EN'], required: false })
   @ApiFoundResponse({ description: 'Redirects to Google.' })
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UseFilters(GoogleOAuthExceptionFilter)
   @UseGuards(GoogleAuthGuard)
   @Get('google')
   googleLogin(): void {}
@@ -223,14 +238,19 @@ export class AuthController {
     @Query('state') state: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const code = await this.authService.handleGoogleCallback(
+    const result = await this.authService.handleGoogleCallback(
       request.user,
       state,
+      this.authCookieService.getOAuthState(request),
     );
+    this.authCookieService.clearOAuthState(response);
     const frontendUrl =
       this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
     const redirectUrl = new URL('/auth/google/callback', frontendUrl);
-    redirectUrl.searchParams.set('code', code);
+    redirectUrl.searchParams.set(
+      result.type === 'SESSION' ? 'code' : 'registration',
+      result.code,
+    );
 
     response.redirect(redirectUrl.toString());
   }
@@ -247,7 +267,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<AuthResponseDto> {
     const result = await this.authService.exchangeOAuthCode(dto.code);
-    this.setRefreshCookie(response, result.refreshToken);
+    this.authCookieService.setRefreshToken(response, result.refreshToken);
 
     return new AuthResponseDto({
       accessToken: result.accessToken,
@@ -255,70 +275,22 @@ export class AuthController {
     });
   }
 
-  private setRefreshCookie(response: Response, refreshToken: string): void {
-    response.cookie(this.getRefreshCookieName(), refreshToken, {
-      ...this.getRefreshCookieOptions(),
-      maxAge: this.getRefreshCookieMaxAgeMs(),
+  @ApiOperation({ summary: 'Finish Google registration after choosing a role' })
+  @ApiCreatedResponse({ type: AuthResponseDto })
+  @ApiBadRequestResponse({ type: AuthErrorDto })
+  @ApiUnauthorizedResponse({ type: AuthErrorDto })
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('google/complete-registration')
+  async completeGoogleRegistration(
+    @Body() dto: CompleteGoogleRegistrationDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<AuthResponseDto> {
+    const result = await this.authService.completeGoogleRegistration(dto);
+    this.authCookieService.setRefreshToken(response, result.refreshToken);
+
+    return new AuthResponseDto({
+      accessToken: result.accessToken,
+      user: result.user,
     });
-  }
-
-  private clearRefreshCookie(response: Response): void {
-    response.clearCookie(
-      this.getRefreshCookieName(),
-      this.getRefreshCookieOptions(),
-    );
-  }
-
-  private getRefreshCookieOptions(): CookieOptions {
-    const configuredSameSite =
-      this.configService.get<string>('COOKIE_SAME_SITE') ?? 'lax';
-    const sameSite = this.isSameSiteValue(configuredSameSite)
-      ? configuredSameSite
-      : 'lax';
-    const configuredDomain = this.configService.get<string>('COOKIE_DOMAIN');
-
-    return {
-      httpOnly: true,
-      secure:
-        this.configService.get<string>('COOKIE_SECURE') === 'true' ||
-        this.configService.get<string>('NODE_ENV') === 'production',
-      sameSite,
-      path: '/auth',
-      ...(configuredDomain ? { domain: configuredDomain } : {}),
-    };
-  }
-
-  private isSameSiteValue(value: string): value is 'lax' | 'strict' | 'none' {
-    return value === 'lax' || value === 'strict' || value === 'none';
-  }
-
-  private getRefreshCookie(request: CookieRequest): string | undefined {
-    if (!this.isCookieRecord(request.cookies)) {
-      return undefined;
-    }
-
-    const refreshToken = request.cookies[this.getRefreshCookieName()];
-
-    return typeof refreshToken === 'string' ? refreshToken : undefined;
-  }
-
-  private isCookieRecord(cookies: unknown): cookies is Record<string, unknown> {
-    return typeof cookies === 'object' && cookies !== null;
-  }
-
-  private getRefreshCookieName(): string {
-    return (
-      this.configService.get<string>('REFRESH_TOKEN_COOKIE_NAME') ??
-      'obriy_refresh_token'
-    );
-  }
-
-  private getRefreshCookieMaxAgeMs(): number {
-    const daysValue = this.configService.get<string | number>(
-      'REFRESH_TOKEN_TTL_DAYS',
-    );
-    const days = Number(daysValue);
-    const ttlDays = Number.isFinite(days) ? days : 30;
-    return ttlDays * 24 * 60 * 60 * 1000;
   }
 }

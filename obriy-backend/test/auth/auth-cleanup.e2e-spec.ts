@@ -53,6 +53,16 @@ describe('Auth token cleanup (e2e)', () => {
         createdAt: oldDate,
       },
     });
+    await context.prisma.oAuthRegistrationTicket.create({
+      data: {
+        tokenHash: `oauth-registration-cleanup-${Date.now()}`,
+        googleId: `cleanup-google-${Date.now()}`,
+        email,
+        displayName: 'Cleanup Registration',
+        expiresAt: oldDate,
+        createdAt: oldDate,
+      },
+    });
     await context.prisma.refreshToken.create({
       data: {
         userId: user.id,
@@ -72,8 +82,9 @@ describe('Auth token cleanup (e2e)', () => {
         where: { userId: user.id },
       }),
       context.prisma.oAuthExchangeCode.count({ where: { userId: user.id } }),
+      context.prisma.oAuthRegistrationTicket.count({ where: { email } }),
       context.prisma.refreshToken.count({ where: { userId: user.id } }),
     ]);
-    expect(remaining).toEqual([0, 0, 0, 0]);
+    expect(remaining).toEqual([0, 0, 0, 0, 0]);
   });
 });

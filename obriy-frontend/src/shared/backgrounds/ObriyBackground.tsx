@@ -2,9 +2,16 @@ import { DawnAtlas } from './DawnAtlas'
 import { NightSky } from './NightSky'
 import styles from './ObriyBackground.module.css'
 
-export function ObriyBackground() {
+interface ObriyBackgroundProps {
+  compactHorizon?: boolean
+}
+
+export function ObriyBackground({ compactHorizon = false }: ObriyBackgroundProps) {
   return (
-    <div className={styles.background} aria-hidden="true">
+    <div
+      className={`${styles.background} ${compactHorizon ? styles.compactHorizon : ''}`}
+      aria-hidden="true"
+    >
       <DawnAtlas />
       <NightSky />
       <div className={styles.noise} />

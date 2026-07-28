@@ -1,18 +1,12 @@
 import {
-  ArrowRight,
   Award,
-  BookOpen,
-  Check,
   Compass,
-  Globe2,
   Library,
   Map,
   Menu,
-  Moon,
   Route,
   Settings,
   Sparkles,
-  Sun,
   Trophy,
   User,
   UsersRound,
@@ -22,7 +16,6 @@ import { useState, type ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ObriyBackground } from '../../shared/backgrounds/ObriyBackground'
 import { BrandLogo } from '../../shared/brand/BrandLogo'
-import { useTheme } from '../../shared/theme/theme-context'
 import styles from './DesignLabPage.module.css'
 
 interface NavigationItem {
@@ -44,17 +37,8 @@ const navigationItems: NavigationItem[] = [
 ]
 
 export function DesignLabPage() {
-  const { i18n, t } = useTranslation()
-  const { theme, toggleTheme } = useTheme()
+  const { t } = useTranslation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const isDay = theme === 'day'
-  const currentLanguage = i18n.resolvedLanguage === 'en' ? 'en' : 'uk'
-
-  const toggleLanguage = async () => {
-    const nextLanguage = currentLanguage === 'uk' ? 'en' : 'uk'
-    localStorage.setItem('obriy-language', nextLanguage)
-    await i18n.changeLanguage(nextLanguage)
-  }
 
   return (
     <div className={styles.page}>
@@ -112,71 +96,10 @@ export function DesignLabPage() {
       </aside>
 
       <div className={styles.appShell}>
-        <header className={styles.topbar}>
-          <button className={`${styles.iconButton} ${styles.mobileMenu}`} type="button" onClick={() => setIsSidebarOpen(true)} aria-label={t('navigation.openMenu')}>
-            <Menu size={20} />
-          </button>
-
-          <div className={styles.mobileBrand}><BrandLogo compact /></div>
-
-          <div className={styles.profileSummary}>
-            <span className={styles.avatar}>{t('profile.initials')}</span>
-            <span className={styles.profileText}>
-              <strong>{t('profile.demoName')}</strong>
-              <small>{t('progress.level')} · {t('progress.xp')}</small>
-            </span>
-          </div>
-
-          <div className={styles.headerActions}>
-            <button className={styles.iconButton} type="button" onClick={toggleTheme} aria-label={isDay ? t('theme.switchToNight') : t('theme.switchToDay')} title={isDay ? t('theme.switchToNight') : t('theme.switchToDay')}>
-              {isDay ? <Moon size={18} /> : <Sun size={18} />}
-            </button>
-            <button className={styles.languageButton} type="button" onClick={() => void toggleLanguage()} aria-label={t('language.label')}>
-              <Globe2 size={17} /><span>{t('language.short')}</span>
-            </button>
-          </div>
-        </header>
-
-        <main className={styles.main}>
-          <section className={styles.intro} id="overview">
-            <div className={styles.introCopy}>
-              <p className={styles.eyebrow}><Sparkles size={15} />{t('greeting.eyebrow')}</p>
-              <h1>{t('greeting.title')}</h1>
-              <p className={styles.description}>{t('greeting.description')}</p>
-              <button className={styles.primaryButton} type="button">
-                {t('actions.continue')}<ArrowRight size={18} />
-              </button>
-            </div>
-
-            <div className={styles.progressPanel} id="journey">
-              <span className={styles.panelLabel}>{t('progress.title')}</span>
-              <div className={styles.progressTopline}>
-                <div className={styles.progressRing}><span>7</span></div>
-                <div><strong>{t('progress.xp').split('/')[0]}</strong><small>{t('progress.level')}</small></div>
-              </div>
-              <div className={styles.progressTrack}><span /></div>
-              <p className={styles.xpLabel}>{t('progress.xp')}</p>
-            </div>
-          </section>
-
-          <section className={styles.contentGrid}>
-            <article className={`${styles.surface} ${styles.lessonCard}`}>
-              <div className={styles.lessonIcon}><BookOpen size={23} /></div>
-              <div className={styles.lessonCopy}>
-                <span className={styles.panelLabel}>{t('lesson.label')}</span>
-                <h2>{t('lesson.title')}</h2>
-                <p>{t('lesson.meta')}</p>
-              </div>
-              <button className={styles.secondaryButton} type="button">{t('actions.openLesson')}<ArrowRight size={17} /></button>
-            </article>
-
-            <article className={`${styles.surface} ${styles.badgeCard}`} id="badges">
-              <div className={styles.badgeIcon}><span className={styles.badgeOrbit} /><Sparkles size={25} /></div>
-              <div><span className={styles.panelLabel}>{t('badge.unlocked')}</span><h2>{t('badge.name')}</h2></div>
-              <span className={styles.checkmark}><Check size={15} /></span>
-            </article>
-          </section>
-        </main>
+        <button className={styles.mobileMenu} type="button" onClick={() => setIsSidebarOpen(true)} aria-label={t('navigation.openMenu')}>
+          <Menu size={20} />
+        </button>
+        <main className={styles.emptyPage} id="overview" />
       </div>
     </div>
   )

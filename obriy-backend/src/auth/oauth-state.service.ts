@@ -1,13 +1,23 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UserRole } from '@prisma/client';
+import { Locale, UserRole } from '@prisma/client';
 import { I18nService } from 'nestjs-i18n';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
-type OAuthStatePayload = {
-  role: UserRole;
+export type OAuthIntent = 'LOGIN' | 'REGISTER';
+
+export type OAuthStatePayload = {
+  intent: OAuthIntent;
+  role?: UserRole;
+  locale: Locale;
   nonce: string;
   expiresAt: number;
+};
+
+type CreateOAuthStateInput = {
+  intent: OAuthIntent;
+  role?: UserRole;
+  locale: Locale;
 };
 
 @Injectable()
@@ -17,13 +27,19 @@ export class OAuthStateService {
     private readonly i18n: I18nService,
   ) {}
 
-  create(role: UserRole): string {
-    if (role === UserRole.ADMIN) {
+  create(input: CreateOAuthStateInput): string {
+    if (
+      (input.intent === 'REGISTER' && !input.role) ||
+      input.role === UserRole.ADMIN ||
+      !Object.values(Locale).includes(input.locale)
+    ) {
       throw this.invalidState();
     }
 
     const payload: OAuthStatePayload = {
-      role,
+      intent: input.intent,
+      ...(input.intent === 'REGISTER' ? { role: input.role } : {}),
+      locale: input.locale,
       nonce: randomBytes(16).toString('base64url'),
       expiresAt: Date.now() + 10 * 60 * 1000,
     };
@@ -34,8 +50,11 @@ export class OAuthStateService {
     return `${encodedPayload}.${this.sign(encodedPayload)}`;
   }
 
-  verify(state: string | undefined): OAuthStatePayload {
-    if (!state) {
+  verify(
+    state: string | undefined,
+    expectedState: string | undefined,
+  ): OAuthStatePayload {
+    if (!state || !expectedState || !this.matches(state, expectedState)) {
       throw this.invalidState();
     }
 
@@ -61,9 +80,13 @@ export class OAuthStateService {
       ) as Partial<OAuthStatePayload>;
 
       if (
-        !payload.role ||
-        payload.role === UserRole.ADMIN ||
-        !Object.values(UserRole).includes(payload.role) ||
+        (payload.intent !== 'LOGIN' && payload.intent !== 'REGISTER') ||
+        (payload.intent === 'REGISTER' &&
+          (!payload.role ||
+            payload.role === UserRole.ADMIN ||
+            !Object.values(UserRole).includes(payload.role))) ||
+        !payload.locale ||
+        !Object.values(Locale).includes(payload.locale) ||
         typeof payload.nonce !== 'string' ||
         typeof payload.expiresAt !== 'number' ||
         payload.expiresAt <= Date.now()
@@ -83,6 +106,15 @@ export class OAuthStateService {
       this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
 
     return createHmac('sha256', secret).update(value).digest('base64url');
+  }
+
+  private matches(value: string, expectedValue: string): boolean {
+    const supplied = Buffer.from(value);
+    const expected = Buffer.from(expectedValue);
+
+    return (
+      supplied.length === expected.length && timingSafeEqual(supplied, expected)
+    );
   }
 
   private invalidState(): BadRequestException {

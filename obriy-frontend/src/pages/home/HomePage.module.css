@@ -1,0 +1,1597 @@
+.page {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  min-height: 100svh;
+  flex-direction: column;
+  overflow: clip;
+  isolation: isolate;
+}
+
+.page > main {
+  flex: 1 0 auto;
+}
+
+.header {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  right: 0;
+  left: 0;
+  min-height: var(--site-header-height);
+  pointer-events: none;
+}
+
+.header::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-surface-solid), transparent 5%);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border-strong), transparent 16%);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--color-bg-deep), transparent 84%);
+  opacity: 0;
+  transform: translateY(-10px);
+  backdrop-filter: blur(16px) saturate(112%);
+  transition:
+    opacity 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.headerScrolled::before {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.headerInner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 100%;
+  min-height: var(--site-header-height);
+  align-items: center;
+  padding-right: 134px;
+  padding-left: var(--page-edge);
+  grid-template-columns: 1fr auto;
+}
+
+.brandLink {
+  width: max-content;
+  pointer-events: auto;
+  text-decoration: none;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.headerAction {
+  display: inline-flex;
+  min-height: var(--control-height);
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 15px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    color var(--duration-fast),
+    background-color var(--duration-fast),
+    border-color var(--duration-fast),
+    transform var(--duration-fast);
+}
+
+.headerRegister {
+  width: 184px;
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-button);
+}
+
+.headerRegister:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.headerLogin {
+  width: 112px;
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface-solid), transparent 18%);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-button);
+}
+
+.headerLogin:hover {
+  color: var(--color-accent-hover);
+  background: var(--color-surface-solid);
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.hero {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  min-height: 94vh;
+  min-height: 94svh;
+  align-items: center;
+  justify-content: center;
+  padding: 112px max(28px, calc((100vw - var(--content-width)) / 2)) 112px;
+  overflow: hidden;
+}
+
+.heroReadability {
+  position: absolute;
+  z-index: -1;
+  top: 5%;
+  bottom: 4%;
+  left: 50%;
+  width: min(1040px, 92vw);
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 44%,
+    color-mix(in srgb, var(--color-bg), white 28%) 0%,
+    color-mix(in srgb, var(--color-bg), transparent 34%) 48%,
+    transparent 76%
+  );
+  opacity: 0.78;
+  filter: blur(8px);
+  transform: translateX(-50%);
+}
+
+:global(:root[data-theme='night']) .heroReadability {
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgb(5 15 27 / 88%) 0%,
+    rgb(6 17 30 / 48%) 53%,
+    transparent 78%
+  );
+  opacity: 0.84;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 4;
+  top: 40px;
+  width: min(900px, 82vw);
+  text-align: center;
+}
+
+.sectionKicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 16px;
+  color: var(--color-accent-hover);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.title {
+  display: flex;
+  height: 142px;
+  max-width: 900px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  margin-inline: auto;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 58px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.12;
+}
+
+.title span {
+  display: block;
+  white-space: nowrap;
+}
+
+.titleAccent {
+  color: var(--color-accent-hover);
+  font-size: 0.86em;
+  line-height: 1.16;
+}
+
+.titleDivider {
+  display: block;
+  width: 84px;
+  height: 1px;
+  margin: 18px auto 0;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+}
+
+.description {
+  display: flex;
+  height: 58px;
+  max-width: 680px;
+  align-items: center;
+  justify-content: center;
+  margin: 14px auto 0;
+  color: var(--color-text-soft);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.actions {
+  display: grid;
+  width: 352px;
+  justify-content: center;
+  gap: 12px;
+  margin: 28px auto 0;
+  grid-template-columns: 220px 120px;
+}
+
+.primaryAction,
+.secondaryAction,
+.roleAction {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 21px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-decoration: none;
+  transition:
+    color var(--duration-fast),
+    background-color var(--duration-fast),
+    border-color var(--duration-fast),
+    transform var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+
+.primaryAction {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  box-shadow: var(--shadow-button);
+}
+
+.primaryAction:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  transform: translateY(-2px);
+}
+
+.secondaryAction {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface-solid), transparent 22%);
+  border: 1px solid var(--color-border-strong);
+}
+
+.secondaryAction:hover {
+  color: var(--color-accent-hover);
+  background: var(--color-surface-solid);
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
+
+.scrollCue {
+  position: absolute;
+  z-index: 5;
+  bottom: 10px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  color: var(--color-text-soft);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  transition: color var(--duration-fast);
+}
+
+.scrollCue svg {
+  animation: scrollCue 2s ease-in-out infinite;
+}
+
+.scrollCue:hover {
+  color: var(--color-accent-hover);
+}
+
+:global(:root[data-theme='day']) .scrollCue {
+  color: #fff2d4;
+  filter: drop-shadow(0 2px 4px rgb(18 49 70 / 72%));
+}
+
+:global(:root[data-theme='day']) .scrollCue:hover {
+  color: #fffaf0;
+}
+
+.journeySection {
+  position: relative;
+  z-index: 3;
+  scroll-margin-top: 70px;
+  padding: 126px max(28px, calc((100vw - var(--content-width)) / 2)) 142px;
+  background:
+    radial-gradient(circle at 82% 10%, rgb(247 214 143 / 16%), transparent 28%),
+    linear-gradient(
+      180deg,
+      rgb(72 113 139 / 10%) 0%,
+      rgb(78 119 143 / 46%) 17%,
+      rgb(91 132 153 / 52%) 84%,
+      rgb(69 109 135 / 12%) 100%
+    );
+  border-top: 1px solid rgb(185 127 55 / 48%);
+  border-bottom: 1px solid rgb(185 127 55 / 42%);
+  box-shadow:
+    inset 0 1px rgb(255 244 215 / 12%),
+    inset 0 -1px rgb(25 63 87 / 12%);
+  backdrop-filter: blur(3px) saturate(88%);
+}
+
+:global(:root[data-theme='night']) .journeySection {
+  background:
+    linear-gradient(
+      180deg,
+      rgb(5 15 27 / 28%) 0%,
+      rgb(8 22 37 / 91%) 15%,
+      rgb(9 24 40 / 94%) 84%,
+      rgb(6 17 29 / 50%) 100%
+    );
+}
+
+:global(:root[data-theme='day']) .journeySection .sectionKicker,
+:global(:root[data-theme='day']) .journeySection .chapterNumber {
+  color: #86521f;
+}
+
+:global(:root[data-theme='day']) .journeySection .sectionIntro h2,
+:global(:root[data-theme='day']) .journeySection .journeyChapter h3 {
+  color: #173143;
+  text-shadow: 0 1px 0 rgb(255 248 232 / 22%);
+}
+
+:global(:root[data-theme='day']) .journeySection .sectionIntro > p:last-child,
+:global(:root[data-theme='day']) .journeySection .journeyChapter p {
+  color: #2f4d5f;
+}
+
+.sectionIntro,
+.rolesHeader {
+  width: min(690px, 100%);
+}
+
+.sectionIntro {
+  margin-bottom: 44px;
+}
+
+.sectionIntro h2 {
+  display: flex;
+  height: 110px;
+  flex-direction: column;
+}
+
+.sectionIntro h2 span {
+  display: block;
+}
+
+.sectionIntro > p:last-child {
+  height: 55px;
+}
+
+.sectionIntro h2,
+.rolesHeader h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.sectionIntro > p:last-child,
+.rolesHeader > p:last-child {
+  margin: 18px 0 0;
+  color: var(--color-text-soft);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.journeyStage {
+  display: grid;
+  max-width: var(--content-width);
+  align-items: start;
+  grid-template-columns: minmax(0, 0.86fr) minmax(460px, 1.14fr);
+  gap: 78px;
+}
+
+.journeyChapters {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.journeyChapter {
+  position: relative;
+  display: grid;
+  height: max(480px, 68vh);
+  align-content: center;
+  padding: 70px 0 70px 44px;
+  border-left: 1px solid color-mix(in srgb, var(--color-border-strong), transparent 24%);
+  transform-origin: left center;
+  transition:
+    border-color 720ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 720ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:global(:root[data-theme='day']) .journeyChapter {
+  border-left-color: rgb(170 108 43 / 52%);
+}
+
+.journeyChapter::before {
+  position: absolute;
+  top: 50%;
+  left: -5px;
+  width: 9px;
+  height: 9px;
+  content: '';
+  background: var(--color-surface-solid);
+  border: 2px solid var(--color-accent);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  transition:
+    width 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    left 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.journeyChapter[data-state='active'] {
+  border-left-color: var(--color-accent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-accent), transparent 91%),
+    transparent 72%
+  );
+}
+
+:global(:root[data-theme='day']) .journeyChapter[data-state='active'] {
+  border-left-color: #b87931;
+  background: none;
+}
+
+.journeyChapter[data-state='active']::before {
+  left: -7px;
+  width: 13px;
+  height: 13px;
+  background: var(--color-accent);
+  border-color: var(--color-surface-solid);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--color-accent), transparent 79%),
+    0 0 18px color-mix(in srgb, var(--color-accent), transparent 28%);
+}
+
+.journeyChapter[data-state='complete'] {
+  border-left-color: color-mix(in srgb, var(--color-accent), transparent 42%);
+}
+
+:global(:root[data-theme='day']) .journeyChapter[data-state='complete'] {
+  border-left-color: rgb(184 121 49 / 68%);
+}
+
+.journeyChapter[data-state='complete']::before {
+  background: var(--color-accent);
+  border-color: var(--color-surface-solid);
+  opacity: 0.72;
+}
+
+.journeyChapter[data-state='upcoming']::before {
+  border-color: color-mix(in srgb, var(--color-accent), transparent 38%);
+  opacity: 0.48;
+}
+
+.chapterCard {
+  position: relative;
+  width: min(100%, 500px);
+}
+
+:global(:root[data-theme='day']) .chapterCard {
+  padding: 24px 26px 22px;
+  background: #e6ddcd;
+  border: 1px solid #a96d2d;
+  border-radius: 4px;
+  box-shadow:
+    0 18px 42px rgb(18 53 76 / 18%),
+    inset 0 0 0 1px rgb(255 249 234 / 56%);
+}
+
+:global(:root[data-theme='day']) .chapterCard::before,
+:global(:root[data-theme='day']) .chapterCard::after {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  content: '';
+  pointer-events: none;
+}
+
+:global(:root[data-theme='day']) .chapterCard::before {
+  top: 7px;
+  left: 7px;
+  border-top: 1px solid rgb(145 88 34 / 64%);
+  border-left: 1px solid rgb(145 88 34 / 64%);
+}
+
+:global(:root[data-theme='day']) .chapterCard::after {
+  right: 7px;
+  bottom: 7px;
+  border-right: 1px solid rgb(145 88 34 / 64%);
+  border-bottom: 1px solid rgb(145 88 34 / 64%);
+}
+
+.chapterNumber {
+  display: block;
+  margin-bottom: 20px;
+  color: var(--color-accent-hover);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chapterIcon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 22px;
+  place-items: center;
+  color: var(--color-accent-hover);
+  background: color-mix(in srgb, var(--color-surface-solid), transparent 16%);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  transition:
+    color 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 680ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:global(:root[data-theme='day']) .chapterIcon {
+  color: #285f84;
+  background: rgb(235 225 207 / 94%);
+  border-color: rgb(188 125 48 / 72%);
+  box-shadow: 0 10px 24px rgb(22 62 86 / 14%);
+}
+
+.journeyChapter[data-state='active'] .chapterIcon {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--color-accent), transparent 72%);
+}
+
+:global(:root[data-theme='day']) .journeyChapter[data-state='active'] .chapterIcon {
+  color: #fff8e8;
+  background: #b97a31;
+  border-color: #d7a761;
+  box-shadow: 0 12px 28px rgb(22 58 81 / 24%);
+}
+
+.journeyChapter h3 {
+  display: flex;
+  height: 78px;
+  align-items: center;
+  max-width: 440px;
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 31px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.journeyChapter p {
+  height: 78px;
+  max-width: 470px;
+  margin: 15px 0 0;
+  color: var(--color-text-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.journeyVisual {
+  position: sticky;
+  top: 112px;
+  grid-column: 2;
+  grid-row: 1;
+  height: calc(100vh - 150px);
+  min-height: 620px;
+  max-height: 760px;
+  overflow: hidden;
+  color: var(--color-accent);
+  background:
+    radial-gradient(
+      circle at 50% 44%,
+      color-mix(in srgb, var(--color-surface-solid), transparent 12%),
+      color-mix(in srgb, var(--color-surface-solid), transparent 48%) 62%,
+      transparent 82%
+    );
+  border-top: 1px solid var(--color-border-strong);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+:global(:root[data-theme='day']) .journeyVisual {
+  color: #2d6f9b;
+  background:
+    radial-gradient(circle at 48% 42%, rgb(247 239 222 / 98%), rgb(226 214 192 / 97%) 72%),
+    #e2d5c0;
+  border: 1px solid rgb(204 150 72 / 72%);
+  box-shadow:
+    0 22px 54px rgb(18 53 76 / 24%),
+    inset 0 0 0 1px rgb(255 250 235 / 54%);
+}
+
+.journeyVisual::before,
+.journeyVisual::after {
+  position: absolute;
+  z-index: 2;
+  width: 56px;
+  height: 56px;
+  content: '';
+  pointer-events: none;
+}
+
+.journeyVisual::before {
+  top: 12px;
+  left: 12px;
+  border-top: 1px solid currentColor;
+  border-left: 1px solid currentColor;
+}
+
+.journeyVisual::after {
+  right: 12px;
+  bottom: 12px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+}
+
+.atlasGrid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(90deg, currentColor 1px, transparent 1px),
+    linear-gradient(currentColor 1px, transparent 1px);
+  background-size: 74px 74px;
+  mask-image: radial-gradient(circle, black, transparent 84%);
+}
+
+:global(:root[data-theme='day']) .atlasGrid {
+  opacity: 0.22;
+}
+
+.journeyVisual > svg {
+  position: absolute;
+  z-index: 1;
+  inset: 2%;
+  width: 96%;
+  height: 96%;
+  overflow: visible;
+}
+
+.atlasContour {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-dasharray: 3 11;
+  opacity: 0.22;
+}
+
+:global(:root[data-theme='day']) .atlasContour {
+  opacity: 0.3;
+}
+
+.atlasRouteBase,
+.atlasRouteProgress {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.atlasRouteBase {
+  stroke: color-mix(in srgb, var(--color-accent), transparent 68%);
+  stroke-width: 2;
+  stroke-dasharray: 5 10;
+}
+
+.atlasRouteProgress {
+  stroke: var(--color-accent);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-accent), transparent 44%));
+}
+
+.routeMetrics {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.atlasNodeGroup {
+  transition: opacity 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.atlasNodeGroup[data-state='upcoming'] {
+  opacity: 0.3;
+}
+
+.atlasNodeGroup[data-state='complete'] {
+  opacity: 0.72;
+}
+
+.atlasNodeGroup[data-state='active'] {
+  opacity: 1;
+}
+
+.atlasNode {
+  fill: var(--color-surface-solid);
+  stroke: var(--color-accent);
+  stroke-width: 3;
+}
+
+.atlasNodeGroup[data-state='active'] .atlasNode {
+  fill: var(--color-accent);
+  stroke: var(--color-surface-solid);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--color-accent), transparent 30%));
+}
+
+.atlasNodeGroup[data-state='complete'] .atlasNode {
+  fill: color-mix(in srgb, var(--color-accent), var(--color-surface-solid) 28%);
+}
+
+.atlasTicks {
+  fill: var(--color-surface-solid);
+  stroke: currentColor;
+  stroke-width: 1.2;
+  opacity: 0.58;
+}
+
+.routeMarker {
+  pointer-events: none;
+}
+
+.routeMarkerCore {
+  fill: var(--color-accent);
+  stroke: var(--color-surface-solid);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--color-accent), transparent 22%));
+}
+
+.atlasLabel {
+  position: absolute;
+  z-index: 3;
+  color: var(--color-text-soft);
+  font-family: var(--font-display);
+  font-size: 12px;
+}
+
+:global(:root[data-theme='day']) .atlasLabel {
+  color: #40596a;
+}
+
+.atlasLabelStart {
+  top: 5%;
+  left: 17%;
+}
+
+.atlasLabelFinish {
+  right: 25%;
+  bottom: 3%;
+}
+
+.rolesSection {
+  position: relative;
+  z-index: 3;
+  scroll-margin-top: 70px;
+  padding: 140px max(28px, calc((100vw - var(--content-width)) / 2)) 76px;
+  overflow: hidden;
+}
+
+.rolesSection::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: '';
+  background:
+    radial-gradient(
+      circle at 26% 55%,
+      color-mix(in srgb, var(--color-surface-solid), transparent 10%),
+      transparent 34%
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-bg), transparent 18%),
+      color-mix(in srgb, var(--color-bg), transparent 64%)
+    );
+  opacity: 0.9;
+}
+
+:global(:root[data-theme='night']) .rolesSection::before {
+  background:
+    radial-gradient(circle at 26% 55%, rgb(12 31 49 / 92%), transparent 38%),
+    linear-gradient(90deg, rgb(5 16 29 / 83%), rgb(5 16 29 / 25%));
+}
+
+.rolesHeader {
+  margin-bottom: 76px;
+}
+
+.rolesHeader h2 {
+  height: 54px;
+}
+
+.rolesHeader > p:last-child {
+  height: 55px;
+}
+
+.rolesLayout {
+  display: grid;
+  max-width: 1080px;
+  align-items: center;
+  margin: 0 auto;
+  grid-template-columns: minmax(430px, 1fr) minmax(0, 0.92fr);
+  gap: 100px;
+}
+
+.roleDial {
+  position: relative;
+  width: 430px;
+  height: 430px;
+  color: var(--color-accent);
+}
+
+.dialOuter,
+.dialMiddle,
+.dialInner {
+  position: absolute;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.dialOuter {
+  inset: 0;
+  border-style: dashed;
+  opacity: 0.48;
+  animation: instrumentSpin 72s linear infinite reverse;
+}
+
+.dialOuter::before,
+.dialOuter::after {
+  position: absolute;
+  content: '';
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.dialOuter::before {
+  inset: 14px;
+  opacity: 0.45;
+}
+
+.dialOuter::after {
+  inset: 31px;
+  border-style: dotted;
+  opacity: 0.34;
+}
+
+.dialMiddle {
+  inset: 70px;
+  border-width: 2px;
+  opacity: 0.62;
+}
+
+.dialInner {
+  inset: 116px;
+  opacity: 0.72;
+}
+
+.dialCross {
+  position: absolute;
+  inset: 34px;
+  opacity: 0.22;
+}
+
+.dialCross::before,
+.dialCross::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  content: '';
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.dialCross::before {
+  width: 100%;
+  height: 1px;
+}
+
+.dialCross::after {
+  width: 1px;
+  height: 100%;
+}
+
+.dialNeedle {
+  position: absolute;
+  z-index: 2;
+  top: 83px;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 132px;
+  background: linear-gradient(to top, var(--color-accent), transparent);
+  transform-origin: 50% 100%;
+}
+
+.dialNeedle::before {
+  position: absolute;
+  top: -3px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  content: '';
+  background: var(--color-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-accent), transparent 30%);
+}
+
+.dialCore {
+  position: absolute;
+  z-index: 3;
+  top: calc(50% - 31px);
+  left: calc(50% - 31px);
+  display: grid;
+  width: 62px;
+  height: 62px;
+  place-items: center;
+  color: var(--color-accent);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-accent);
+  border-radius: 50%;
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--color-bg-deep), transparent 62%);
+}
+
+.roleButton {
+  position: absolute;
+  z-index: 5;
+  display: inline-flex;
+  width: 138px;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 13px;
+  color: var(--color-text);
+  cursor: pointer;
+  background: color-mix(in srgb, var(--color-surface-solid), transparent 8%);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-button);
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    color var(--duration-fast),
+    background-color var(--duration-fast),
+    border-color var(--duration-fast),
+    transform var(--duration-fast);
+}
+
+.roleButton:hover {
+  color: var(--color-accent-hover);
+  background: var(--color-surface-solid);
+  border-color: var(--color-accent);
+}
+
+.roleButtonActive {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.roleButtonActive:hover {
+  color: var(--color-accent-text);
+  background: var(--color-accent-hover);
+}
+
+.roleStudent {
+  top: calc(50% - 27px);
+  left: -69px;
+}
+
+.roleTeacher {
+  top: -27px;
+  left: calc(50% - 69px);
+}
+
+.roleParent {
+  top: calc(50% - 27px);
+  right: -69px;
+}
+
+.roleDetails {
+  position: relative;
+  height: 540px;
+  min-height: 0;
+  overflow: hidden;
+  border-left: 1px solid var(--color-border-strong);
+}
+
+.roleDetailContent {
+  position: absolute;
+  inset: 18px 0 18px 44px;
+  will-change: opacity, transform;
+}
+
+.roleDetailIcon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 18px;
+  place-items: center;
+  color: var(--color-accent-hover);
+  background: color-mix(in srgb, var(--color-surface-solid), transparent 14%);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+}
+
+.roleCounter {
+  height: 16px;
+  margin: 0 0 10px;
+  color: var(--color-accent-hover);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.roleDetails h3 {
+  display: flex;
+  height: 82px;
+  align-items: center;
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.roleDescription {
+  height: 76px;
+  margin: 10px 0 0;
+  color: var(--color-text-soft);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.roleDetails ul {
+  display: grid;
+  height: 150px;
+  align-content: start;
+  gap: 12px;
+  padding: 0;
+  margin: 18px 0 20px;
+  list-style: none;
+}
+
+.roleDetails li {
+  display: grid;
+  align-items: start;
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.5;
+  grid-template-columns: 22px 1fr;
+}
+
+.roleDetails li svg {
+  margin-top: 2px;
+  color: var(--color-accent-hover);
+}
+
+.roleAction {
+  width: 260px;
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+
+.roleAction:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  transform: translateY(-2px);
+}
+
+.rolesClosure {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(760px, 72vw);
+  height: 58px;
+  margin: 42px auto 0;
+  color: var(--color-accent);
+  pointer-events: none;
+}
+
+.rolesClosureLine {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-accent), transparent 52%) 22%,
+    color-mix(in srgb, var(--color-accent), transparent 52%) 78%,
+    transparent
+  );
+  transform: translateY(-50%);
+}
+
+.rolesClosureSeal {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: var(--color-accent-hover);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--color-surface-solid), transparent 20%),
+    0 8px 22px color-mix(in srgb, var(--color-bg-deep), transparent 78%);
+}
+
+.footer {
+  position: relative;
+  z-index: 4;
+  flex: 0 0 auto;
+  margin-top: auto;
+  background: color-mix(in srgb, var(--color-surface-solid), transparent 3%);
+  border-top: 1px solid var(--color-border-strong);
+  backdrop-filter: blur(14px);
+}
+
+.footerInner {
+  display: flex;
+  width: min(calc(100% - 40px), var(--content-width));
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto;
+  gap: 24px;
+}
+
+.footerInner p {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text-soft);
+  font-size: 11px;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footerInner span {
+  flex: 0 0 auto;
+  color: var(--color-text-faint);
+  font-size: 11px;
+  line-height: 1;
+}
+
+@keyframes instrumentSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes scrollCue {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+@media (max-width: 1120px) {
+  .headerInner {
+    grid-template-columns: 1fr auto;
+  }
+
+  .journeyStage {
+    grid-template-columns: minmax(0, 0.86fr) minmax(420px, 1.14fr);
+    gap: 44px;
+  }
+
+  .rolesLayout {
+    gap: 72px;
+  }
+
+  .roleDial {
+    width: 390px;
+    height: 390px;
+  }
+
+  .dialNeedle {
+    top: 74px;
+    height: 121px;
+  }
+}
+
+@media (max-width: 920px) {
+  .heroContent {
+    width: min(800px, 84vw);
+  }
+
+  .title {
+    font-size: 52px;
+  }
+
+  .journeyStage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .journeyVisual {
+    position: sticky;
+    top: calc(var(--site-header-height) + 12px);
+    z-index: 1;
+    grid-column: 1;
+    grid-row: 1;
+    width: min(620px, 100%);
+    height: clamp(320px, 48svh, 500px);
+    min-height: 0;
+    margin: 0 auto;
+  }
+
+  .journeyChapters {
+    position: relative;
+    z-index: 2;
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+    pointer-events: none;
+  }
+
+  .journeyChapter {
+    height: max(560px, 76vh);
+    height: max(560px, 76svh);
+    align-content: end;
+    padding: 42px 0 44px 42px;
+  }
+
+  .journeyChapter[data-state='active'] {
+    background: linear-gradient(
+      180deg,
+      transparent 42%,
+      color-mix(in srgb, var(--color-surface-solid), transparent 18%) 64%,
+      var(--color-surface-solid) 100%
+    );
+  }
+
+  .rolesLayout {
+    grid-template-columns: 1fr;
+    gap: 74px;
+  }
+
+  .roleDial {
+    justify-self: center;
+  }
+
+  .roleDetails {
+    width: min(620px, 100%);
+    min-height: 0;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .header {
+    min-height: var(--site-header-height);
+  }
+
+  .headerInner {
+    width: 100%;
+    min-height: var(--site-header-height);
+    padding-right: 116px;
+    padding-left: 12px;
+  }
+
+  .headerActions {
+    gap: 6px;
+  }
+
+  .headerAction {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+
+  .headerAction span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .hero {
+    min-height: 95vh;
+    min-height: 95svh;
+    align-items: center;
+    padding: 112px 20px 100px;
+  }
+
+  .heroReadability {
+    top: 5%;
+    width: 100%;
+    background: radial-gradient(
+      ellipse at 50% 40%,
+      color-mix(in srgb, var(--color-bg), white 28%) 0%,
+      color-mix(in srgb, var(--color-bg), transparent 28%) 58%,
+      transparent 86%
+    );
+  }
+
+  .heroContent {
+    top: 30px;
+    width: 100%;
+  }
+
+  .title {
+    height: 98px;
+    max-width: 620px;
+    font-size: 38px;
+  }
+
+  .description {
+    height: 82px;
+    max-width: 520px;
+    font-size: 15px;
+  }
+
+  .journeySection,
+  .rolesSection {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .journeySection {
+    padding-top: 94px;
+    padding-bottom: 104px;
+  }
+
+  .rolesSection {
+    padding-top: 100px;
+    padding-bottom: 52px;
+  }
+
+  .sectionIntro h2,
+  .rolesHeader h2 {
+    font-size: 37px;
+  }
+
+  .sectionIntro h2 {
+    height: 132px;
+  }
+
+  .sectionIntro > p:last-child,
+  .rolesHeader > p:last-child {
+    font-size: 15px;
+  }
+
+  .sectionIntro > p:last-child {
+    height: 78px;
+  }
+
+  .journeyVisual {
+    height: clamp(300px, 46svh, 420px);
+  }
+
+  .rolesHeader {
+    margin-bottom: 48px;
+  }
+
+  .rolesHeader h2 {
+    height: 87px;
+  }
+
+  .rolesHeader > p:last-child {
+    height: 78px;
+  }
+
+  .roleDial {
+    display: grid;
+    width: 100%;
+    height: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dialOuter,
+  .dialMiddle,
+  .dialInner,
+  .dialCross,
+  .dialNeedle,
+  .dialCore {
+    display: none;
+  }
+
+  .roleButton {
+    position: static;
+    width: 100%;
+    min-height: 58px;
+    padding: 8px;
+    transform: none;
+  }
+
+  .roleButton:hover {
+    transform: none;
+  }
+
+  .roleDetails {
+    height: 620px;
+    min-height: 0;
+    padding: 0;
+    border-top: 1px solid var(--color-border-strong);
+    border-left: 0;
+  }
+
+  .roleDetailContent {
+    inset: 36px 0 0;
+  }
+
+  .roleDetails h3 {
+    height: 108px;
+  }
+
+  .roleDescription {
+    height: 100px;
+  }
+
+  .roleDetails ul {
+    height: 156px;
+  }
+
+  .rolesClosure {
+    width: min(520px, 88vw);
+    margin-top: 24px;
+  }
+
+  .footerInner {
+    width: calc(100% - 40px);
+    min-height: 36px;
+    gap: 12px;
+  }
+
+  .footerInner p,
+  .footerInner span {
+    font-size: 10.5px;
+  }
+}
+
+@media (max-width: 470px) {
+  .hero {
+    padding-top: 108px;
+  }
+
+  .title {
+    height: 74px;
+    font-size: 30px;
+  }
+
+  .titleDivider {
+    margin-top: 14px;
+  }
+
+  .actions,
+  .primaryAction,
+  .secondaryAction {
+    width: 100%;
+  }
+
+  .actions {
+    flex-direction: column;
+    display: flex;
+  }
+
+  .journeyVisual {
+    height: clamp(270px, 42svh, 350px);
+  }
+
+  .journeyChapter {
+    padding-left: 32px;
+  }
+
+  .journeyChapter h3 {
+    font-size: 27px;
+  }
+
+  .journeyChapter p {
+    height: 104px;
+  }
+
+  .roleDial {
+    grid-template-columns: 1fr;
+  }
+
+  .roleButton {
+    justify-content: flex-start;
+    min-height: 52px;
+    padding: 0 15px;
+  }
+
+  .roleDetails {
+    height: 620px;
+    min-height: 0;
+  }
+
+  .roleDetails h3 {
+    font-size: 30px;
+  }
+
+  .roleAction {
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .headerInner {
+    padding-right: 102px;
+  }
+
+  .headerAction {
+    width: 36px;
+    min-height: 36px;
+  }
+
+  .title {
+    height: 68px;
+    font-size: 27px;
+  }
+
+  .description {
+    height: 92px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialOuter,
+  .scrollCue svg {
+    animation: none;
+  }
+}

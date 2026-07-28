@@ -28,6 +28,25 @@ describe('validateEnvironment', () => {
     ).toThrow('GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET');
   });
 
+  it('requires callback and independent state secrets for Google OAuth', () => {
+    expect(() =>
+      validateEnvironment({
+        ...validEnvironment,
+        GOOGLE_CLIENT_ID: 'client-id',
+        GOOGLE_CLIENT_SECRET: 'client-secret',
+      }),
+    ).toThrow('GOOGLE_CALLBACK_URL is required');
+
+    expect(() =>
+      validateEnvironment({
+        ...validEnvironment,
+        GOOGLE_CLIENT_ID: 'client-id',
+        GOOGLE_CLIENT_SECRET: 'client-secret',
+        GOOGLE_CALLBACK_URL: 'http://localhost:3000/auth/google/callback',
+      }),
+    ).toThrow('GOOGLE_OAUTH_STATE_SECRET is required');
+  });
+
   it('requires secure cookies for SameSite none', () => {
     expect(() =>
       validateEnvironment({

@@ -1,0 +1,77 @@
+.page {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 100px max(28px, calc((100vw - var(--content-width)) / 2)) 48px;
+  overflow: hidden;
+}
+
+.brandLink {
+  position: absolute;
+  z-index: 3;
+  top: var(--site-header-logo-top);
+  left: var(--page-edge);
+  text-decoration: none;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 440px);
+  margin: auto;
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  padding: 34px 34px 32px;
+  color: var(--color-text);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-surface);
+  clip-path: polygon(0 9px, 9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px));
+}
+
+.panel::before {
+  position: absolute;
+  inset: 6px;
+  content: '';
+  background:
+    linear-gradient(var(--color-border-strong), var(--color-border-strong)) left top / 18px 1px no-repeat,
+    linear-gradient(var(--color-border-strong), var(--color-border-strong)) left top / 1px 12px no-repeat,
+    linear-gradient(var(--color-border-strong), var(--color-border-strong)) right top / 18px 1px no-repeat,
+    linear-gradient(var(--color-border-strong), var(--color-border-strong)) right top / 1px 12px no-repeat,
+    linear-gradient(var(--color-border-strong), var(--color-border-strong)) left bottom / 18px 1px no-repeat,
+    linear-gradient(var(--color-border-strong), var(--color-border-strong)) left bottom / 1px 12px no-repeat,
+    linear-gradient(var(--color-border-strong), var(--color-border-strong)) right bottom / 18px 1px no-repeat,
+    linear-gradient(var(--color-border-strong), var(--color-border-strong)) right bottom / 1px 12px no-repeat;
+  opacity: 0.58;
+  pointer-events: none;
+}
+
+.panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 900px) {
+  .content {
+    max-width: 440px;
+  }
+}
+
+@media (max-width: 520px) {
+  .page {
+    padding: 92px 12px 24px;
+  }
+
+  .brandLink {
+    top: var(--site-header-logo-top);
+    left: 14px;
+  }
+
+  .panel {
+    padding: 30px 22px 26px;
+  }
+}

@@ -12,6 +12,7 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { OAuthStateService } from './oauth-state.service';
 import { AuthTokenCleanupService } from './auth-token-cleanup.service';
 import { GoogleOAuthExceptionFilter } from './filters/google-oauth-exception.filter';
+import { AuthCookieService } from './auth-cookie.service';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { GoogleOAuthExceptionFilter } from './filters/google-oauth-exception.fil
     OAuthStateService,
     AuthTokenCleanupService,
     GoogleOAuthExceptionFilter,
+    AuthCookieService,
   ],
 })
 export class AuthModule {}

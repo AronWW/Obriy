@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 const viewports = [
   { name: 'mobile', width: 390, height: 844 },
@@ -13,10 +13,13 @@ for (const viewport of viewports) {
       await page.setViewportSize(viewport)
       await page.addInitScript((selectedTheme) => {
         localStorage.setItem('obriy-theme', selectedTheme)
+        localStorage.setItem('obriy-language', 'uk')
+        localStorage.setItem('obriy-has-session', '1')
       }, theme)
-      await page.goto('/')
+      await mockAuthenticatedSession(page)
+      await page.goto('/app')
       await page.emulateMedia({ reducedMotion: 'reduce' })
-      await page.getByRole('heading', { level: 1 }).waitFor()
+      await page.getByRole('navigation').waitFor()
 
       const layout = await page.evaluate(() => {
         const viewportWidth = document.documentElement.clientWidth
@@ -85,4 +88,31 @@ for (const viewport of viewports) {
       })
     })
   }
+}
+
+async function mockAuthenticatedSession(page: Page) {
+  await page.route('**/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        accessToken: 'visual-test-access-token',
+        user: {
+          id: 'visual-user',
+          email: 'student@example.com',
+          role: 'STUDENT',
+          status: 'ACTIVE',
+          emailVerifiedAt: '2026-07-18T12:00:00.000Z',
+          profile: {
+            displayName: 'Арія Косміна',
+            avatarUrl: null,
+            bio: null,
+            gradeLevel: 9,
+            subjectArea: null,
+            preferredLocale: 'UK',
+          },
+        },
+      }),
+    })
+  })
 }

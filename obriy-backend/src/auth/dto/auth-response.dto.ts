@@ -24,9 +24,13 @@ export class AuthMessageDto {
   @ApiPropertyOptional({ example: 'student@example.com' })
   email?: string;
 
+  @ApiPropertyOptional({ example: 60 })
+  retryAfterSeconds?: number;
+
   constructor(data: AuthMessageDto) {
     this.code = data.code;
     this.message = data.message;
     this.email = data.email;
+    this.retryAfterSeconds = data.retryAfterSeconds;
   }
 }

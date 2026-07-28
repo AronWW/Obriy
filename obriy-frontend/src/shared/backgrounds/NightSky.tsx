@@ -49,7 +49,7 @@ export function NightSky() {
       <div className={`${styles.sigil} ${styles.sigilOne}`}>✦</div>
       <div className={`${styles.sigil} ${styles.sigilTwo}`}>✧</div>
       <div className={`${styles.sigil} ${styles.sigilThree}`}>✦</div>
-      <CoastalHorizon showRisingSun />
+      <CoastalHorizon />
     </div>
   )
 }

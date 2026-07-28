@@ -37,7 +37,9 @@ describe('Auth session (e2e)', () => {
       })
       .expect(201)
       .expect((response) => {
-        expect(getResponseBody(response).code).toBe('EMAIL_VERIFICATION_SENT');
+        const body = getResponseBody(response);
+        expect(body.code).toBe('EMAIL_VERIFICATION_SENT');
+        expect(body.retryAfterSeconds).toBe(60);
       });
 
     expect(context.mail.verificationEmails).toHaveLength(1);
@@ -51,9 +53,9 @@ describe('Auth session (e2e)', () => {
       .send({ email, password })
       .expect(403)
       .expect((response) => {
-        expect(getResponseBody(response).code).toBe(
-          'EMAIL_VERIFICATION_REQUIRED',
-        );
+        const body = getResponseBody(response);
+        expect(body.code).toBe('EMAIL_VERIFICATION_REQUIRED');
+        expect(body.retryAfterSeconds).toEqual(expect.any(Number));
       });
 
     await request(context.app.getHttpServer())

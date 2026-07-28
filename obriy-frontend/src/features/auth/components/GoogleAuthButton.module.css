@@ -1,0 +1,52 @@
+.button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 18px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-strong);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    color var(--duration-fast),
+    background var(--duration-fast),
+    border-color var(--duration-fast),
+    transform var(--duration-fast);
+}
+
+.button:hover {
+  color: var(--color-accent-hover);
+  background: var(--color-surface-solid);
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.googleMark {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+}
+
+.divider {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 11px;
+  align-items: center;
+  margin: 18px 0;
+  color: var(--color-text-faint);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.divider::before,
+.divider::after {
+  height: 1px;
+  content: '';
+  background: var(--color-border);
+}

@@ -85,3 +85,46 @@
     transform: rotate(360deg);
   }
 }
+
+@media (max-width: 720px) {
+  .large {
+    gap: 12px;
+  }
+
+  .large .mark {
+    width: 48px;
+    height: 48px;
+  }
+
+  .large .mark svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .large .wordmark {
+    font-size: 29px;
+  }
+}
+
+@media (max-width: 360px) {
+  .brand {
+    gap: 8px;
+  }
+
+  .mark,
+  .large .mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .mark svg,
+  .large .mark svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .wordmark,
+  .large .wordmark {
+    font-size: 22px;
+  }
+}

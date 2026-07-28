@@ -6,6 +6,10 @@
   --radius-md: 8px;
   --control-height: 42px;
   --content-width: 1180px;
+  --page-edge: 16px;
+  --site-header-height: 84px;
+  --site-header-logo-top: 12px;
+  --site-header-control-top: 21px;
 
   --duration-fast: 160ms;
   --duration-theme: 680ms;
@@ -18,31 +22,39 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (max-width: 720px) {
+  :root {
+    --site-header-height: 72px;
+    --site-header-logo-top: 12px;
+    --site-header-control-top: 16px;
+  }
+}
+
 :root,
 :root[data-theme='day'] {
-  --color-bg: #dfe5df;
-  --color-bg-deep: #cdd8d2;
-  --color-surface: rgb(240 237 228 / 90%);
-  --color-surface-solid: #f0ede4;
-  --color-surface-raised: #faf7ef;
-  --color-text: #233b43;
-  --color-text-soft: #4a5f63;
-  --color-text-faint: #687679;
-  --color-border: rgb(126 87 52 / 32%);
-  --color-border-strong: rgb(137 88 45 / 55%);
-  --color-accent: #89582d;
-  --color-accent-hover: #6f4325;
-  --color-accent-text: #faf7ef;
-  --color-focus: #376f79;
+  --color-bg: #cbdee8;
+  --color-bg-deep: #86a9bf;
+  --color-surface: rgb(255 250 240 / 94%);
+  --color-surface-solid: #fffaf0;
+  --color-surface-raised: #fffdf8;
+  --color-text: #173143;
+  --color-text-soft: #4e6371;
+  --color-text-faint: #6c7c85;
+  --color-border: rgb(128 104 70 / 34%);
+  --color-border-strong: rgb(155 100 41 / 56%);
+  --color-accent: #3b78a6;
+  --color-accent-hover: #295f89;
+  --color-accent-text: #fffaf0;
+  --color-focus: #3b78a6;
   --color-success: #3f725f;
-  --color-info: #3f7280;
-  --color-warning: #996225;
+  --color-info: #3b78a6;
+  --color-warning: #a66e2e;
   --color-danger: #984846;
-  --color-progress-track: rgb(64 83 82 / 14%);
-  --color-progress-start: #89582d;
-  --color-progress-end: #507a80;
-  --shadow-surface: 0 20px 52px rgb(43 57 54 / 13%);
-  --shadow-button: 0 8px 24px rgb(72 55 38 / 16%);
+  --color-progress-track: rgb(59 99 130 / 14%);
+  --color-progress-start: #a66e2e;
+  --color-progress-end: #3b78a6;
+  --shadow-surface: 0 16px 36px rgb(42 66 83 / 12%);
+  --shadow-button: 0 8px 20px rgb(45 79 102 / 14%);
   --backdrop-blur: 16px;
 }
 

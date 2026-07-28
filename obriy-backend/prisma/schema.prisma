@@ -63,6 +63,23 @@ model OAuthExchangeCode {
   @@index([expiresAt])
 }
 
+model OAuthRegistrationTicket {
+  id          String    @id @default(uuid())
+  tokenHash   String    @unique
+  googleId    String
+  email       String
+  displayName String
+  avatarUrl   String?
+  locale      Locale    @default(UK)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([googleId])
+  @@index([email])
+  @@index([expiresAt])
+}
+
 model Profile {
   id              String   @id @default(uuid())
   userId          String   @unique

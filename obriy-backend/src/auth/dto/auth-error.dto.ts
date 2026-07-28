@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AuthErrorDto {
   @ApiProperty({ example: 400 })
@@ -9,4 +9,10 @@ export class AuthErrorDto {
 
   @ApiProperty({ example: 'The link is invalid or expired.' })
   message: string;
+
+  @ApiPropertyOptional({ example: 'student@example.com' })
+  email?: string;
+
+  @ApiPropertyOptional({ example: 42 })
+  retryAfterSeconds?: number;
 }

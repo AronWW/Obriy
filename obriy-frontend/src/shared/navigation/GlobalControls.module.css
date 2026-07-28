@@ -1,0 +1,81 @@
+.controls {
+  position: fixed;
+  z-index: 100;
+  top: var(--site-header-control-top);
+  right: var(--page-edge);
+  display: flex;
+  gap: 8px;
+}
+
+.button {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  place-items: center;
+  color: var(--color-text);
+  cursor: pointer;
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-button);
+  transition:
+    color var(--duration-fast),
+    background-color var(--duration-theme) var(--ease-standard),
+    border-color var(--duration-fast),
+    transform var(--duration-fast);
+}
+
+.button:hover:not(:disabled) {
+  color: var(--color-accent-hover);
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.languageButton {
+  width: auto;
+  min-width: 58px;
+  grid-auto-flow: column;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .controls {
+    right: 12px;
+    gap: 6px;
+  }
+
+  .button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .languageButton {
+    width: 46px;
+    min-width: 46px;
+    padding: 0;
+  }
+
+  .languageButton span {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .languageButton {
+    width: 40px;
+    min-width: 40px;
+  }
+}

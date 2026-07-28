@@ -14,6 +14,12 @@ process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
   'postgresql://obriy:obriy_password@127.0.0.1:5433/obriy_test?schema=public';
 process.env.JWT_ACCESS_SECRET ??= 'test-access-secret-at-least-32-characters';
+process.env.GOOGLE_CLIENT_ID ??= 'test-google-client-id';
+process.env.GOOGLE_CLIENT_SECRET ??= 'test-google-client-secret';
+process.env.GOOGLE_CALLBACK_URL ??=
+  'http://localhost:3000/auth/google/callback';
+process.env.GOOGLE_OAUTH_STATE_SECRET ??=
+  'test-google-state-secret-at-least-32-characters';
 
 export type AuthTestContext = {
   app: INestApplication<App>;
@@ -58,6 +64,9 @@ export async function closeAuthTestContext(
   context: AuthTestContext,
   emails: string[],
 ): Promise<void> {
+  await context.prisma.oAuthRegistrationTicket.deleteMany({
+    where: { email: { in: emails } },
+  });
   await context.prisma.user.deleteMany({
     where: { email: { in: emails } },
   });

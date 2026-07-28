@@ -7,6 +7,7 @@ const numericVariables = [
   'PASSWORD_RESET_TTL_MINUTES',
   'EMAIL_SEND_COOLDOWN_SECONDS',
   'OAUTH_EXCHANGE_TTL_SECONDS',
+  'OAUTH_REGISTRATION_TTL_MINUTES',
   'AUTH_TRANSIENT_TOKEN_RETENTION_DAYS',
   'OAUTH_CODE_RETENTION_DAYS',
   'REFRESH_TOKEN_RETENTION_DAYS',
@@ -17,12 +18,19 @@ export function validateEnvironment(config: Environment): Environment {
   requireString(config, 'JWT_ACCESS_SECRET');
 
   validateUrl(config, 'FRONTEND_URL');
+  validateUrl(config, 'GOOGLE_CALLBACK_URL');
 
   for (const key of numericVariables) {
     validatePositiveNumber(config, key);
   }
 
   validateOptionalGroup(config, ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET']);
+  requireWhenConfigured(config, 'GOOGLE_CLIENT_ID', 'GOOGLE_CALLBACK_URL');
+  requireWhenConfigured(
+    config,
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_OAUTH_STATE_SECRET',
+  );
   requireWhenConfigured(config, 'RESEND_API_KEY', 'MAIL_FROM');
   validateEnum(config, 'COOKIE_SAME_SITE', ['lax', 'strict', 'none']);
   validateBoolean(config, 'COOKIE_SECURE');

@@ -34,7 +34,12 @@ describe('Auth registration and verification (e2e)', () => {
     await request(context.app.getHttpServer())
       .post('/auth/resend-verification')
       .send({ email: resendEmail })
-      .expect(201);
+      .expect(429)
+      .expect((response) => {
+        const body = getResponseBody(response);
+        expect(body.code).toBe('EMAIL_VERIFICATION_COOLDOWN');
+        expect(body.retryAfterSeconds).toEqual(expect.any(Number));
+      });
     expect(
       context.mail.verificationEmails.filter(
         (item) => item.email === resendEmail,
@@ -49,7 +54,10 @@ describe('Auth registration and verification (e2e)', () => {
     await request(context.app.getHttpServer())
       .post('/auth/resend-verification')
       .send({ email: resendEmail })
-      .expect(201);
+      .expect(201)
+      .expect((response) => {
+        expect(getResponseBody(response).retryAfterSeconds).toBe(60);
+      });
 
     const secondToken = extractToken(
       getLastVerificationMail(context.mail, resendEmail).link,

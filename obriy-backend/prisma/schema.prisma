@@ -29,6 +29,12 @@ enum Locale {
   EN @map("en")
 }
 
+enum LessonStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id              String     @id @default(uuid())
   email           String     @unique
@@ -49,6 +55,7 @@ model User {
   childLinks              ParentChild[]            @relation("ChildLinks")
   parentInvitations       ParentInvitation[]       @relation("ChildParentInvitations")
   taughtClasses           Class[]                  @relation("TeacherClasses")
+  authoredLessons         Lesson[]                 @relation("TeacherLessons")
   studentClassId          String?
   studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
 
@@ -179,9 +186,10 @@ model Class {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  teacher User          @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
-  students User[]       @relation("ClassStudents")
-  invites  ClassInvite[]
+  teacher     User          @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  students    User[]        @relation("ClassStudents")
+  invites     ClassInvite[]
+  lessonLinks ClassLesson[]
 
   @@index([teacherId])
 }
@@ -198,4 +206,38 @@ model ClassInvite {
 
   @@index([classId])
   @@index([expiresAt])
+}
+
+model Lesson {
+  id               String       @id @default(uuid())
+  teacherId        String
+  title            String       @db.VarChar(160)
+  summary          String       @db.VarChar(500)
+  content          String       @db.Text
+  contentLocale    Locale
+  estimatedMinutes Int?
+  status           LessonStatus @default(DRAFT)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  teacher    User          @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
+  classLinks ClassLesson[]
+
+  @@index([teacherId, status, updatedAt])
+}
+
+model ClassLesson {
+  classId     String
+  lessonId    String
+  position    Int
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  class  Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([classId, lessonId])
+  @@index([lessonId])
+  @@index([classId, publishedAt, position])
 }

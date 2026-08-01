@@ -15,6 +15,7 @@ import { MemberAvatar } from '../components/MemberAvatar'
 import type { ClassInvite } from '../model/class.types'
 import type { CreateClassInput } from '../model/class.types'
 import styles from '../ClassesPage.module.css'
+import { ClassLessonsPanel } from '../../lessons/components/ClassLessonsPanel'
 
 export function TeacherClassDetailPage() {
   const { t } = useTranslation()
@@ -292,6 +293,7 @@ export function TeacherClassDetailPage() {
             )}
           </div>
         </div>
+        <ClassLessonsPanel classId={classId} />
       </div>
     </section>
   )

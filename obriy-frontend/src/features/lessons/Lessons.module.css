@@ -1,0 +1,916 @@
+.page {
+  min-height: 100svh;
+  padding: clamp(88px, 9vw, 124px) clamp(22px, 6vw, 82px) 72px;
+}
+
+.content {
+  width: min(100%, 1120px);
+}
+
+.editorContent {
+  width: min(100%, 1180px);
+}
+
+.intro,
+.editorHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 28px;
+}
+
+.intro > div,
+.editorHeader > div:first-child {
+  max-width: 720px;
+}
+
+.eyebrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.intro h1,
+.editorHeader h1 {
+  margin: 9px 0 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 500;
+  line-height: 1.06;
+}
+
+.intro > div > p:last-child,
+.editorHeader > div:first-child > p:last-child {
+  margin: 14px 0 0;
+  color: var(--copy);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.iconButton,
+.backButton,
+.assignmentActions button,
+.compactLessonActions button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color var(--duration-fast),
+    background var(--duration-fast),
+    border-color var(--duration-fast),
+    opacity var(--duration-fast);
+}
+
+.primaryButton {
+  color: var(--panel-solid);
+  background: var(--archive-blue-deep);
+  border-color: var(--archive-blue-deep);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--archive-blue);
+  border-color: var(--archive-blue);
+}
+
+.secondaryButton,
+.backButton {
+  color: var(--archive-blue);
+  background: transparent;
+  border-color: var(--line);
+}
+
+.secondaryButton:hover:not(:disabled),
+.backButton:hover:not(:disabled) {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.dangerButton {
+  color: #fff;
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-danger), #000 12%);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled,
+.iconButton:disabled,
+.assignmentActions button:disabled,
+.compactLessonActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.iconButton {
+  width: 42px;
+  min-width: 42px;
+  padding: 0;
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: var(--line);
+}
+
+.iconButton:hover:not(:disabled) {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.dangerIconButton:hover:not(:disabled) {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(205px, auto);
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 13px;
+  background: color-mix(in srgb, var(--panel-solid), transparent 7%);
+  border: 1px solid var(--line-soft);
+}
+
+.searchField {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchField svg {
+  position: absolute;
+  left: 13px;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+.searchField input,
+.statusFilter select,
+.editorForm input,
+.editorForm textarea,
+.editorForm select,
+.classLibrarySelect {
+  width: 100%;
+  color: var(--ink);
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  font: inherit;
+  font-size: 14px;
+}
+
+.searchField input,
+.statusFilter select,
+.editorForm input,
+.editorForm select,
+.classLibrarySelect {
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.searchField input {
+  padding-left: 41px;
+}
+
+.statusFilter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusFilter > span {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.statusFilter select {
+  min-width: 150px;
+}
+
+.searchField input:focus,
+.statusFilter select:focus,
+.editorForm input:focus,
+.editorForm textarea:focus,
+.editorForm select:focus,
+.classLibrarySelect:focus {
+  border-color: var(--archive-blue);
+  outline: 2px solid color-mix(in srgb, var(--archive-blue), transparent 78%);
+  outline-offset: 1px;
+}
+
+.lessonList {
+  display: grid;
+  gap: 13px;
+}
+
+.lessonRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  min-height: 176px;
+  padding: 23px 24px 23px 18px;
+  overflow: hidden;
+  background:
+    linear-gradient(110deg, color-mix(in srgb, var(--archive-blue), transparent 91%), transparent 44%),
+    color-mix(in srgb, var(--panel-solid), transparent 4%);
+  border: 1px solid var(--line);
+  box-shadow: 0 9px 26px color-mix(in srgb, var(--archive-blue-deep), transparent 91%);
+}
+
+.lessonRow::after {
+  position: absolute;
+  right: -46px;
+  bottom: -74px;
+  width: 154px;
+  height: 154px;
+  content: '';
+  border: 1px dashed var(--line-soft);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.lessonOrdinal {
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  color: var(--gold);
+  border-right: 1px solid var(--line-soft);
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.08em;
+}
+
+.lessonCopy {
+  min-width: 0;
+}
+
+.lessonHeadingRow,
+.lessonFooter,
+.classChips,
+.rowActions,
+.editorHeaderActions,
+.assignmentActions,
+.compactLessonActions,
+.classLessonMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.statusBadge,
+.lessonMetaItem,
+.classChips span,
+.classLessonState {
+  display: inline-flex;
+  min-height: 25px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--panel-solid), transparent 5%);
+  border: 1px solid var(--line-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+}
+
+.statusBadge {
+  text-transform: uppercase;
+}
+
+.statusDRAFT {
+  color: var(--archive-blue);
+  border-color: color-mix(in srgb, var(--archive-blue), transparent 56%);
+}
+
+.statusPUBLISHED,
+.classChipPublished,
+.classLessonStatePublished {
+  color: var(--color-success) !important;
+  border-color: color-mix(in srgb, var(--color-success), transparent 55%) !important;
+}
+
+.statusARCHIVED {
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--ink-soft), transparent 91%);
+}
+
+.lessonCopy h2 {
+  margin: 10px 0 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 29px);
+  font-weight: 500;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lessonSummary {
+  display: -webkit-box;
+  margin: 7px 0 0;
+  overflow: hidden;
+  color: var(--copy);
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.lessonFooter {
+  justify-content: space-between;
+  margin-top: 15px;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.classChips {
+  justify-content: flex-end;
+}
+
+.classChips span {
+  min-height: 22px;
+  padding: 2px 7px;
+  font-size: 9px;
+}
+
+.rowActions {
+  position: relative;
+  z-index: 2;
+  max-width: 184px;
+  justify-content: flex-end;
+}
+
+.rowActions .secondaryButton {
+  flex: 1 0 100%;
+}
+
+.statusPanel,
+.editorForm,
+.classAssignmentPanel,
+.classLessonsPanel {
+  position: relative;
+  background:
+    linear-gradient(145deg, var(--line-soft), transparent 24%),
+    color-mix(in srgb, var(--panel-solid), transparent 4%);
+  border: 1px solid var(--line);
+  box-shadow: var(--panel-shadow);
+}
+
+.statusPanel {
+  display: grid;
+  min-height: 230px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 32px;
+  text-align: center;
+}
+
+.statusPanel > span {
+  color: var(--gold);
+}
+
+.statusPanel h1,
+.statusPanel h2,
+.statusPanel p {
+  margin: 0;
+}
+
+.statusPanel h1,
+.statusPanel h2 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 500;
+}
+
+.statusPanel p {
+  max-width: 520px;
+  color: var(--copy);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.backButton {
+  min-height: 36px;
+  margin-bottom: 20px;
+  padding: 0;
+  border: 0;
+}
+
+.editorHeader {
+  align-items: center;
+}
+
+.editorHeader h1 {
+  max-width: 720px;
+  overflow-wrap: anywhere;
+  font-size: clamp(33px, 4.4vw, 52px);
+}
+
+.editorHeaderActions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.saveIndicator {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.saveIndicatorError {
+  color: var(--color-danger);
+}
+
+.archiveNotice,
+.quietNotice,
+.errorStatus {
+  margin: 0 0 18px;
+  padding: 11px 13px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.archiveNotice,
+.quietNotice {
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--gold), transparent 91%);
+  border-left: 3px solid var(--gold);
+}
+
+.errorStatus {
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger), transparent 91%);
+  border-left: 3px solid var(--color-danger);
+  font-weight: 700;
+}
+
+.editorLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(285px, 0.42fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.editorForm,
+.classAssignmentPanel,
+.classLessonsPanel {
+  padding: clamp(21px, 4vw, 30px);
+}
+
+.editorForm fieldset {
+  display: grid;
+  gap: 20px;
+  padding: 0;
+  border: 0;
+}
+
+.editorForm label {
+  display: grid;
+  gap: 8px;
+}
+
+.editorForm label > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.editorForm textarea {
+  padding: 12px;
+  line-height: 1.65;
+  resize: vertical;
+}
+
+.editorForm small {
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.editorForm .fieldError {
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+.summaryInput {
+  min-height: 92px;
+}
+
+.contentInput {
+  min-height: 390px;
+}
+
+.compactFields {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.6fr) minmax(170px, 0.4fr);
+  gap: 16px;
+}
+
+.sectionHeading {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 11px;
+  color: var(--gold);
+}
+
+.sectionHeading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.sectionHeading p {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.classAssignmentPanel .quietNotice {
+  margin-top: 18px;
+  margin-bottom: 0;
+  font-size: 11px;
+}
+
+.classAssignmentPanel .errorStatus {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.assignmentList,
+.compactLessonList {
+  padding: 0;
+  list-style: none;
+}
+
+.assignmentList {
+  display: grid;
+  gap: 0;
+  margin: 18px 0 0;
+}
+
+.assignmentList li {
+  display: grid;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.assignmentCopy strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.assignmentCopy span {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.assignmentActions {
+  justify-content: flex-start;
+}
+
+.assignmentActions button {
+  min-height: 34px;
+  padding: 0 10px;
+  color: var(--archive-blue);
+  background: transparent;
+  border-color: var(--line);
+  font-size: 10px;
+}
+
+.assignmentActions button:hover:not(:disabled) {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.assignmentActions .assignmentUnlink {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+}
+
+.editorFooterActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.dialogBackdrop {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgb(5 16 25 / 62%);
+  backdrop-filter: blur(5px);
+}
+
+.dialog {
+  position: relative;
+  width: min(100%, 460px);
+  padding: 30px;
+  color: var(--ink);
+  background:
+    linear-gradient(145deg, var(--line-soft), transparent 28%),
+    var(--panel-solid);
+  border: 1px solid var(--line);
+  box-shadow: 0 25px 80px rgb(0 0 0 / 28%);
+}
+
+.dialog > .iconButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.dialogIcon {
+  display: grid;
+  width: 45px;
+  height: 45px;
+  place-items: center;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+}
+
+.dialog h2 {
+  margin: 17px 0 0;
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 500;
+}
+
+.dialog p {
+  margin: 9px 0 0;
+  color: var(--copy);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.dialog .dialogError {
+  padding: 9px 11px;
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger), transparent 91%);
+  border-left: 3px solid var(--color-danger);
+  font-weight: 700;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 24px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Integrated teacher class detail panel */
+.classLessonsPanel {
+  margin-top: 20px;
+}
+
+.classLessonToolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+  margin-top: 20px;
+  padding: 13px;
+  background: color-mix(in srgb, var(--panel-solid), transparent 7%);
+  border: 1px solid var(--line-soft);
+}
+
+.compactLessonList {
+  display: grid;
+  gap: 9px;
+  margin: 18px 0 0;
+}
+
+.compactLessonRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 15px;
+  align-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--panel-solid), transparent 8%);
+  border: 1px solid var(--line-soft);
+}
+
+.compactLessonCopy {
+  min-width: 0;
+}
+
+.compactLessonCopy strong {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.classLessonMeta {
+  margin-top: 7px;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.compactLessonActions {
+  justify-content: flex-end;
+}
+
+.compactLessonActions a,
+.compactLessonActions button {
+  display: inline-grid;
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  place-items: center;
+  color: var(--archive-blue);
+  background: transparent;
+  border: 1px solid var(--line);
+  text-decoration: none;
+}
+
+.compactLessonActions a:hover,
+.compactLessonActions button:hover:not(:disabled) {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.compactLessonActions .unlinkButton:hover:not(:disabled) {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+@media (max-width: 980px) {
+  .editorLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .classAssignmentPanel {
+    order: -1;
+  }
+
+  .assignmentList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 82px 16px 48px;
+  }
+
+  .intro,
+  .editorHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .statusFilter {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .lessonRow {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .rowActions {
+    grid-column: 2;
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .rowActions .secondaryButton {
+    flex: 0 1 auto;
+  }
+
+  .editorHeaderActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .compactFields,
+  .assignmentList {
+    grid-template-columns: 1fr;
+  }
+
+  .compactLessonRow {
+    grid-template-columns: 1fr;
+  }
+
+  .compactLessonActions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .intro > .primaryButton,
+  .editorHeaderActions,
+  .editorHeaderActions .primaryButton,
+  .editorFooterActions button {
+    width: 100%;
+  }
+
+  .lessonRow {
+    grid-template-columns: 1fr;
+    padding: 19px;
+  }
+
+  .lessonOrdinal {
+    display: none;
+  }
+
+  .rowActions {
+    grid-column: 1;
+  }
+
+  .lessonFooter {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .classChips {
+    justify-content: flex-start;
+  }
+
+  .editorHeaderActions,
+  .editorFooterActions,
+  .dialogActions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .dialogActions button {
+    width: 100%;
+  }
+
+  .classLessonToolbar {
+    grid-template-columns: 1fr;
+  }
+}

@@ -20,6 +20,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useSessionStore } from '../../features/auth/model/session.store'
 import { ObriyBackground } from '../../shared/backgrounds/ObriyBackground'
 import { BrandLogo } from '../../shared/brand/BrandLogo'
+import { requestWorkspaceNavigation } from '../../shared/navigation/workspace-navigation-guard'
 import styles from './DesignLabPage.module.css'
 
 interface NavigationItemBase {
@@ -158,7 +159,14 @@ export function DesignLabPage() {
                   end={item.end}
                   key={item.key}
                   to={item.to}
-                  onClick={() => setIsSidebarOpen(false)}
+                  onClick={(event) => {
+                    if (requestWorkspaceNavigation(item.to)) {
+                      event.preventDefault()
+                      setIsSidebarOpen(false)
+                      return
+                    }
+                    setIsSidebarOpen(false)
+                  }}
                 >
                   <Icon size={17} />
                   <span>{t(`navigation.${item.key}`)}</span>

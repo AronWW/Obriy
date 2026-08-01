@@ -511,6 +511,173 @@ const resources = {
           unexpected: 'Щось пішло не так. Спробуйте ще раз.',
         },
       },
+      lessons: {
+        common: {
+          retry: 'Спробувати ще раз',
+          cancel: 'Скасувати',
+          minutes: '{{count}} хв',
+          untitled: 'Урок без назви',
+          noSummary: 'Короткий опис ще не додано.',
+          updated: 'Оновлено {{date}}',
+          noClasses: 'Ще не додано до класів',
+        },
+        status: {
+          all: 'Усі статуси',
+          DRAFT: 'Чернетка',
+          PUBLISHED: 'Опубліковано',
+          ARCHIVED: 'В архіві',
+        },
+        locale: {
+          UK: 'Українська',
+          EN: 'English',
+        },
+        library: {
+          eyebrow: 'Бібліотека матеріалів',
+          title: 'Мої уроки',
+          description:
+            'Готуйте матеріали один раз, додавайте їх до своїх класів і керуйте публікацією.',
+          create: 'Створити урок',
+          search: 'Пошук уроків',
+          searchPlaceholder: 'Знайти урок за назвою…',
+          filter: 'Статус',
+          loading: 'Завантажуємо уроки…',
+          loadError: 'Не вдалося завантажити бібліотеку уроків.',
+          emptyTitle: 'Уроків ще немає',
+          emptyDescription:
+            'Створіть першу чернетку. Вона не буде доступна учням, доки ви не опублікуєте її для класу.',
+          noResultsTitle: 'Нічого не знайдено',
+          noResultsDescription:
+            'Змініть пошуковий запит або виберіть інший статус.',
+        },
+        actions: {
+          edit: 'Редагувати',
+          archive: 'Архівувати',
+          restore: 'Відновити',
+          delete: 'Видалити',
+        },
+        confirm: {
+          archive: {
+            title: 'Архівувати урок?',
+            description:
+              '«{{title}}» буде приховано в усіх класах. Прив’язки до класів збережуться.',
+            confirm: 'Архівувати',
+          },
+          restore: {
+            title: 'Відновити урок?',
+            description:
+              '«{{title}}» повернеться до чернеток. У всіх класах урок залишиться прихованим.',
+            confirm: 'Відновити',
+          },
+          delete: {
+            title: 'Видалити чернетку?',
+            description:
+              '«{{title}}» буде видалено назавжди. Цю дію неможливо скасувати.',
+            confirm: 'Видалити',
+          },
+          discard: {
+            title: 'Вийти без збереження?',
+            description:
+              'Останні зміни ще не збережено. Якщо вийти зараз, вони будуть втрачені.',
+            cancel: 'Залишитися',
+            confirm: 'Вийти без збереження',
+          },
+          unlink: {
+            title: 'Від’єднати урок від класу?',
+            description:
+              'Урок зникне зі списку класу. Сам матеріал залишиться у вашій бібліотеці.',
+            confirm: 'Від’єднати',
+          },
+        },
+        editor: {
+          loading: 'Відкриваємо урок…',
+          back: 'До бібліотеки уроків',
+          notFoundTitle: 'Урок не знайдено',
+          notFoundDescription:
+            'Цей урок не існує або не належить вашому обліковому запису.',
+          createEyebrow: 'Нова чернетка',
+          editEyebrow: 'Редактор уроку',
+          createTitle: 'Створити урок',
+          description:
+            'Підготуйте текст і виберіть класи. Чернетки зберігаються автоматично.',
+          saving: 'Зберігаємо…',
+          saved: 'Збережено',
+          unsaved: 'Є незбережені зміни',
+          saveFailed: 'Не збережено',
+          saveNow: 'Зберегти зараз',
+          savePublished: 'Зберегти зміни',
+          archived:
+            'Урок в архіві й доступний лише для перегляду. Відновіть його з бібліотеки, щоб редагувати.',
+          fields: {
+            title: 'Назва уроку',
+            titlePlaceholder: 'Наприклад, Київська Русь за князя Ярослава',
+            titleHint: 'До 160 символів. Для чернетки назву можна залишити порожньою.',
+            summary: 'Короткий опис',
+            summaryPlaceholder: 'Про що цей урок і що учень у ньому дізнається?',
+            summaryHint: 'До 500 символів. Опис з’явиться у списку уроків.',
+            locale: 'Мова матеріалу',
+            duration: 'Орієнтовний час',
+            durationPlaceholder: 'Хвилини',
+            content: 'Текст уроку',
+            contentPlaceholder: 'Напишіть основний матеріал уроку…',
+            contentHint:
+              'Звичайний текст з абзацами, без HTML, Markdown і зображень.',
+          },
+          classes: {
+            title: 'Класи',
+            description:
+              'Додайте урок до класу, а потім окремо відкрийте його учням.',
+            saveFirst:
+              'Почніть заповнювати урок. Після першого автозбереження можна буде вибрати класи.',
+            loading: 'Завантажуємо класи…',
+            loadError: 'Не вдалося завантажити класи.',
+            empty: 'Спочатку створіть хоча б один клас.',
+            notAdded: 'Не додано',
+            hidden: 'Додано, приховано',
+            published: 'Опубліковано для учнів',
+            add: 'Додати',
+            publish: 'Опублікувати',
+            hide: 'Приховати',
+            unlink: 'Від’єднати',
+            unlinkNamed: 'Від’єднати від класу {{name}}',
+          },
+        },
+        classPanel: {
+          title: 'Уроки класу',
+          description:
+            'Додавайте матеріали з бібліотеки, змінюйте порядок і видимість для учнів.',
+          choose: 'Виберіть урок із бібліотеки',
+          libraryLoading: 'Завантажуємо бібліотеку…',
+          noneAvailable: 'Немає доступних уроків',
+          add: 'Додати урок',
+          loadError: 'Не вдалося завантажити уроки класу.',
+          loading: 'Завантажуємо уроки класу…',
+          empty: 'До цього класу ще не додано жодного уроку.',
+          hidden: 'Приховано',
+          published: 'Доступно учням',
+          moveUp: 'Перемістити вгору',
+          moveDown: 'Перемістити вниз',
+          moveUpNamed: 'Перемістити «{{title}}» вгору',
+          moveDownNamed: 'Перемістити «{{title}}» вниз',
+          publish: 'Опублікувати',
+          hide: 'Приховати',
+          publishNamed: 'Опублікувати «{{title}}»',
+          hideNamed: 'Приховати «{{title}}»',
+          editNamed: 'Редагувати «{{title}}»',
+          unlink: 'Від’єднати',
+          unlinkNamed: 'Від’єднати «{{title}}» від класу',
+        },
+        validation: {
+          duration: 'Укажіть ціле число від 1 до 180 хвилин.',
+        },
+        errors: {
+          network: 'Не вдалося з’єднатися із сервером.',
+          action: 'Не вдалося виконати дію. Спробуйте ще раз.',
+          save: 'Не вдалося зберегти урок. Перевірте дані та спробуйте ще раз.',
+          publishIncomplete:
+            'Щоб опублікувати урок, заповніть назву, короткий опис і основний текст та збережіть зміни.',
+          classAction: 'Не вдалося оновити уроки класу.',
+        },
+      },
       studentWorkspace: {
         placeholderLabel: 'Розділ у розробці',
         pages: {
@@ -1330,6 +1497,173 @@ const resources = {
         errors: {
           network: 'Could not connect to the server.',
           unexpected: 'Something went wrong. Try again.',
+        },
+      },
+      lessons: {
+        common: {
+          retry: 'Try again',
+          cancel: 'Cancel',
+          minutes: '{{count}} min',
+          untitled: 'Untitled lesson',
+          noSummary: 'No short description has been added yet.',
+          updated: 'Updated {{date}}',
+          noClasses: 'Not added to any classes yet',
+        },
+        status: {
+          all: 'All statuses',
+          DRAFT: 'Draft',
+          PUBLISHED: 'Published',
+          ARCHIVED: 'Archived',
+        },
+        locale: {
+          UK: 'Українська',
+          EN: 'English',
+        },
+        library: {
+          eyebrow: 'Material library',
+          title: 'My lessons',
+          description:
+            'Prepare a material once, add it to your classes, and control where it is published.',
+          create: 'Create lesson',
+          search: 'Search lessons',
+          searchPlaceholder: 'Find a lesson by title…',
+          filter: 'Status',
+          loading: 'Loading lessons…',
+          loadError: 'Could not load the lesson library.',
+          emptyTitle: 'No lessons yet',
+          emptyDescription:
+            'Create your first draft. Students will not see it until you publish it to a class.',
+          noResultsTitle: 'No results',
+          noResultsDescription:
+            'Change your search or select a different status.',
+        },
+        actions: {
+          edit: 'Edit',
+          archive: 'Archive',
+          restore: 'Restore',
+          delete: 'Delete',
+        },
+        confirm: {
+          archive: {
+            title: 'Archive this lesson?',
+            description:
+              '“{{title}}” will be hidden in every class. Its class links will be kept.',
+            confirm: 'Archive',
+          },
+          restore: {
+            title: 'Restore this lesson?',
+            description:
+              '“{{title}}” will return to drafts and remain hidden in every class.',
+            confirm: 'Restore',
+          },
+          delete: {
+            title: 'Delete this draft?',
+            description:
+              '“{{title}}” will be deleted permanently. This action cannot be undone.',
+            confirm: 'Delete',
+          },
+          discard: {
+            title: 'Leave without saving?',
+            description:
+              'Your latest changes have not been saved. They will be lost if you leave now.',
+            cancel: 'Keep editing',
+            confirm: 'Leave without saving',
+          },
+          unlink: {
+            title: 'Remove lesson from class?',
+            description:
+              'The lesson will disappear from this class. The material will stay in your library.',
+            confirm: 'Remove',
+          },
+        },
+        editor: {
+          loading: 'Opening lesson…',
+          back: 'Back to lesson library',
+          notFoundTitle: 'Lesson not found',
+          notFoundDescription:
+            'This lesson does not exist or does not belong to your account.',
+          createEyebrow: 'New draft',
+          editEyebrow: 'Lesson editor',
+          createTitle: 'Create a lesson',
+          description:
+            'Prepare the text and choose classes. Drafts save automatically.',
+          saving: 'Saving…',
+          saved: 'Saved',
+          unsaved: 'Unsaved changes',
+          saveFailed: 'Not saved',
+          saveNow: 'Save now',
+          savePublished: 'Save changes',
+          archived:
+            'This lesson is archived and read-only. Restore it from the library to continue editing.',
+          fields: {
+            title: 'Lesson title',
+            titlePlaceholder: 'For example, Kyivan Rus under Yaroslav',
+            titleHint: 'Up to 160 characters. A draft may be left untitled.',
+            summary: 'Short description',
+            summaryPlaceholder: 'What is this lesson about and what will students learn?',
+            summaryHint: 'Up to 500 characters. This appears in lesson lists.',
+            locale: 'Material language',
+            duration: 'Estimated time',
+            durationPlaceholder: 'Minutes',
+            content: 'Lesson text',
+            contentPlaceholder: 'Write the main lesson material…',
+            contentHint:
+              'Plain text with paragraphs, without HTML, Markdown, or images.',
+          },
+          classes: {
+            title: 'Classes',
+            description:
+              'Add the lesson to a class, then publish it to students separately.',
+            saveFirst:
+              'Start filling out the lesson. You can choose classes after its first autosave.',
+            loading: 'Loading classes…',
+            loadError: 'Could not load classes.',
+            empty: 'Create at least one class first.',
+            notAdded: 'Not added',
+            hidden: 'Added, hidden',
+            published: 'Published to students',
+            add: 'Add',
+            publish: 'Publish',
+            hide: 'Hide',
+            unlink: 'Remove',
+            unlinkNamed: 'Remove from class {{name}}',
+          },
+        },
+        classPanel: {
+          title: 'Class lessons',
+          description:
+            'Add library materials, change their order, and control student visibility.',
+          choose: 'Choose a lesson from the library',
+          libraryLoading: 'Loading library…',
+          noneAvailable: 'No lessons available',
+          add: 'Add lesson',
+          loadError: 'Could not load class lessons.',
+          loading: 'Loading class lessons…',
+          empty: 'No lessons have been added to this class yet.',
+          hidden: 'Hidden',
+          published: 'Visible to students',
+          moveUp: 'Move up',
+          moveDown: 'Move down',
+          moveUpNamed: 'Move “{{title}}” up',
+          moveDownNamed: 'Move “{{title}}” down',
+          publish: 'Publish',
+          hide: 'Hide',
+          publishNamed: 'Publish “{{title}}”',
+          hideNamed: 'Hide “{{title}}”',
+          editNamed: 'Edit “{{title}}”',
+          unlink: 'Remove',
+          unlinkNamed: 'Remove “{{title}}” from class',
+        },
+        validation: {
+          duration: 'Enter a whole number from 1 to 180 minutes.',
+        },
+        errors: {
+          network: 'Could not connect to the server.',
+          action: 'Could not complete the action. Try again.',
+          save: 'Could not save the lesson. Check the fields and try again.',
+          publishIncomplete:
+            'Add a title, short description, and lesson text, then save before publishing.',
+          classAction: 'Could not update the class lessons.',
         },
       },
       studentWorkspace: {

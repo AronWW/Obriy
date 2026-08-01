@@ -18,6 +18,7 @@ import { CommonModule } from './common/common.module';
 import { UsersModule } from './users/users.module';
 import { ClassesModule } from './classes/classes.module';
 import { ParentLinksModule } from './parent-links/parent-links.module';
+import { LessonsModule } from './lessons/lessons.module';
 import { validateEnvironment } from './config/env.validation';
 
 const i18nPath = existsSync(join(__dirname, 'i18n'))
@@ -44,6 +45,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     UsersModule,
     ClassesModule,
     ParentLinksModule,
+    LessonsModule,
   ],
   controllers: [AppController],
   providers: [

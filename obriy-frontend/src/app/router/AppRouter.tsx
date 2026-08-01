@@ -20,6 +20,10 @@ import {
 import { StudentOverviewPage } from '../../features/student-overview'
 import { StudentProfilePage } from '../../features/student-profile'
 import { TeacherProfilePage } from '../../features/teacher-profile'
+import {
+  TeacherLessonEditorPage,
+  TeacherLessonsPage,
+} from '../../features/lessons'
 import { AuthLayout } from '../../pages/auth/AuthLayout'
 import { CheckEmailPage } from '../../pages/auth/CheckEmailPage'
 import { ForgotPasswordPage } from '../../pages/auth/ForgotPasswordPage'
@@ -95,7 +99,12 @@ export function AppRouter() {
             />
             <Route
               path="lessons"
-              element={<TeacherPlaceholderPage section="lessons" />}
+              element={<TeacherLessonsPage />}
+            />
+            <Route path="lessons/new" element={<TeacherLessonEditorPage />} />
+            <Route
+              path="lessons/:lessonId/edit"
+              element={<TeacherLessonEditorPage />}
             />
             <Route
               path="tasks"

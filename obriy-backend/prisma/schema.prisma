@@ -47,6 +47,11 @@ model User {
   oauthExchangeCodes      OAuthExchangeCode[]
   parentLinks             ParentChild[]            @relation("ParentLinks")
   childLinks              ParentChild[]            @relation("ChildLinks")
+  taughtClasses           Class[]                  @relation("TeacherClasses")
+  studentClassId          String?
+  studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
+
+  @@index([studentClassId])
 }
 
 model OAuthExchangeCode {
@@ -148,4 +153,33 @@ model ParentChild {
 
   @@id([parentId, childId])
   @@index([childId])
+}
+
+model Class {
+  id         String   @id @default(uuid())
+  teacherId  String
+  name       String
+  gradeLevel Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  teacher User          @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  students User[]       @relation("ClassStudents")
+  invites  ClassInvite[]
+
+  @@index([teacherId])
+}
+
+model ClassInvite {
+  id        String    @id @default(uuid())
+  classId   String
+  codeHash  String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@index([classId])
+  @@index([expiresAt])
 }

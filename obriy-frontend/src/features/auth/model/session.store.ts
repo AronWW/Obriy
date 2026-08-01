@@ -15,6 +15,7 @@ interface SessionState {
   clearSession: () => void
   setChecking: () => void
   setSession: (session: AuthResponse) => void
+  updateUser: (user: PrivateProfile) => void
 }
 
 export const useSessionStore = create<SessionState>()((set) => ({
@@ -34,4 +35,5 @@ export const useSessionStore = create<SessionState>()((set) => ({
       user: session.user,
     })
   },
+  updateUser: (user) => set({ user }),
 }))

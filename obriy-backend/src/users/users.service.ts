@@ -1,5 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { UserRole } from '@prisma/client';
+import type { AuthUser } from '../common/types/auth-user.type';
 import { PrismaService } from '../../prisma/prisma.service';
+import { LinkedChildDto } from './dto/linked-child.dto';
 import { PrivateProfileDto, PublicProfileDto } from './dto/profile.dto';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 
@@ -23,6 +31,55 @@ export class UsersService {
     }
 
     return this.toPrivateProfile(user);
+  }
+
+  async findMyLinkedChildren(user: AuthUser): Promise<LinkedChildDto[]> {
+    if (user.role !== UserRole.PARENT) {
+      throw new ForbiddenException(
+        'Only parent accounts can view linked children',
+      );
+    }
+
+    const links = await this.prisma.parentChild.findMany({
+      where: {
+        parentId: user.id,
+        child: {
+          role: UserRole.STUDENT,
+        },
+      },
+      orderBy: [{ createdAt: 'asc' }, { childId: 'asc' }],
+      select: {
+        child: {
+          select: {
+            id: true,
+            profile: {
+              select: {
+                displayName: true,
+                avatarUrl: true,
+                gradeLevel: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return links.map(({ child }) => {
+      // A profile is an application invariant. Fail the whole response instead
+      // of hiding a linked child or inventing identity data when it is broken.
+      if (!child.profile) {
+        throw new InternalServerErrorException(
+          'Linked child profile is unavailable',
+        );
+      }
+
+      return new LinkedChildDto({
+        id: child.id,
+        displayName: child.profile.displayName,
+        avatarUrl: child.profile.avatarUrl,
+        gradeLevel: child.profile.gradeLevel,
+      });
+    });
   }
 
   async updateMyProfile(

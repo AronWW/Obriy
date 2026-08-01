@@ -1,5 +1,7 @@
 import {
   Award,
+  ChartBar,
+  ClipboardList,
   Compass,
   Library,
   Map,
@@ -14,17 +16,22 @@ import {
 } from 'lucide-react'
 import { useState, type ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
+import { NavLink, Outlet } from 'react-router-dom'
+import { useSessionStore } from '../../features/auth/model/session.store'
 import { ObriyBackground } from '../../shared/backgrounds/ObriyBackground'
 import { BrandLogo } from '../../shared/brand/BrandLogo'
 import styles from './DesignLabPage.module.css'
 
-interface NavigationItem {
+interface NavigationItemBase {
   key: string
-  href: string
   icon: ComponentType<{ size?: number }>
 }
 
-const navigationItems: NavigationItem[] = [
+type NavigationItem =
+  | (NavigationItemBase & { href: string; to?: never })
+  | (NavigationItemBase & { end?: boolean; href?: never; to: string })
+
+const designNavigationItems: NavigationItem[] = [
   { key: 'overview', href: '#overview', icon: Compass },
   { key: 'journey', href: '#journey', icon: Route },
   { key: 'map', href: '#map', icon: Map },
@@ -36,12 +43,89 @@ const navigationItems: NavigationItem[] = [
   { key: 'settings', href: '#settings', icon: Settings },
 ]
 
+const studentNavigationItems: NavigationItem[] = [
+  {
+    key: 'studentOverview',
+    to: '/app/student',
+    end: true,
+    icon: Compass,
+  },
+  {
+    key: 'studentClasses',
+    to: '/app/student/classes',
+    icon: UsersRound,
+  },
+  {
+    key: 'studentTasks',
+    to: '/app/student/tasks',
+    icon: Library,
+  },
+  {
+    key: 'studentAchievements',
+    to: '/app/student/achievements',
+    icon: Award,
+  },
+  {
+    key: 'studentLeaderboard',
+    to: '/app/student/leaderboard',
+    icon: Trophy,
+  },
+  {
+    key: 'studentProfile',
+    to: '/app/student/profile',
+    icon: User,
+  },
+]
+
+const teacherNavigationItems: NavigationItem[] = [
+  {
+    key: 'teacherOverview',
+    to: '/app/teacher',
+    end: true,
+    icon: Compass,
+  },
+  {
+    key: 'teacherClasses',
+    to: '/app/teacher/classes',
+    icon: UsersRound,
+  },
+  {
+    key: 'teacherLessons',
+    to: '/app/teacher/lessons',
+    icon: Library,
+  },
+  {
+    key: 'teacherTasks',
+    to: '/app/teacher/tasks',
+    icon: ClipboardList,
+  },
+  {
+    key: 'teacherAnalytics',
+    to: '/app/teacher/analytics',
+    icon: ChartBar,
+  },
+  {
+    key: 'teacherProfile',
+    to: '/app/teacher/profile',
+    icon: User,
+  },
+]
+
 export function DesignLabPage() {
   const { t } = useTranslation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const role = useSessionStore((state) => state.user?.role)
+  const navigationItems =
+    role === 'STUDENT'
+      ? studentNavigationItems
+      : role === 'TEACHER'
+        ? teacherNavigationItems
+        : designNavigationItems
 
   return (
-    <div className={styles.page}>
+    <div
+      className={`${styles.page} ${isSidebarOpen ? styles.pageMenuOpen : ''}`}
+    >
       <ObriyBackground />
 
       <button
@@ -64,6 +148,24 @@ export function DesignLabPage() {
         <nav className={styles.navigation} aria-label={t('navigation.label')}>
           {navigationItems.map((item, index) => {
             const Icon = item.icon
+
+            if (item.to) {
+              return (
+                <NavLink
+                  className={({ isActive }) =>
+                    isActive ? styles.activeNav : undefined
+                  }
+                  end={item.end}
+                  key={item.key}
+                  to={item.to}
+                  onClick={() => setIsSidebarOpen(false)}
+                >
+                  <Icon size={17} />
+                  <span>{t(`navigation.${item.key}`)}</span>
+                </NavLink>
+              )
+            }
+
             return (
               <a
                 className={index === 0 ? styles.activeNav : undefined}
@@ -99,7 +201,9 @@ export function DesignLabPage() {
         <button className={styles.mobileMenu} type="button" onClick={() => setIsSidebarOpen(true)} aria-label={t('navigation.openMenu')}>
           <Menu size={20} />
         </button>
-        <main className={styles.emptyPage} id="overview" />
+        <main className={styles.emptyPage} id="overview">
+          <Outlet />
+        </main>
       </div>
     </div>
   )

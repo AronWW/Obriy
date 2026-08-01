@@ -204,6 +204,8 @@
 }
 
 .appShell {
+  position: relative;
+  z-index: 10;
   min-height: 100svh;
   margin-left: 214px;
 }
@@ -248,7 +250,12 @@
 }
 
 @media (max-width: 1020px) {
+  .pageMenuOpen {
+    z-index: 110;
+  }
+
   .sidebar {
+    z-index: 120;
     width: min(86vw, 290px);
     transform: translateX(-105%);
   }
@@ -280,7 +287,7 @@
 
   .sidebarScrim {
     position: fixed;
-    z-index: 25;
+    z-index: 110;
     inset: 0;
     display: block;
     visibility: hidden;

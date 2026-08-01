@@ -20,6 +20,7 @@ for (const viewport of viewports) {
       await page.goto('/app')
       await page.emulateMedia({ reducedMotion: 'reduce' })
       await page.getByRole('navigation').waitFor()
+      await page.getByRole('heading', { name: 'Огляд' }).waitFor()
 
       const layout = await page.evaluate(() => {
         const viewportWidth = document.documentElement.clientWidth
@@ -90,7 +91,79 @@ for (const viewport of viewports) {
   }
 }
 
-async function mockAuthenticatedSession(page: Page) {
+test('student mobile drawer exposes the placeholder routes', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.addInitScript(() => {
+    localStorage.setItem('obriy-theme', 'day')
+    localStorage.setItem('obriy-language', 'uk')
+    localStorage.setItem('obriy-has-session', '1')
+  })
+  await mockAuthenticatedSession(page)
+  await page.goto('/app/student')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+
+  await page.getByRole('button', { name: 'Відкрити меню' }).click()
+
+  const tasksLink = page
+    .getByRole('complementary')
+    .getByRole('link', { name: 'Мої завдання' })
+  await expect(
+    page
+      .getByRole('complementary')
+      .getByRole('button', { name: 'Закрити меню' }),
+  ).toBeInViewport()
+  await expect(tasksLink).toBeInViewport()
+  await page.screenshot({
+    path: testInfo.outputPath('day-mobile-menu.png'),
+    fullPage: true,
+  })
+
+  await tasksLink.click()
+
+  await expect(page).toHaveURL('/app/student/tasks')
+  await expect(
+    page.getByRole('heading', { name: 'Мої завдання' }),
+  ).toBeVisible()
+})
+
+test('teacher desktop menu exposes its English placeholder routes', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.addInitScript(() => {
+    localStorage.setItem('obriy-theme', 'day')
+    localStorage.setItem('obriy-language', 'en')
+    localStorage.setItem('obriy-has-session', '1')
+  })
+  await mockAuthenticatedSession(page, 'TEACHER', 'EN')
+  await page.goto('/app/teacher')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'My lessons' })).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Achievements' }),
+  ).toHaveCount(0)
+  await page.screenshot({
+    path: testInfo.outputPath('day-teacher-desktop-en.png'),
+    fullPage: true,
+  })
+
+  await page.getByRole('link', { name: 'Analytics' }).click()
+
+  await expect(page).toHaveURL('/app/teacher/analytics')
+  await expect(
+    page.getByRole('heading', { name: 'Analytics' }),
+  ).toBeVisible()
+})
+
+async function mockAuthenticatedSession(
+  page: Page,
+  role = 'STUDENT',
+  preferredLocale = 'UK',
+) {
   await page.route('**/auth/refresh', async (route) => {
     await route.fulfill({
       status: 201,
@@ -100,7 +173,7 @@ async function mockAuthenticatedSession(page: Page) {
         user: {
           id: 'visual-user',
           email: 'student@example.com',
-          role: 'STUDENT',
+          role,
           status: 'ACTIVE',
           emailVerifiedAt: '2026-07-18T12:00:00.000Z',
           profile: {
@@ -109,7 +182,7 @@ async function mockAuthenticatedSession(page: Page) {
             bio: null,
             gradeLevel: 9,
             subjectArea: null,
-            preferredLocale: 'UK',
+            preferredLocale,
           },
         },
       }),

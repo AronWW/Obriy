@@ -1,6 +1,24 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '../../features/auth/components/ProtectedRoute'
 import { PublicOnlyRoute } from '../../features/auth/components/PublicOnlyRoute'
+import {
+  RoleHomeRedirect,
+  RoleRoute,
+} from '../../features/auth/components/RoleRoute'
+import { ParentLayout } from '../../features/parent/components/ParentLayout'
+import { ParentChildPage } from '../../features/parent/pages/ParentChildPage'
+import { ParentConnectPage } from '../../features/parent/pages/ParentConnectPage'
+import { ParentHubPage } from '../../features/parent/pages/ParentHubPage'
+import { ParentProgressPage } from '../../features/parent/pages/ParentProgressPage'
+import {
+  ClassmateProfilePage,
+  StudentClassesPage,
+  TeacherClassDetailPage,
+  TeacherClassesPage,
+} from '../../features/classes'
+import { StudentOverviewPage } from '../../features/student-overview'
+import { StudentProfilePage } from '../../features/student-profile'
+import { TeacherProfilePage } from '../../features/teacher-profile'
 import { AuthLayout } from '../../pages/auth/AuthLayout'
 import { CheckEmailPage } from '../../pages/auth/CheckEmailPage'
 import { ForgotPasswordPage } from '../../pages/auth/ForgotPasswordPage'
@@ -12,6 +30,8 @@ import { RoleSelectionPage } from '../../pages/auth/RoleSelectionPage'
 import { VerifyEmailPage } from '../../pages/auth/VerifyEmailPage'
 import { DesignLabPage } from '../../pages/design-lab/DesignLabPage'
 import { HomePage } from '../../pages/home/HomePage'
+import { TeacherPlaceholderPage } from '../../pages/teacher/TeacherPlaceholderPage'
+import { StudentPlaceholderPage } from '../../pages/student/StudentPlaceholderPage'
 
 export function AppRouter() {
   return (
@@ -32,7 +52,79 @@ export function AppRouter() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/app" element={<DesignLabPage />} />
+        <Route path="/app" element={<RoleHomeRedirect />} />
+
+        <Route element={<RoleRoute role="STUDENT" />}>
+          <Route path="/app/student" element={<DesignLabPage />}>
+            <Route index element={<StudentOverviewPage />} />
+            <Route path="classes" element={<StudentClassesPage />} />
+            <Route
+              path="classmates/:studentId"
+              element={<ClassmateProfilePage />}
+            />
+            <Route
+              path="tasks"
+              element={<StudentPlaceholderPage section="tasks" />}
+            />
+            <Route
+              path="achievements"
+              element={<StudentPlaceholderPage section="achievements" />}
+            />
+            <Route
+              path="leaderboard"
+              element={<StudentPlaceholderPage section="leaderboard" />}
+            />
+            <Route
+              path="profile"
+              element={<StudentProfilePage />}
+            />
+          </Route>
+        </Route>
+        <Route element={<RoleRoute role="TEACHER" />}>
+          <Route path="/app/teacher" element={<DesignLabPage />}>
+            <Route
+              index
+              element={<TeacherPlaceholderPage section="overview" />}
+            />
+            <Route path="classes" element={<TeacherClassesPage />} />
+            <Route
+              path="classes/:classId"
+              element={<TeacherClassDetailPage />}
+            />
+            <Route
+              path="lessons"
+              element={<TeacherPlaceholderPage section="lessons" />}
+            />
+            <Route
+              path="tasks"
+              element={<TeacherPlaceholderPage section="tasks" />}
+            />
+            <Route
+              path="analytics"
+              element={<TeacherPlaceholderPage section="analytics" />}
+            />
+            <Route
+              path="profile"
+              element={<TeacherProfilePage />}
+            />
+          </Route>
+        </Route>
+        <Route element={<RoleRoute role="PARENT" />}>
+          <Route path="/app/parent" element={<ParentLayout />}>
+            <Route index element={<ParentHubPage />} />
+            <Route path="child/:childId" element={<ParentChildPage />} />
+            <Route
+              path="child/:childId/progress"
+              element={<ParentProgressPage />}
+            />
+            <Route path="connect" element={<ParentConnectPage />} />
+          </Route>
+        </Route>
+        <Route element={<RoleRoute role="ADMIN" />}>
+          <Route path="/app/admin" element={<DesignLabPage />} />
+        </Route>
+
+        <Route path="/app/*" element={<RoleHomeRedirect />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -86,6 +86,26 @@ describe('session service', () => {
     expect(useSessionStore.getState().accessToken).toBe('access-token')
   })
 
+  it('updates the signed-in user without replacing the active session', () => {
+    establishSession(session)
+    const updatedUser = {
+      ...session.user,
+      profile: {
+        ...session.user.profile,
+        displayName: 'Олена Коваль',
+        subjectArea: 'Історія України',
+      },
+    }
+
+    useSessionStore.getState().updateUser(updatedUser)
+
+    expect(useSessionStore.getState()).toMatchObject({
+      accessToken: 'access-token',
+      status: 'authenticated',
+      user: updatedUser,
+    })
+  })
+
   it('clears the local session even when the logout request fails', async () => {
     establishSession(session)
     expect(hasSessionHint()).toBe(true)

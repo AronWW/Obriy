@@ -264,6 +264,444 @@ const resources = {
         settings: 'Налаштування',
         openMenu: 'Відкрити меню',
         closeMenu: 'Закрити меню',
+        studentOverview: 'Огляд',
+        studentClasses: 'Мої класи',
+        studentTasks: 'Мої завдання',
+        studentAchievements: 'Досягнення',
+        studentLeaderboard: 'Рейтинг',
+        studentProfile: 'Профіль',
+        teacherOverview: 'Огляд',
+        teacherClasses: 'Мої класи',
+        teacherLessons: 'Мої уроки',
+        teacherTasks: 'Завдання',
+        teacherAnalytics: 'Аналітика',
+        teacherProfile: 'Профіль',
+      },
+      studentOverview: {
+        eyebrow: 'Твоя навчальна подорож',
+        title: 'Огляд',
+        description:
+          'Тут зібрано те, що допомагає продовжити навчання й бачити власний поступ.',
+        unavailable: 'Дані огляду тимчасово недоступні.',
+        profile: {
+          label: 'Профіль дослідника',
+          open: 'Відкрити профіль',
+          grade: '{{grade}} клас',
+          gradeUnavailable: 'Клас не вказано',
+        },
+        progress: {
+          eyebrow: 'Навчальний огляд',
+          title: 'Твій прогрес',
+          emptyTitle: 'Перші результати ще попереду',
+          emptyDescription:
+            'Завдання, досягнення й активні дні з’являться після початку навчання.',
+          summaryLabel: 'Короткий підсумок навчання',
+          tasks: 'Завдання',
+          achievements: 'Досягнення',
+          activeDays: 'Активні дні',
+          unavailable: 'Ще немає даних',
+        },
+        learning: {
+          title: 'Зараз у навчанні',
+          description: 'Поточний урок або тема.',
+          empty: 'Активний навчальний матеріал ще не з’явився.',
+          action: 'Перейти до класів',
+        },
+        tasks: {
+          title: 'Найближчі завдання',
+          description: 'Те, що потребуватиме уваги.',
+          empty: 'Нових завдань поки немає.',
+          action: 'Мої завдання',
+        },
+        achievements: {
+          title: 'Останні досягнення',
+          description: 'Нові відкриття й отримані значки.',
+          empty: 'Перші досягнення ще попереду.',
+          action: 'Усі досягнення',
+        },
+      },
+      studentProfile: {
+        title: 'Профіль учня',
+        unavailable: 'Дані профілю тимчасово недоступні.',
+        eyebrow: 'Профіль дослідника',
+        customize: 'Налаштувати профіль',
+        titleEmpty: 'Титул ще не обрано',
+        grade: '{{grade}} клас',
+        gradeUnavailable: 'Клас не вказано',
+        saved: 'Профіль оновлено.',
+        editor: {
+          eyebrow: 'Налаштування',
+          title: 'Оновити профіль',
+          close: 'Закрити налаштування профілю',
+          displayName: 'Ім’я у профілі',
+          bio: 'Коротко про себе',
+          bioPlaceholder:
+            'Розкажіть, які історичні теми вам цікаві.',
+          avatarHint:
+            'Аватар, рамки, обкладинки й титули додамо разом із системою оформлення.',
+          cancel: 'Скасувати',
+          save: 'Зберегти',
+          saving: 'Зберігаємо…',
+        },
+        about: {
+          title: 'Про дослідника',
+          description: 'Коротка розповідь про інтереси учня.',
+          empty:
+            'Опис ще не додано. Його можна заповнити в налаштуваннях профілю.',
+        },
+        showcase: {
+          title: 'Вибрані значки',
+          description:
+            'Тут будуть значки, які учень вибере для демонстрації.',
+          label: 'Місця для вибраних значків',
+          empty: 'Поки не вибрано жодного значка.',
+        },
+        collection: {
+          title: 'Колекція досягнень',
+          description: 'Усі зароблені значки та особливі відзнаки.',
+          empty:
+            'Колекція з’явиться після запуску завдань і системи досягнень.',
+        },
+        appearance: {
+          title: 'Оформлення',
+          description:
+            'Обкладинка, рамка аватара, кольорова тема й декоративний символ.',
+          unavailable:
+            'Вибір оформлення стане доступним разом із колекцією нагород.',
+        },
+        visibility: {
+          title: 'Хто бачить профіль',
+          description:
+            'Профіль доступний лише учням вашого класу. Доступ перевіряється сервером.',
+        },
+        validation: {
+          displayNameRequired: 'Вкажіть ім’я.',
+          displayNameMin: 'Ім’я має містити щонайменше 2 символи.',
+          displayNameMax: 'Ім’я не може бути довшим за 80 символів.',
+          bioMax: 'Опис не може бути довшим за 500 символів.',
+        },
+        errors: {
+          network:
+            'Не вдалося з’єднатися із сервером. Спробуйте ще раз.',
+          save: 'Не вдалося зберегти профіль. Спробуйте ще раз.',
+        },
+      },
+      classes: {
+        common: {
+          grade: '{{grade}} клас',
+          gradeUnknown: 'Клас не вказано',
+          students: 'Учнів у класі: {{count}}',
+          retry: 'Спробувати ще раз',
+          cancel: 'Скасувати',
+          close: 'Закрити',
+        },
+        teacher: {
+          eyebrow: 'Навчальний простір',
+          title: 'Мої класи',
+          description:
+            'Створюйте класи, запрошуйте учнів і переглядайте склад кожного класу.',
+          open: 'Відкрити клас',
+          states: {
+            loading: 'Завантажуємо класи…',
+            error: 'Не вдалося завантажити класи.',
+          },
+          empty: {
+            title: 'Класів ще немає',
+            description:
+              'Створіть перший клас, щоб отримати код запрошення для учнів.',
+          },
+          create: {
+            action: 'Створити клас',
+            eyebrow: 'Новий клас',
+            title: 'Основна інформація',
+            name: 'Назва класу',
+            namePlaceholder: 'Наприклад, 8-А',
+            grade: 'Рік навчання',
+            submit: 'Створити й отримати код',
+            creating: 'Створюємо…',
+          },
+          edit: {
+            action: 'Редагувати',
+            eyebrow: 'Налаштування класу',
+            title: 'Оновити клас',
+            save: 'Зберегти',
+            saving: 'Зберігаємо…',
+            error: 'Не вдалося оновити клас.',
+          },
+          detail: {
+            back: 'До всіх класів',
+            eyebrow: 'Клас учителя',
+            notFoundTitle: 'Клас не знайдено',
+            notFound:
+              'Цей клас не існує або не належить вашому обліковому запису.',
+          },
+          members: {
+            title: 'Учні класу',
+            description: 'Усі учні, які приєдналися за кодом.',
+            loading: 'Завантажуємо список учнів…',
+            error: 'Не вдалося завантажити список учнів.',
+            empty:
+              'Поки ніхто не приєднався. Створіть код і передайте його учням.',
+          },
+          invite: {
+            title: 'Код запрошення',
+            description:
+              'Передайте код учням цього класу. Код діє сім днів.',
+            copy: 'Копіювати',
+            copied: 'Скопійовано',
+            expires: 'Діє до {{date}}',
+            hidden:
+              'З міркувань безпеки повний код не зберігається. Створіть новий код, коли будете готові його передати.',
+            refresh: 'Створити новий код',
+            refreshing: 'Створюємо…',
+            error: 'Не вдалося створити код. Спробуйте ще раз.',
+          },
+        },
+        student: {
+          eyebrow: 'Навчальний простір',
+          title: 'Мій клас',
+          description:
+            'Приєднайтеся за кодом учителя, щоб бачити свій клас і профілі однокласників.',
+          current: 'Ваш поточний клас',
+          teacher: 'Учитель: {{name}}',
+          states: {
+            loading: 'Завантажуємо ваш клас…',
+            errorTitle: 'Не вдалося відкрити клас',
+            error: 'Перевірте з’єднання та спробуйте ще раз.',
+          },
+          join: {
+            title: 'Приєднатися до класу',
+            description:
+              'Введіть код із восьми символів, який надав учитель.',
+            label: 'Код запрошення',
+            action: 'Приєднатися',
+            joining: 'Приєднуємо…',
+            invalid: 'Код недійсний або строк його дії завершився.',
+            alreadyJoined: 'Ви вже приєднані до класу.',
+          },
+          classmates: {
+            title: 'Однокласники',
+            description:
+              'Ви можете відкрити публічний профіль учня лише зі свого класу.',
+            loading: 'Завантажуємо однокласників…',
+            error: 'Не вдалося завантажити однокласників.',
+            empty: 'Інші учні ще не приєдналися до цього класу.',
+            open: 'Відкрити профіль',
+          },
+          profile: {
+            back: 'Назад до класу',
+            loading: 'Завантажуємо профіль…',
+            notFoundTitle: 'Профіль недоступний',
+            notFound:
+              'Учень не належить до вашого класу або профіль більше недоступний.',
+            aboutEmpty: 'Учень ще не додав розповідь про себе.',
+            visibility:
+              'Цей профіль бачать лише учні того самого класу.',
+          },
+        },
+        validation: {
+          nameRequired: 'Вкажіть назву класу.',
+          nameMin: 'Назва має містити щонайменше 2 символи.',
+          nameMax: 'Назва не може бути довшою за 80 символів.',
+          codeRequired: 'Введіть код запрошення.',
+          codeInvalid: 'Перевірте формат коду.',
+        },
+        errors: {
+          network: 'Не вдалося з’єднатися із сервером.',
+          unexpected: 'Щось пішло не так. Спробуйте ще раз.',
+        },
+      },
+      studentWorkspace: {
+        placeholderLabel: 'Розділ у розробці',
+        pages: {
+          overview: {
+            title: 'Огляд',
+            description:
+              'Тут з’явиться короткий огляд навчання, найближчих завдань і прогресу.',
+          },
+          classes: {
+            title: 'Мої класи',
+            description:
+              'Тут з’явиться інформація про навчальний клас і його учасників.',
+          },
+          tasks: {
+            title: 'Мої завдання',
+            description:
+              'Тут з’являться доступні, поточні та завершені навчальні завдання.',
+          },
+          achievements: {
+            title: 'Досягнення',
+            description:
+              'Тут з’являться здобуті відзнаки, рівень і навчальний прогрес.',
+          },
+          leaderboard: {
+            title: 'Рейтинг',
+            description:
+              'Тут з’явиться рейтинг учасників класу після запуску системи прогресу.',
+          },
+          profile: {
+            title: 'Профіль',
+            description:
+              'Тут можна буде переглядати й редагувати особисті дані профілю.',
+          },
+        },
+      },
+      teacherWorkspace: {
+        placeholderLabel: 'Розділ у розробці',
+        pages: {
+          overview: {
+            title: 'Огляд',
+            description:
+              'Тут з’явиться короткий огляд класів, матеріалів і навчальної активності.',
+          },
+          classes: {
+            title: 'Мої класи',
+            description:
+              'Тут можна буде створювати класи та керувати їхніми учасниками.',
+          },
+          lessons: {
+            title: 'Мої уроки',
+            description:
+              'Тут можна буде створювати, редагувати й публікувати навчальні матеріали.',
+          },
+          tasks: {
+            title: 'Завдання',
+            description:
+              'Тут можна буде готувати завдання та переглядати результати учнів.',
+          },
+          analytics: {
+            title: 'Аналітика',
+            description:
+              'Тут з’явиться прогрес і навчальна активність власних класів.',
+          },
+          profile: {
+            title: 'Профіль',
+            description:
+              'Тут можна буде переглядати й редагувати особисті дані вчителя.',
+          },
+        },
+      },
+      teacherProfile: {
+        eyebrow: 'Особисті дані',
+        title: 'Профіль учителя',
+        description:
+          'Інформація, яку ви використовуватимете у своєму робочому просторі Obriy.',
+        unavailable: 'Дані профілю тимчасово недоступні.',
+        identityLabel: 'Поточний профіль',
+        avatarHint:
+          'Завантаження нового фото додамо окремим наступним кроком.',
+        formLegend: 'Основна інформація',
+        displayName: 'Ім’я та прізвище',
+        subjectArea: 'Предмет або спеціалізація',
+        subjectAreaPlaceholder: 'Наприклад, історія України',
+        bio: 'Коротко про себе',
+        bioPlaceholder:
+          'Розкажіть про свій досвід або підхід до навчання.',
+        email: 'Електронна пошта',
+        emailHint:
+          'Пошта прив’язана до акаунта й не редагується на цій сторінці.',
+        saved: 'Зміни збережено.',
+        reset: 'Скасувати зміни',
+        save: 'Зберегти зміни',
+        saving: 'Зберігаємо…',
+        validation: {
+          displayNameRequired: 'Вкажіть ім’я.',
+          displayNameMin: 'Ім’я має містити щонайменше 2 символи.',
+          displayNameMax: 'Ім’я не може бути довшим за 80 символів.',
+          subjectAreaMax:
+            'Назва предмета не може бути довшою за 80 символів.',
+          bioMax: 'Опис не може бути довшим за 500 символів.',
+        },
+        errors: {
+          network:
+            'Не вдалося з’єднатися із сервером. Спробуйте ще раз.',
+          save: 'Не вдалося зберегти профіль. Спробуйте ще раз.',
+        },
+      },
+      parentHub: {
+        homeAriaLabel: 'Батьківський простір Obriy',
+        header: {
+          title: 'Простір для батьків',
+        },
+        states: {
+          loading: 'Завантажуємо дані про дітей…',
+          errorTitle: 'Не вдалося завантажити огляд',
+          errorDescription:
+            'Перевірте з’єднання та спробуйте завантажити дані ще раз.',
+        },
+        actions: {
+          retry: 'Спробувати ще раз',
+          allChildren: 'Огляд сім’ї',
+          openProgress: 'Докладний прогрес',
+          backToOverview: 'До огляду дитини',
+          backToHome: 'На головну',
+        },
+        empty: {
+          eyebrow: 'Перший крок',
+          title: 'Підключіть дитину',
+          description:
+            'Навчальний огляд з’явиться тут після підключення через захищене запрошення.',
+          action: 'Підключити дитину',
+        },
+        family: {
+          eyebrow: 'Огляд сім’ї',
+          title: 'Навчання ваших дітей',
+          description:
+            'Кожна дитина має окремий огляд — без порівнянь і рейтингів між ними.',
+          listLabel: 'Підключені діти',
+          quietNote:
+            'Тут показуємо лише інформацію, яка допомагає підтримати навчання дитини.',
+          openChild: 'Відкрити огляд',
+        },
+        child: {
+          gradeUnavailable: 'Клас не вказано',
+          grade: '{{grade}} клас',
+          switcherLabel: 'Переглянути дитину',
+          eyebrow: 'Навчальний огляд',
+        },
+        attention: {
+          title: 'Варто перевірити',
+          unavailable:
+            'Сигнали з’являться, коли в дитини будуть навчальні завдання та результати.',
+        },
+        weekly: {
+          title: 'Цей тиждень',
+          description:
+            'Короткий підсумок з’явиться після початку навчальної активності.',
+          learningTime: 'Час навчання',
+          completed: 'Завершено',
+          progress: 'Прогрес',
+        },
+        common: {
+          unavailable: 'Ще немає даних',
+        },
+        learningNow: {
+          title: 'Зараз у навчанні',
+          description: 'Поточні теми й завдання дитини.',
+          empty: 'Активні навчальні матеріали ще не з’явилися.',
+        },
+        activity: {
+          title: 'Остання активність',
+          description: 'Недавні завершені уроки та завдання.',
+          empty: 'Історія навчальної активності поки порожня.',
+        },
+        progress: {
+          eyebrow: 'Докладний звіт',
+          title: 'Прогрес: {{name}}',
+          description:
+            'Тут буде хронологія навчання, виконання уроків і динаміка результатів.',
+          emptyTitle: 'Дані прогресу ще формуються',
+          emptyDescription:
+            'Перші результати з’являться після виконання навчальних завдань.',
+        },
+        connect: {
+          eyebrow: 'Захищене підключення',
+          title: 'Підключення дитини',
+          description:
+            'Дитина підключатиметься до вашого акаунта через персональне запрошення.',
+          unavailable:
+            'Механізм запрошень реалізуємо окремим наступним кроком.',
+        },
       },
       quote: {
         text: 'Минуле — твій компас. Майбутнє — твій квест.',
@@ -571,6 +1009,441 @@ const resources = {
         settings: 'Settings',
         openMenu: 'Open menu',
         closeMenu: 'Close menu',
+        studentOverview: 'Overview',
+        studentClasses: 'My classes',
+        studentTasks: 'My assignments',
+        studentAchievements: 'Achievements',
+        studentLeaderboard: 'Leaderboard',
+        studentProfile: 'Profile',
+        teacherOverview: 'Overview',
+        teacherClasses: 'My classes',
+        teacherLessons: 'My lessons',
+        teacherTasks: 'Assignments',
+        teacherAnalytics: 'Analytics',
+        teacherProfile: 'Profile',
+      },
+      studentOverview: {
+        eyebrow: 'Your learning journey',
+        title: 'Overview',
+        description:
+          'Everything that helps you continue learning and see your own progress is gathered here.',
+        unavailable: 'Overview information is temporarily unavailable.',
+        profile: {
+          label: 'Explorer profile',
+          open: 'Open profile',
+          grade: 'Grade {{grade}}',
+          gradeUnavailable: 'Grade not provided',
+        },
+        progress: {
+          eyebrow: 'Learning overview',
+          title: 'Your progress',
+          emptyTitle: 'Your first results are still ahead',
+          emptyDescription:
+            'Assignments, achievements, and active days will appear after learning begins.',
+          summaryLabel: 'Learning summary',
+          tasks: 'Assignments',
+          achievements: 'Achievements',
+          activeDays: 'Active days',
+          unavailable: 'No data yet',
+        },
+        learning: {
+          title: 'Learning now',
+          description: 'Your current lesson or topic.',
+          empty: 'No active learning material is available yet.',
+          action: 'Go to classes',
+        },
+        tasks: {
+          title: 'Upcoming assignments',
+          description: 'What may need your attention next.',
+          empty: 'There are no new assignments yet.',
+          action: 'My assignments',
+        },
+        achievements: {
+          title: 'Recent achievements',
+          description: 'New discoveries and earned badges.',
+          empty: 'Your first achievements are still ahead.',
+          action: 'All achievements',
+        },
+      },
+      studentProfile: {
+        title: 'Student profile',
+        unavailable: 'Profile information is temporarily unavailable.',
+        eyebrow: 'Explorer profile',
+        customize: 'Customize profile',
+        titleEmpty: 'No title selected yet',
+        grade: 'Grade {{grade}}',
+        gradeUnavailable: 'Grade not provided',
+        saved: 'Profile updated.',
+        editor: {
+          eyebrow: 'Settings',
+          title: 'Update profile',
+          close: 'Close profile settings',
+          displayName: 'Profile name',
+          bio: 'About you',
+          bioPlaceholder:
+            'Share which historical topics interest you.',
+          avatarHint:
+            'Avatars, frames, covers, and titles will arrive with profile appearance.',
+          cancel: 'Cancel',
+          save: 'Save',
+          saving: 'Saving…',
+        },
+        about: {
+          title: 'About the explorer',
+          description: 'A short introduction to the student’s interests.',
+          empty:
+            'No introduction has been added yet. You can add one in profile settings.',
+        },
+        showcase: {
+          title: 'Featured badges',
+          description:
+            'Badges selected by the student will be shown here.',
+          label: 'Featured badge slots',
+          empty: 'No badges have been selected yet.',
+        },
+        collection: {
+          title: 'Achievement collection',
+          description: 'All earned badges and special awards.',
+          empty:
+            'The collection will appear after assignments and achievements are available.',
+        },
+        appearance: {
+          title: 'Appearance',
+          description:
+            'Cover, avatar frame, colour theme, and decorative symbol.',
+          unavailable:
+            'Appearance choices will become available with the reward collection.',
+        },
+        visibility: {
+          title: 'Who can view this profile',
+          description:
+            'Only students in your class can view this profile. Access is checked by the server.',
+        },
+        validation: {
+          displayNameRequired: 'Enter your name.',
+          displayNameMin: 'Your name must contain at least 2 characters.',
+          displayNameMax: 'Your name cannot be longer than 80 characters.',
+          bioMax: 'The description cannot be longer than 500 characters.',
+        },
+        errors: {
+          network: 'Could not connect to the server. Try again.',
+          save: 'Could not save the profile. Try again.',
+        },
+      },
+      classes: {
+        common: {
+          grade: 'Grade {{grade}}',
+          gradeUnknown: 'Grade not provided',
+          students: 'Students: {{count}}',
+          retry: 'Try again',
+          cancel: 'Cancel',
+          close: 'Close',
+        },
+        teacher: {
+          eyebrow: 'Learning space',
+          title: 'My classes',
+          description:
+            'Create classes, invite students, and view the members of each class.',
+          open: 'Open class',
+          states: {
+            loading: 'Loading classes…',
+            error: 'Could not load classes.',
+          },
+          empty: {
+            title: 'No classes yet',
+            description:
+              'Create your first class to receive an invitation code for students.',
+          },
+          create: {
+            action: 'Create class',
+            eyebrow: 'New class',
+            title: 'Basic information',
+            name: 'Class name',
+            namePlaceholder: 'For example, 8-A',
+            grade: 'Grade level',
+            submit: 'Create and get code',
+            creating: 'Creating…',
+          },
+          edit: {
+            action: 'Edit',
+            eyebrow: 'Class settings',
+            title: 'Update class',
+            save: 'Save',
+            saving: 'Saving…',
+            error: 'Could not update the class.',
+          },
+          detail: {
+            back: 'Back to all classes',
+            eyebrow: 'Teacher class',
+            notFoundTitle: 'Class not found',
+            notFound:
+              'This class does not exist or does not belong to your account.',
+          },
+          members: {
+            title: 'Class students',
+            description: 'All students who joined using the code.',
+            loading: 'Loading students…',
+            error: 'Could not load the student list.',
+            empty:
+              'Nobody has joined yet. Create a code and share it with your students.',
+          },
+          invite: {
+            title: 'Invitation code',
+            description:
+              'Share the code with students in this class. It is valid for seven days.',
+            copy: 'Copy',
+            copied: 'Copied',
+            expires: 'Valid until {{date}}',
+            hidden:
+              'For security, the full code is not stored. Create a new code when you are ready to share it.',
+            refresh: 'Create new code',
+            refreshing: 'Creating…',
+            error: 'Could not create a code. Try again.',
+          },
+        },
+        student: {
+          eyebrow: 'Learning space',
+          title: 'My class',
+          description:
+            'Join with your teacher’s code to see your class and your classmates’ profiles.',
+          current: 'Your current class',
+          teacher: 'Teacher: {{name}}',
+          states: {
+            loading: 'Loading your class…',
+            errorTitle: 'Could not open the class',
+            error: 'Check your connection and try again.',
+          },
+          join: {
+            title: 'Join a class',
+            description:
+              'Enter the eight-character code provided by your teacher.',
+            label: 'Invitation code',
+            action: 'Join class',
+            joining: 'Joining…',
+            invalid: 'The code is invalid or has expired.',
+            alreadyJoined: 'You already belong to a class.',
+          },
+          classmates: {
+            title: 'Classmates',
+            description:
+              'You can open a student’s public profile only when they are in your class.',
+            loading: 'Loading classmates…',
+            error: 'Could not load classmates.',
+            empty: 'No other students have joined this class yet.',
+            open: 'Open profile',
+          },
+          profile: {
+            back: 'Back to class',
+            loading: 'Loading profile…',
+            notFoundTitle: 'Profile unavailable',
+            notFound:
+              'The student is not in your class or their profile is no longer available.',
+            aboutEmpty: 'This student has not added an introduction yet.',
+            visibility:
+              'This profile is visible only to students in the same class.',
+          },
+        },
+        validation: {
+          nameRequired: 'Enter a class name.',
+          nameMin: 'The name must contain at least 2 characters.',
+          nameMax: 'The name cannot be longer than 80 characters.',
+          codeRequired: 'Enter an invitation code.',
+          codeInvalid: 'Check the code format.',
+        },
+        errors: {
+          network: 'Could not connect to the server.',
+          unexpected: 'Something went wrong. Try again.',
+        },
+      },
+      studentWorkspace: {
+        placeholderLabel: 'Section in development',
+        pages: {
+          overview: {
+            title: 'Overview',
+            description:
+              'A concise overview of learning, upcoming assignments, and progress will appear here.',
+          },
+          classes: {
+            title: 'My classes',
+            description:
+              'Information about the learning class and its members will appear here.',
+          },
+          tasks: {
+            title: 'My assignments',
+            description:
+              'Available, active, and completed learning assignments will appear here.',
+          },
+          achievements: {
+            title: 'Achievements',
+            description:
+              'Earned badges, level, and learning progress will appear here.',
+          },
+          leaderboard: {
+            title: 'Leaderboard',
+            description:
+              'The class leaderboard will appear here after the progress system is available.',
+          },
+          profile: {
+            title: 'Profile',
+            description:
+              'Personal profile information will be available to view and edit here.',
+          },
+        },
+      },
+      teacherWorkspace: {
+        placeholderLabel: 'Section in development',
+        pages: {
+          overview: {
+            title: 'Overview',
+            description:
+              'A concise overview of classes, materials, and learning activity will appear here.',
+          },
+          classes: {
+            title: 'My classes',
+            description:
+              'Classes and their members will be created and managed here.',
+          },
+          lessons: {
+            title: 'My lessons',
+            description:
+              'Learning materials will be created, edited, and published here.',
+          },
+          tasks: {
+            title: 'Assignments',
+            description:
+              'Assignments will be prepared and student results reviewed here.',
+          },
+          analytics: {
+            title: 'Analytics',
+            description:
+              'Progress and learning activity for owned classes will appear here.',
+          },
+          profile: {
+            title: 'Profile',
+            description:
+              'Teacher profile information will be available to view and edit here.',
+          },
+        },
+      },
+      teacherProfile: {
+        eyebrow: 'Personal details',
+        title: 'Teacher profile',
+        description:
+          'Information you will use throughout your Obriy workspace.',
+        unavailable: 'Profile information is temporarily unavailable.',
+        identityLabel: 'Current profile',
+        avatarHint: 'We will add photo uploads as a separate next step.',
+        formLegend: 'Basic information',
+        displayName: 'Full name',
+        subjectArea: 'Subject or specialisation',
+        subjectAreaPlaceholder: 'For example, Ukrainian history',
+        bio: 'About you',
+        bioPlaceholder:
+          'Share a little about your experience or teaching approach.',
+        email: 'Email address',
+        emailHint:
+          'Your email is tied to the account and cannot be changed here.',
+        saved: 'Changes saved.',
+        reset: 'Discard changes',
+        save: 'Save changes',
+        saving: 'Saving…',
+        validation: {
+          displayNameRequired: 'Enter your name.',
+          displayNameMin: 'Your name must contain at least 2 characters.',
+          displayNameMax: 'Your name cannot be longer than 80 characters.',
+          subjectAreaMax:
+            'The subject name cannot be longer than 80 characters.',
+          bioMax: 'The description cannot be longer than 500 characters.',
+        },
+        errors: {
+          network: 'Could not connect to the server. Try again.',
+          save: 'Could not save the profile. Try again.',
+        },
+      },
+      parentHub: {
+        homeAriaLabel: 'Obriy parent space',
+        header: {
+          title: 'Parent space',
+        },
+        states: {
+          loading: 'Loading your children…',
+          errorTitle: 'Could not load the overview',
+          errorDescription:
+            'Check your connection and try loading the information again.',
+        },
+        actions: {
+          retry: 'Try again',
+          allChildren: 'Family overview',
+          openProgress: 'Detailed progress',
+          backToOverview: 'Back to child overview',
+          backToHome: 'Back home',
+        },
+        empty: {
+          eyebrow: 'First step',
+          title: 'Connect a child',
+          description:
+            'The learning overview will appear here after you connect through a secure invitation.',
+          action: 'Connect a child',
+        },
+        family: {
+          eyebrow: 'Family overview',
+          title: 'Your children’s learning',
+          description:
+            'Each child has a separate overview, with no comparisons or rankings between them.',
+          listLabel: 'Connected children',
+          quietNote:
+            'This space only shows information that helps you support your child’s learning.',
+          openChild: 'Open overview',
+        },
+        child: {
+          gradeUnavailable: 'Grade not provided',
+          grade: 'Grade {{grade}}',
+          switcherLabel: 'View child',
+          eyebrow: 'Learning overview',
+        },
+        attention: {
+          title: 'Worth checking',
+          unavailable:
+            'Signals will appear when the child has learning assignments and results.',
+        },
+        weekly: {
+          title: 'This week',
+          description:
+            'A short summary will appear after learning activity begins.',
+          learningTime: 'Learning time',
+          completed: 'Completed',
+          progress: 'Progress',
+        },
+        common: {
+          unavailable: 'No data yet',
+        },
+        learningNow: {
+          title: 'Learning now',
+          description: 'The child’s current topics and assignments.',
+          empty: 'No active learning materials are available yet.',
+        },
+        activity: {
+          title: 'Recent activity',
+          description: 'Recently completed lessons and assignments.',
+          empty: 'The learning activity history is empty for now.',
+        },
+        progress: {
+          eyebrow: 'Detailed report',
+          title: 'Progress: {{name}}',
+          description:
+            'The learning timeline, lesson completion, and result trends will appear here.',
+          emptyTitle: 'Progress data is still being prepared',
+          emptyDescription:
+            'The first results will appear after learning assignments are completed.',
+        },
+        connect: {
+          eyebrow: 'Secure connection',
+          title: 'Connect a child',
+          description:
+            'A child will connect to your account through a personal invitation.',
+          unavailable:
+            'We will implement the invitation flow as a separate next step.',
+        },
       },
       quote: {
         text: 'The past is your compass. The future is your quest.',

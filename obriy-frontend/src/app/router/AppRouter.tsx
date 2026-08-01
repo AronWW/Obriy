@@ -10,6 +10,7 @@ import { ParentChildPage } from '../../features/parent/pages/ParentChildPage'
 import { ParentConnectPage } from '../../features/parent/pages/ParentConnectPage'
 import { ParentHubPage } from '../../features/parent/pages/ParentHubPage'
 import { ParentProgressPage } from '../../features/parent/pages/ParentProgressPage'
+import { ParentInviteLandingPage } from '../../features/parent-links/pages/ParentInviteLandingPage'
 import {
   ClassmateProfilePage,
   StudentClassesPage,
@@ -37,6 +38,7 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/parent-invite" element={<ParentInviteLandingPage />} />
 
       <Route path="/auth" element={<AuthLayout />}>
         <Route element={<PublicOnlyRoute />}>

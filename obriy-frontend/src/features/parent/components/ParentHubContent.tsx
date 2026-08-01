@@ -11,11 +11,15 @@ import {
   Sparkles,
   UsersRound,
 } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import type { LinkedChild } from '../model/parent.types'
 import { ChildAvatar } from './ChildAvatar'
 import styles from './ParentHub.module.css'
+import { parentLinksApi } from '../../parent-links/api/parent-links.api'
+import { linkedChildrenQueryKey } from '../hooks/useLinkedChildren'
 
 export function ParentDataState({
   isLoading,
@@ -131,6 +135,26 @@ export function ChildOverview({
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [confirmingUnlink, setConfirmingUnlink] = useState(false)
+  const unlinkMutation = useMutation({
+    mutationFn: () => parentLinksApi.unlinkChild(child.id),
+    onSuccess: () => {
+      queryClient.setQueryData(linkedChildrenQueryKey, (current: unknown) =>
+        Array.isArray(current)
+          ? current.filter(
+              (entry) =>
+                typeof entry !== 'object' ||
+                entry === null ||
+                !('id' in entry) ||
+                entry.id !== child.id,
+            )
+          : [],
+      )
+      void queryClient.invalidateQueries({ queryKey: linkedChildrenQueryKey })
+      navigate('/app/parent', { replace: true })
+    },
+  })
   const grade =
     child.gradeLevel === null
       ? t('parentHub.child.gradeUnavailable')
@@ -219,14 +243,48 @@ export function ChildOverview({
           <p className={styles.emptyCopy}>{t('parentHub.activity.empty')}</p>
         </section>
       </div>
-      <Link
-        className={styles.secondaryButton}
-        to={`/app/parent/child/${child.id}/progress`}
-      >
-        <Sparkles size={16} />
-        {t('parentHub.actions.openProgress')}
-        <ArrowRight size={16} />
-      </Link>
+      <div className={styles.childActions}>
+        <Link
+          className={styles.secondaryButton}
+          to={`/app/parent/child/${child.id}/progress`}
+        >
+          <Sparkles size={16} />
+          {t('parentHub.actions.openProgress')}
+          <ArrowRight size={16} />
+        </Link>
+        {confirmingUnlink ? (
+          <div className={styles.unlinkConfirmation}>
+            <button
+              className={styles.dangerButton}
+              type="button"
+              disabled={unlinkMutation.isPending}
+              onClick={() => unlinkMutation.mutate()}
+            >
+              {t('parentLinks.parent.confirmUnlink')}
+            </button>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={() => setConfirmingUnlink(false)}
+            >
+              {t('parentLinks.parent.cancelUnlink')}
+            </button>
+          </div>
+        ) : (
+          <button
+            className={styles.textDangerButton}
+            type="button"
+            onClick={() => setConfirmingUnlink(true)}
+          >
+            {t('parentLinks.parent.unlink')}
+          </button>
+        )}
+      </div>
+      {unlinkMutation.isError && (
+        <p className={styles.unlinkError} role="alert">
+          {t('parentLinks.parent.unlinkError')}
+        </p>
+      )}
     </article>
   )
 }

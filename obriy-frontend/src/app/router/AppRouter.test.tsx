@@ -6,6 +6,10 @@ import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { UserRole } from '../../features/auth/model/auth.types'
 import { useSessionStore } from '../../features/auth/model/session.store'
+import {
+  getPendingParentInvitation,
+  rememberParentInvitation,
+} from '../../features/parent-links/model/parent-invitation-session'
 import i18n from '../../i18n/config'
 import { API_BASE_URL } from '../../shared/config/env'
 import { server } from '../../test/server'
@@ -38,6 +42,12 @@ describe('AppRouter auth boundaries', () => {
     server.use(
       http.get(`${API_BASE_URL}/users/me/children`, () =>
         HttpResponse.json([]),
+      ),
+      http.get(`${API_BASE_URL}/parent-links/me/guardians`, () =>
+        HttpResponse.json([]),
+      ),
+      http.get(`${API_BASE_URL}/parent-links/invitation`, () =>
+        HttpResponse.json(null),
       ),
     )
   })
@@ -570,11 +580,161 @@ describe('AppRouter auth boundaries', () => {
     )
 
     expect(
-      await screen.findByRole('heading', { name: 'Підключення дитини' }),
+      await screen.findByRole('heading', {
+        name: 'Немає активного запрошення',
+      }),
     ).toBeInTheDocument()
     expect(screen.getByTestId('current-location')).toHaveTextContent(
       '/app/parent/connect',
     )
+  })
+
+  it('creates a one-time parent invitation from the student profile', async () => {
+    const user = userEvent.setup()
+    const invitationToken = 'A'.repeat(43)
+    let createRequestCount = 0
+    server.use(
+      http.get(`${API_BASE_URL}/parent-links/me/guardians`, () =>
+        HttpResponse.json([]),
+      ),
+      http.get(`${API_BASE_URL}/parent-links/invitation`, () =>
+        HttpResponse.json(null),
+      ),
+      http.post(`${API_BASE_URL}/parent-links/invitation`, () => {
+        createRequestCount += 1
+        return HttpResponse.json(
+          {
+            token: invitationToken,
+            expiresAt: '2026-08-02T12:00:00.000Z',
+          },
+          { status: 201 },
+        )
+      }),
+    )
+
+    renderRouter('/app/student/profile')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Батьки та опікуни' }),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Створити запрошення' }),
+    )
+
+    expect(
+      await screen.findByDisplayValue(
+        `http://localhost:3000/parent-invite?token=${invitationToken}`,
+      ),
+    ).toBeInTheDocument()
+    expect(createRequestCount).toBe(1)
+  })
+
+  it('preserves a parent invitation before authentication', async () => {
+    const invitationToken = 'B'.repeat(43)
+    useSessionStore.setState({
+      accessToken: null,
+      status: 'anonymous',
+      user: null,
+    })
+
+    renderRouter(`/parent-invite?token=${invitationToken}`)
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Вас запросили до Obriy',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Увійти' })).toHaveAttribute(
+      'href',
+      '/auth/login',
+    )
+    expect(
+      screen.getByRole('link', { name: /Створити профіль батька/ }),
+    ).toHaveAttribute('href', '/auth/register/parent')
+    expect(getPendingParentInvitation()).toBe(invitationToken)
+  })
+
+  it('returns an authenticated parent to the pending invitation', async () => {
+    const invitationToken = 'D'.repeat(43)
+    rememberParentInvitation(invitationToken)
+    useSessionStore.setState({
+      user: { ...authenticatedUser, role: 'PARENT' },
+    })
+    server.use(
+      http.post(`${API_BASE_URL}/parent-links/invitation/preview`, () =>
+        HttpResponse.json({
+          child: {
+            id: 'child-return',
+            displayName: 'Софія',
+            avatarUrl: null,
+          },
+          alreadyLinked: false,
+        }),
+      ),
+    )
+
+    renderRouter('/app')
+
+    await waitFor(() => {
+      expect(screen.getByTestId('current-location')).toHaveTextContent(
+        '/app/parent/connect',
+      )
+    })
+    expect(
+      await screen.findByRole('heading', { name: 'Софія' }),
+    ).toBeInTheDocument()
+  })
+
+  it('lets a parent confirm the stored invitation and opens the child overview', async () => {
+    const user = userEvent.setup()
+    const invitationToken = 'C'.repeat(43)
+    const linkedChild = {
+      id: 'child-invited',
+      displayName: 'Марія',
+      avatarUrl: null,
+      gradeLevel: 7,
+    }
+    let children: typeof linkedChild[] = []
+    rememberParentInvitation(invitationToken)
+    useSessionStore.setState({
+      user: { ...authenticatedUser, role: 'PARENT' },
+    })
+    server.use(
+      http.get(`${API_BASE_URL}/users/me/children`, () =>
+        HttpResponse.json(children),
+      ),
+      http.post(`${API_BASE_URL}/parent-links/invitation/preview`, () =>
+        HttpResponse.json({
+          child: {
+            id: linkedChild.id,
+            displayName: linkedChild.displayName,
+            avatarUrl: linkedChild.avatarUrl,
+          },
+          alreadyLinked: false,
+        }),
+      ),
+      http.post(`${API_BASE_URL}/parent-links/invitation/accept`, () => {
+        children = [linkedChild]
+        return HttpResponse.json(linkedChild, { status: 201 })
+      }),
+    )
+
+    renderRouter('/app/parent/connect')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Марія' }),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Підключити дитину' }),
+    )
+
+    expect(
+      await screen.findByRole('heading', { name: 'Марія' }),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('current-location')).toHaveTextContent(
+      '/app/parent',
+    )
+    expect(getPendingParentInvitation()).toBeNull()
   })
 
   it('opens the child overview directly for a parent with one linked child', async () => {

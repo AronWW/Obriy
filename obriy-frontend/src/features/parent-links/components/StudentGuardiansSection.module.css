@@ -1,0 +1,291 @@
+.section {
+  padding: clamp(22px, 4vw, 30px);
+  background: color-mix(in srgb, var(--panel-solid), transparent 4%);
+  border: 1px solid var(--line);
+  box-shadow: var(--panel-shadow);
+}
+
+.heading {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.headingIcon {
+  color: var(--gold);
+}
+
+.heading h2,
+.invitationArea h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.heading p,
+.invitationArea > div:first-child p {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.counter {
+  padding: 5px 8px;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold), transparent 90%);
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 65%);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.quiet,
+.limitNote {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.empty {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 17px;
+  padding: 15px;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--line-soft), transparent 35%);
+  border: 1px dashed var(--line);
+}
+
+.empty p {
+  margin: 0;
+  color: var(--copy);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.guardianList {
+  margin: 17px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guardianList li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 11px;
+  align-items: center;
+  padding: 12px 3px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.guardianList strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.guardianList li > div > span {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.avatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  place-items: center;
+  color: var(--panel-solid);
+  background: var(--archive-blue-deep);
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.removeButton,
+.confirmActions button {
+  display: inline-grid;
+  min-width: 36px;
+  min-height: 36px;
+  place-items: center;
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.removeButton:hover,
+.confirmActions button:first-child:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.confirmActions {
+  display: flex;
+  gap: 5px;
+}
+
+.confirmActions button:first-child {
+  display: inline-flex;
+  gap: 6px;
+  padding: 0 9px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.invitationArea {
+  display: grid;
+  gap: 15px;
+  margin-top: 21px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.invitationArea h3 {
+  font-size: 18px;
+}
+
+.revealBox {
+  display: grid;
+  gap: 8px;
+}
+
+.revealBox label {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.revealBox > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
+.revealBox input {
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  font: inherit;
+  font-size: 11px;
+}
+
+.revealBox button,
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.revealBox button,
+.secondaryButton {
+  color: var(--archive-blue);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.revealBox small {
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.activeNote {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  padding: 11px;
+  color: var(--copy);
+  background: color-mix(in srgb, var(--archive-blue), transparent 91%);
+  border-left: 3px solid var(--archive-blue);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.invitationActions {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.primaryButton {
+  color: var(--panel-solid);
+  background: var(--archive-blue-deep);
+  border: 1px solid var(--archive-blue-deep);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.error {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger), transparent 91%);
+  border-left: 3px solid var(--color-danger);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.limitNote {
+  margin: 0;
+}
+
+@media (max-width: 520px) {
+  .heading {
+    grid-template-columns: auto 1fr;
+  }
+
+  .counter {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .guardianList li {
+    grid-template-columns: auto 1fr;
+  }
+
+  .removeButton,
+  .confirmActions {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .revealBox > div {
+    grid-template-columns: 1fr;
+  }
+
+  .invitationActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

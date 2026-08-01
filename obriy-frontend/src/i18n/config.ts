@@ -703,6 +703,83 @@ const resources = {
             'Механізм запрошень реалізуємо окремим наступним кроком.',
         },
       },
+      parentLinks: {
+        student: {
+          title: 'Батьки та опікуни',
+          description:
+            'Керуйте дорослими, які мають доступ до вашого сімейного огляду.',
+          loading: 'Завантажуємо підключених дорослих…',
+          loadError: 'Не вдалося завантажити список.',
+          empty: 'До профілю ще не підключено жодного дорослого.',
+          linkedAt: 'Підключено {{date}}',
+          remove: 'Від’єднати {{name}}',
+          confirmRemove: 'Від’єднати',
+          cancelRemove: 'Скасувати від’єднання',
+          invitationTitle: 'Запросити дорослого',
+          invitationDescription:
+            'Створіть одноразове посилання та передайте його батькам або опікуну.',
+          linkLabel: 'Посилання-запрошення',
+          copy: 'Копіювати',
+          copied: 'Скопійовано',
+          revealWarning:
+            'Збережіть посилання зараз: після оновлення сторінки повний токен більше не показуватиметься.',
+          activeUntil: 'Активне запрошення діє до {{date}}.',
+          createInvitation: 'Створити запрошення',
+          replaceInvitation: 'Створити нове посилання',
+          revokeInvitation: 'Відкликати запрошення',
+          limitReached:
+            'Досягнуто ліміту: до профілю можна підключити не більше чотирьох дорослих.',
+        },
+        landing: {
+          eyebrow: 'Захищене сімейне запрошення',
+          title: 'Вас запросили до Obriy',
+          description:
+            'Увійдіть або створіть обліковий запис батька, щоб переглянути запрошення та підтвердити зв’язок.',
+          login: 'Увійти',
+          register: 'Створити профіль батька',
+          privacy:
+            'Дані дитини з’являться тільки після входу з роллю батька та окремого підтвердження.',
+          invalidTitle: 'Посилання недійсне',
+          invalidDescription:
+            'Перевірте адресу або попросіть дитину створити нове запрошення.',
+          wrongRoleTitle: 'Потрібен профіль батька',
+          wrongRoleDescription:
+            'Це запрошення не можна прийняти з профілю учня, учителя або адміністратора.',
+          home: 'На головну',
+          workspace: 'До свого простору',
+        },
+        connect: {
+          eyebrow: 'Підтвердження зв’язку',
+          noInvitationTitle: 'Немає активного запрошення',
+          noInvitationDescription:
+            'Відкрийте особисте посилання, яке створила дитина.',
+          loadingTitle: 'Перевіряємо запрошення',
+          loadingDescription: 'Це займе лише мить.',
+          invalidTitle: 'Запрошення недійсне',
+          invalidDescription:
+            'Посилання вже використано, відкликано або строк його дії завершився.',
+          confirmDescription:
+            'Підтвердіть, що хочете підключити цю дитину до свого сімейного огляду.',
+          confirm: 'Підключити дитину',
+          connecting: 'Підключаємо…',
+          alreadyLinked: 'Ця дитина вже підключена до вашого профілю.',
+          openOverview: 'Відкрити сімейний огляд',
+          privacy:
+            'Після підтвердження ви бачитимете лише дозволену інформацію цієї дитини.',
+          limitReached:
+            'До профілю дитини вже підключено максимальну кількість дорослих.',
+        },
+        parent: {
+          unlink: 'Від’єднатися від дитини',
+          confirmUnlink: 'Підтвердити від’єднання',
+          cancelUnlink: 'Скасувати',
+          unlinkError: 'Не вдалося від’єднати профіль. Спробуйте ще раз.',
+        },
+        errors: {
+          network: 'Не вдалося з’єднатися із сервером.',
+          unexpected: 'Щось пішло не так. Спробуйте ще раз.',
+        },
+      },
       quote: {
         text: 'Минуле — твій компас. Майбутнє — твій квест.',
       },
@@ -1443,6 +1520,83 @@ const resources = {
             'A child will connect to your account through a personal invitation.',
           unavailable:
             'We will implement the invitation flow as a separate next step.',
+        },
+      },
+      parentLinks: {
+        student: {
+          title: 'Parents and guardians',
+          description:
+            'Manage the adults who can access your family learning overview.',
+          loading: 'Loading connected adults…',
+          loadError: 'Could not load the list.',
+          empty: 'No adult is connected to this profile yet.',
+          linkedAt: 'Connected {{date}}',
+          remove: 'Disconnect {{name}}',
+          confirmRemove: 'Disconnect',
+          cancelRemove: 'Cancel disconnection',
+          invitationTitle: 'Invite an adult',
+          invitationDescription:
+            'Create a one-time link and share it with a parent or guardian.',
+          linkLabel: 'Invitation link',
+          copy: 'Copy',
+          copied: 'Copied',
+          revealWarning:
+            'Save the link now: the full token will not be shown again after the page reloads.',
+          activeUntil: 'The active invitation is valid until {{date}}.',
+          createInvitation: 'Create invitation',
+          replaceInvitation: 'Create a new link',
+          revokeInvitation: 'Revoke invitation',
+          limitReached:
+            'Limit reached: no more than four adults can be connected to a profile.',
+        },
+        landing: {
+          eyebrow: 'Secure family invitation',
+          title: 'You were invited to Obriy',
+          description:
+            'Sign in or create a parent account to review the invitation and confirm the connection.',
+          login: 'Sign in',
+          register: 'Create parent profile',
+          privacy:
+            'The child’s details appear only after signing in as a parent and confirming separately.',
+          invalidTitle: 'Invalid link',
+          invalidDescription:
+            'Check the address or ask the child to create a new invitation.',
+          wrongRoleTitle: 'A parent profile is required',
+          wrongRoleDescription:
+            'This invitation cannot be accepted from a student, teacher, or administrator profile.',
+          home: 'Back home',
+          workspace: 'Open my workspace',
+        },
+        connect: {
+          eyebrow: 'Confirm connection',
+          noInvitationTitle: 'No active invitation',
+          noInvitationDescription:
+            'Open the personal link created by the child.',
+          loadingTitle: 'Checking invitation',
+          loadingDescription: 'This will only take a moment.',
+          invalidTitle: 'Invalid invitation',
+          invalidDescription:
+            'The link was already used, revoked, or has expired.',
+          confirmDescription:
+            'Confirm that you want to connect this child to your family overview.',
+          confirm: 'Connect child',
+          connecting: 'Connecting…',
+          alreadyLinked: 'This child is already connected to your profile.',
+          openOverview: 'Open family overview',
+          privacy:
+            'After confirmation, you will see only the information permitted for this child.',
+          limitReached:
+            'The maximum number of adults is already connected to this child.',
+        },
+        parent: {
+          unlink: 'Disconnect from child',
+          confirmUnlink: 'Confirm disconnection',
+          cancelUnlink: 'Cancel',
+          unlinkError: 'Could not disconnect the profile. Try again.',
+        },
+        errors: {
+          network: 'Could not connect to the server.',
+          unexpected: 'Something went wrong. Try again.',
         },
       },
       quote: {

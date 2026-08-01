@@ -226,6 +226,41 @@
   background: var(--color-surface-raised);
   transform: translateY(-1px);
 }
+.childActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.unlinkConfirmation {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dangerButton,
+.textDangerButton {
+  min-height: 40px;
+  padding: 0 13px;
+  color: var(--color-danger);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dangerButton {
+  background: color-mix(in srgb, var(--color-danger), transparent 91%);
+  border: 1px solid var(--color-danger);
+}
+.textDangerButton {
+  background: transparent;
+  border: 0;
+}
+.unlinkError {
+  margin: -12px 0 0;
+  color: var(--color-danger);
+  font-size: 12px;
+}
 .spinner {
   width: 28px;
   height: 28px;

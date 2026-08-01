@@ -98,6 +98,29 @@ async function prepareStudentSession(
       }),
     })
   })
+
+  await page.route('**/parent-links/me/guardians', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          id: 'guardian-olena',
+          displayName: 'Олена Косміна',
+          avatarUrl: null,
+          linkedAt: '2026-07-20T12:00:00.000Z',
+        },
+      ]),
+    })
+  })
+
+  await page.route('**/parent-links/invitation', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: 'null',
+    })
+  })
 }
 
 async function expectNoHorizontalOverflow(page: Page) {

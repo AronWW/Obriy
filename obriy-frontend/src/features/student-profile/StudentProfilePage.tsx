@@ -21,6 +21,7 @@ import {
   type UpdateStudentProfileInput,
 } from './api/student-profile.api'
 import styles from './StudentProfilePage.module.css'
+import { StudentGuardiansSection } from '../parent-links/components/StudentGuardiansSection'
 
 type StudentProfileFormValues = UpdateStudentProfileInput
 
@@ -329,6 +330,8 @@ export function StudentProfilePage() {
                 <p>{t('studentProfile.collection.empty')}</p>
               </div>
             </section>
+
+            <StudentGuardiansSection />
           </main>
 
           <div className={styles.sideColumn}>

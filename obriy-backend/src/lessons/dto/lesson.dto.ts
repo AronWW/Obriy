@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LessonStatus, Locale } from '@prisma/client';
+import {
+  StudentLessonProgressDto,
+  StudentLessonTaskDto,
+} from './lesson-task.dto';
 
 export class LessonClassLinkDto {
   @ApiProperty()
@@ -98,5 +102,78 @@ export class ClassLessonItemDto {
 
   constructor(data: ClassLessonItemDto) {
     Object.assign(this, data);
+  }
+}
+
+export class StudentLessonSummaryDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty({ maxLength: 160 })
+  title: string;
+
+  @ApiProperty({ maxLength: 500 })
+  summary: string;
+
+  @ApiProperty({ enum: Locale })
+  contentLocale: Locale;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 180, nullable: true })
+  estimatedMinutes: number | null;
+
+  @ApiProperty({ minimum: 1 })
+  position: number;
+
+  @ApiProperty({ type: StudentLessonProgressDto })
+  progress: StudentLessonProgressDto;
+
+  constructor(data: StudentLessonSummaryDto) {
+    Object.assign(this, data);
+  }
+}
+
+export class StudentLessonClassDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  constructor(data: StudentLessonClassDto) {
+    Object.assign(this, data);
+  }
+}
+
+export class StudentLessonTeacherDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  displayName: string;
+
+  constructor(data: StudentLessonTeacherDto) {
+    Object.assign(this, data);
+  }
+}
+
+export class StudentLessonDetailDto extends StudentLessonSummaryDto {
+  @ApiProperty()
+  content: string;
+
+  @ApiProperty({ type: StudentLessonClassDto })
+  class: StudentLessonClassDto;
+
+  @ApiProperty({ type: StudentLessonTeacherDto })
+  teacher: StudentLessonTeacherDto;
+
+  @ApiProperty({ type: StudentLessonTaskDto, isArray: true })
+  tasks: StudentLessonTaskDto[];
+
+  constructor(data: StudentLessonDetailDto) {
+    super(data);
+    this.content = data.content;
+    this.class = data.class;
+    this.teacher = data.teacher;
+    this.tasks = data.tasks;
   }
 }

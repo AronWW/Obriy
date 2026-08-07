@@ -1,4 +1,4 @@
-import { Check, Clipboard, KeyRound, RefreshCw } from 'lucide-react'
+import { Check, Clipboard, KeyRound, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ClassInvite } from '../model/class.types'
@@ -6,14 +6,16 @@ import styles from '../ClassesPage.module.css'
 
 export function InvitePanel({
   invite,
-  isRefreshing,
-  onRefresh,
+  isError = false,
+  isLoading = false,
+  onRetry,
 }: {
   invite: ClassInvite | null
-  isRefreshing: boolean
-  onRefresh?: () => void
+  isError?: boolean
+  isLoading?: boolean
+  onRetry?: () => void
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
   const copyCode = async () => {
@@ -40,7 +42,27 @@ export function InvitePanel({
         </div>
       </div>
 
-      {invite ? (
+      {isLoading ? (
+        <p className={styles.quietCopy}>
+          {t('classes.teacher.invite.loading')}
+        </p>
+      ) : isError ? (
+        <div className={styles.inviteStatus}>
+          <p className={styles.errorStatus} role="alert">
+            {t('classes.teacher.invite.error')}
+          </p>
+          {onRetry && (
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={onRetry}
+            >
+              <RotateCcw size={16} aria-hidden="true" />
+              {t('classes.common.retry')}
+            </button>
+          )}
+        </div>
+      ) : invite ? (
         <>
           <div className={styles.inviteCodeRow}>
             <code>{invite.code}</code>
@@ -55,33 +77,11 @@ export function InvitePanel({
                 : t('classes.teacher.invite.copy')}
             </button>
           </div>
-          <p className={styles.inviteExpiry}>
-            {t('classes.teacher.invite.expires', {
-              date: new Intl.DateTimeFormat(i18n.language, {
-                day: 'numeric',
-                month: 'long',
-              }).format(new Date(invite.expiresAt)),
-            })}
-          </p>
         </>
       ) : (
         <p className={styles.quietCopy}>
-          {t('classes.teacher.invite.hidden')}
+          {t('classes.teacher.invite.error')}
         </p>
-      )}
-
-      {onRefresh && (
-        <button
-          className={styles.secondaryButton}
-          type="button"
-          disabled={isRefreshing}
-          onClick={onRefresh}
-        >
-          <RefreshCw size={16} aria-hidden="true" />
-          {isRefreshing
-            ? t('classes.teacher.invite.refreshing')
-            : t('classes.teacher.invite.refresh')}
-        </button>
       )}
     </section>
   )

@@ -27,7 +27,7 @@ export function TeacherClassesPage() {
     register,
     reset,
   } = useForm<CreateClassInput>({
-    defaultValues: { gradeLevel: 5, name: '' },
+    defaultValues: { name: '' },
   })
 
   const classesQuery = useQuery({
@@ -40,7 +40,7 @@ export function TeacherClassesPage() {
     onSuccess: (created) => {
       setCreatedInvite(created.invite)
       setIsCreating(false)
-      reset({ gradeLevel: 5, name: '' })
+      reset({ name: '' })
       void queryClient.invalidateQueries({ queryKey: ['classes', 'teacher'] })
     },
   })
@@ -48,7 +48,6 @@ export function TeacherClassesPage() {
   const onSubmit = handleSubmit((input) => {
     setCreatedInvite(null)
     createMutation.mutate({
-      gradeLevel: Number(input.gradeLevel),
       name: input.name.trim(),
     })
   })
@@ -82,7 +81,6 @@ export function TeacherClassesPage() {
         {createdInvite && (
           <InvitePanel
             invite={createdInvite}
-            isRefreshing={false}
           />
         )}
 
@@ -97,6 +95,9 @@ export function TeacherClassesPage() {
                 <h2 id="create-class-title">
                   {t('classes.teacher.create.title')}
                 </h2>
+                <span className={styles.formDescription}>
+                  {t('classes.teacher.create.description')}
+                </span>
               </div>
               <button
                 className={styles.iconButton}
@@ -136,23 +137,6 @@ export function TeacherClassesPage() {
                       {errors.name.message}
                     </small>
                   )}
-                </label>
-                <label>
-                  <span>{t('classes.teacher.create.grade')}</span>
-                  <select
-                    {...register('gradeLevel', {
-                      required: true,
-                      valueAsNumber: true,
-                    })}
-                  >
-                    {Array.from({ length: 12 }, (_, index) => index + 1).map(
-                      (grade) => (
-                        <option value={grade} key={grade}>
-                          {t('classes.common.grade', { grade })}
-                        </option>
-                      ),
-                    )}
-                  </select>
                 </label>
               </fieldset>
 
@@ -207,14 +191,9 @@ export function TeacherClassesPage() {
             {classesQuery.data.map((classroom) => (
               <article className={styles.classCard} key={classroom.id}>
                 <div className={styles.classSeal} aria-hidden="true">
-                  {classroom.gradeLevel}
+                  <School size={24} />
                 </div>
                 <div className={styles.classCardCopy}>
-                  <p>
-                    {t('classes.common.grade', {
-                      grade: classroom.gradeLevel,
-                    })}
-                  </p>
                   <h2>{classroom.name}</h2>
                   <span>
                     <UsersRound size={15} aria-hidden="true" />

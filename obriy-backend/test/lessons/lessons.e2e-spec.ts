@@ -46,21 +46,21 @@ describe('Teacher lessons (e2e)', () => {
         data: {
           teacherId: ids.teacher,
           name: 'First class',
-          gradeLevel: 8,
+          inviteCode: 'LESS-AAA2',
         },
       }),
       context.prisma.class.create({
         data: {
           teacherId: ids.teacher,
           name: 'Second class',
-          gradeLevel: 9,
+          inviteCode: 'LESS-BBB2',
         },
       }),
       context.prisma.class.create({
         data: {
           teacherId: ids.otherTeacher,
           name: 'Foreign class',
-          gradeLevel: 8,
+          inviteCode: 'LESS-CCC2',
         },
       }),
     ]);

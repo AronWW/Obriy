@@ -3,7 +3,13 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { LessonStatus, Locale, UserRole, UserStatus } from '@prisma/client';
+import {
+  LessonStatus,
+  LessonTaskSubmissionStatus,
+  Locale,
+  UserRole,
+  UserStatus,
+} from '@prisma/client';
 import type { PrismaService } from '../../../prisma/prisma.service';
 import type { AuthUser } from '../../../src/common/types/auth-user.type';
 import { LessonsService } from '../../../src/lessons/lessons.service';
@@ -16,6 +22,9 @@ describe('LessonsService access and draft boundaries', () => {
   >();
   const lessonFindFirst = jest.fn();
   const lessonFindMany = jest.fn();
+  const classLessonFindMany = jest.fn();
+  const classLessonFindFirst = jest.fn();
+  const lessonTaskFindMany = jest.fn();
   const prisma = {
     user: { findUnique: userFindUnique },
     lesson: {
@@ -23,6 +32,11 @@ describe('LessonsService access and draft boundaries', () => {
       findFirst: lessonFindFirst,
       findMany: lessonFindMany,
     },
+    classLesson: {
+      findMany: classLessonFindMany,
+      findFirst: classLessonFindFirst,
+    },
+    lessonTask: { findMany: lessonTaskFindMany },
   } as unknown as PrismaService;
   const service = new LessonsService(prisma);
   const teacher: AuthUser = {
@@ -125,5 +139,269 @@ describe('LessonsService access and draft boundaries', () => {
         where: { id: 'foreign-lesson', teacherId: teacher.id },
       }),
     );
+  });
+
+  it('rejects non-students before reading student class data', async () => {
+    await expect(service.listMyStudentLessons(teacher)).rejects.toMatchObject({
+      response: { code: 'ROLE_FORBIDDEN' },
+    });
+    expect(userFindUnique).not.toHaveBeenCalled();
+    expect(classLessonFindMany).not.toHaveBeenCalled();
+  });
+
+  it('returns an empty lesson list when the student has no class', async () => {
+    userFindUnique.mockResolvedValue({ studentClassId: null });
+
+    await expect(service.listMyStudentLessons(student)).resolves.toEqual([]);
+    expect(userFindUnique).toHaveBeenCalledWith({
+      where: { id: student.id },
+      select: { studentClassId: true },
+    });
+    expect(classLessonFindMany).not.toHaveBeenCalled();
+  });
+
+  it('lists only explicitly selected published lesson summaries in stable order', async () => {
+    userFindUnique.mockResolvedValue({ studentClassId: 'class-1' });
+    classLessonFindMany.mockResolvedValue([
+      {
+        lessonId: 'lesson-a',
+        position: 1,
+        lesson: {
+          id: 'lesson-a',
+          title: 'First lesson',
+          summary: 'First summary',
+          contentLocale: Locale.UK,
+          estimatedMinutes: null,
+          content: 'must not leak',
+          teacherId: 'must not leak',
+        },
+      },
+      {
+        lessonId: 'lesson-b',
+        position: 2,
+        lesson: {
+          id: 'lesson-b',
+          title: 'Second lesson',
+          summary: 'Second summary',
+          contentLocale: Locale.EN,
+          estimatedMinutes: 20,
+        },
+      },
+    ]);
+    lessonTaskFindMany.mockResolvedValue([
+      {
+        lessonId: 'lesson-a',
+        submissions: [{ status: LessonTaskSubmissionStatus.SUBMITTED }],
+      },
+      {
+        lessonId: 'lesson-b',
+        submissions: [{ status: LessonTaskSubmissionStatus.APPROVED }],
+      },
+    ]);
+
+    await expect(service.listMyStudentLessons(student)).resolves.toEqual([
+      {
+        id: 'lesson-a',
+        title: 'First lesson',
+        summary: 'First summary',
+        contentLocale: Locale.UK,
+        estimatedMinutes: null,
+        position: 1,
+        progress: {
+          status: 'IN_PROGRESS',
+          requiredTotal: 1,
+          approved: 0,
+          submitted: 1,
+          returned: 0,
+        },
+      },
+      {
+        id: 'lesson-b',
+        title: 'Second lesson',
+        summary: 'Second summary',
+        contentLocale: Locale.EN,
+        estimatedMinutes: 20,
+        position: 2,
+        progress: {
+          status: 'COMPLETED',
+          requiredTotal: 1,
+          approved: 1,
+          submitted: 0,
+          returned: 0,
+        },
+      },
+    ]);
+
+    expect(classLessonFindMany).toHaveBeenCalledWith({
+      where: {
+        classId: 'class-1',
+        publishedAt: { not: null },
+        lesson: { status: LessonStatus.PUBLISHED },
+      },
+      orderBy: [{ position: 'asc' }, { lessonId: 'asc' }],
+      select: {
+        lessonId: true,
+        position: true,
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            summary: true,
+            contentLocale: true,
+            estimatedMinutes: true,
+          },
+        },
+      },
+    });
+    expect(lessonTaskFindMany).toHaveBeenCalledWith({
+      where: {
+        lessonId: { in: ['lesson-a', 'lesson-b'] },
+        isRequired: true,
+      },
+      select: {
+        lessonId: true,
+        submissions: {
+          where: { studentId: student.id, classId: 'class-1' },
+          take: 1,
+          select: { status: true },
+        },
+      },
+    });
+  });
+
+  it('returns a non-disclosing 404 when a student lesson is unavailable', async () => {
+    userFindUnique.mockResolvedValue({ studentClassId: 'class-1' });
+    classLessonFindFirst.mockResolvedValue(null);
+
+    await expect(
+      service.findMyStudentLesson(student, 'hidden-lesson'),
+    ).rejects.toMatchObject({ response: { code: 'LESSON_NOT_FOUND' } });
+    expect(classLessonFindFirst).toHaveBeenCalledWith({
+      where: {
+        classId: 'class-1',
+        lessonId: 'hidden-lesson',
+        publishedAt: { not: null },
+        lesson: { status: LessonStatus.PUBLISHED },
+      },
+      select: {
+        position: true,
+        class: { select: { id: true, name: true } },
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            summary: true,
+            content: true,
+            contentLocale: true,
+            estimatedMinutes: true,
+            teacher: {
+              select: {
+                id: true,
+                profile: { select: { displayName: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it('maps a student lesson detail explicitly without teacher email', async () => {
+    const content = 'First paragraph\n\n  Second paragraph  ';
+    userFindUnique.mockResolvedValue({ studentClassId: 'class-1' });
+    classLessonFindFirst.mockResolvedValue({
+      position: 3,
+      class: { id: 'class-1', name: 'Robotics' },
+      lesson: {
+        id: 'lesson-1',
+        title: 'Circuits',
+        summary: 'A practical introduction',
+        content,
+        contentLocale: Locale.EN,
+        estimatedMinutes: 15,
+        teacher: {
+          id: 'teacher-1',
+          email: 'must-not-leak@example.com',
+          profile: { displayName: 'Ms Rivera' },
+        },
+      },
+    });
+    lessonTaskFindMany.mockResolvedValue([
+      {
+        id: 'task-required',
+        title: 'Required response',
+        prompt: 'Explain the circuit.',
+        position: 1,
+        isRequired: true,
+        submissions: [],
+      },
+      {
+        id: 'task-optional',
+        title: 'Optional reflection',
+        prompt: 'What surprised you?',
+        position: 2,
+        isRequired: false,
+        submissions: [
+          {
+            id: 'submission-1',
+            taskId: 'task-optional',
+            answerText: 'The switch.',
+            status: LessonTaskSubmissionStatus.APPROVED,
+            teacherComment: null,
+            submittedAt: new Date('2026-08-01T10:00:00.000Z'),
+            reviewedAt: new Date('2026-08-01T11:00:00.000Z'),
+            updatedAt: new Date('2026-08-01T11:00:00.000Z'),
+          },
+        ],
+      },
+    ]);
+
+    await expect(
+      service.findMyStudentLesson(student, 'lesson-1'),
+    ).resolves.toEqual({
+      id: 'lesson-1',
+      title: 'Circuits',
+      summary: 'A practical introduction',
+      contentLocale: Locale.EN,
+      estimatedMinutes: 15,
+      position: 3,
+      progress: {
+        status: 'NOT_STARTED',
+        requiredTotal: 1,
+        approved: 0,
+        submitted: 0,
+        returned: 0,
+      },
+      content,
+      class: { id: 'class-1', name: 'Robotics' },
+      teacher: { id: 'teacher-1', displayName: 'Ms Rivera' },
+      tasks: [
+        {
+          id: 'task-required',
+          title: 'Required response',
+          prompt: 'Explain the circuit.',
+          position: 1,
+          isRequired: true,
+          submission: null,
+        },
+        {
+          id: 'task-optional',
+          title: 'Optional reflection',
+          prompt: 'What surprised you?',
+          position: 2,
+          isRequired: false,
+          submission: {
+            id: 'submission-1',
+            taskId: 'task-optional',
+            answerText: 'The switch.',
+            status: LessonTaskSubmissionStatus.APPROVED,
+            teacherComment: null,
+            submittedAt: new Date('2026-08-01T10:00:00.000Z'),
+            reviewedAt: new Date('2026-08-01T11:00:00.000Z'),
+            updatedAt: new Date('2026-08-01T11:00:00.000Z'),
+          },
+        },
+      ],
+    });
   });
 });

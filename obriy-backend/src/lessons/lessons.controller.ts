@@ -26,6 +26,8 @@ import {
   ClassLessonItemDto,
   LessonDetailDto,
   LessonSummaryDto,
+  StudentLessonDetailDto,
+  StudentLessonSummaryDto,
 } from './dto/lesson.dto';
 import { ListLessonsQueryDto } from './dto/list-lessons-query.dto';
 import { MoveClassLessonDto } from './dto/move-class-lesson.dto';
@@ -105,6 +107,31 @@ export class LessonsController {
     @Param('lessonId') lessonId: string,
   ): Promise<LessonDetailDto> {
     return this.lessonsService.restoreMyLesson(user, lessonId);
+  }
+}
+
+@UseGuards(JwtAuthGuard)
+@ApiTags('Student lessons')
+@ApiBearerAuth()
+@Controller('classes/me/lessons')
+export class StudentLessonsController {
+  constructor(private readonly lessonsService: LessonsService) {}
+
+  @ApiOkResponse({ type: StudentLessonSummaryDto, isArray: true })
+  @Get()
+  listMyClassLessons(
+    @CurrentUser() user: AuthUser,
+  ): Promise<StudentLessonSummaryDto[]> {
+    return this.lessonsService.listMyStudentLessons(user);
+  }
+
+  @ApiOkResponse({ type: StudentLessonDetailDto })
+  @Get(':lessonId')
+  findMyClassLesson(
+    @CurrentUser() user: AuthUser,
+    @Param('lessonId') lessonId: string,
+  ): Promise<StudentLessonDetailDto> {
+    return this.lessonsService.findMyStudentLesson(user, lessonId);
   }
 }
 

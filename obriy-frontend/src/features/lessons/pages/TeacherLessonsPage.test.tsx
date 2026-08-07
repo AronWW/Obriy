@@ -35,6 +35,14 @@ describe('teacher lesson workspace', () => {
       status: 'authenticated',
       user: teacher,
     })
+    server.use(
+      http.get(`${API_BASE_URL}/lessons/:lessonId/tasks`, () =>
+        HttpResponse.json([]),
+      ),
+      http.get(`${API_BASE_URL}/lessons/:lessonId/task-submissions`, () =>
+        HttpResponse.json([]),
+      ),
+    )
   })
 
   it('renders large library rows and confirms archive inside the app', async () => {
@@ -69,7 +77,7 @@ describe('teacher lesson workspace', () => {
     await waitFor(() => expect(archiveCount).toBe(1))
   })
 
-  it('does not create an empty or locale-only draft and autosaves after text input', async () => {
+  it('does not create an empty draft and autosaves after text input', async () => {
     let createCount = 0
     let receivedBody: unknown
     const createdLesson = lessonDetail({
@@ -94,12 +102,11 @@ describe('teacher lesson workspace', () => {
 
     renderLessonEditor('/app/teacher/lessons/new')
 
-    const localeSelect = await screen.findByRole('combobox', {
-      name: 'Material language',
-    })
-    fireEvent.change(localeSelect, { target: { value: 'EN' } })
     await pauseForAutosave()
     expect(createCount).toBe(0)
+    expect(
+      screen.queryByRole('combobox', { name: 'Material language' }),
+    ).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByRole('textbox', { name: /^Lesson title/ }), {
       target: { value: 'The first settlement' },
@@ -108,7 +115,7 @@ describe('teacher lesson workspace', () => {
     await waitFor(() => expect(createCount).toBe(1), { timeout: 3000 })
     expect(receivedBody).toEqual({
       content: '',
-      contentLocale: 'EN',
+      contentLocale: 'UK',
       estimatedMinutes: null,
       summary: '',
       title: 'The first settlement',
@@ -119,6 +126,10 @@ describe('teacher lesson workspace', () => {
   it('keeps published edits local until the teacher explicitly saves', async () => {
     const user = userEvent.setup()
     let patchCount = 0
+    let releaseFirstPatch: (() => void) | undefined
+    const firstPatchGate = new Promise<void>((resolve) => {
+      releaseFirstPatch = resolve
+    })
     const lesson = lessonDetail({ status: 'PUBLISHED' })
 
     server.use(
@@ -129,6 +140,9 @@ describe('teacher lesson workspace', () => {
       http.patch(`${API_BASE_URL}/lessons/lesson-1`, async ({ request }) => {
         patchCount += 1
         const body = (await request.json()) as Record<string, unknown>
+        if (patchCount === 1) {
+          await firstPatchGate
+        }
         return HttpResponse.json({ ...lesson, ...body })
       }),
     )
@@ -145,6 +159,13 @@ describe('teacher lesson workspace', () => {
 
     await user.click(screen.getAllByRole('button', { name: 'Save changes' })[0])
     await waitFor(() => expect(patchCount).toBe(1))
+    await user.type(titleInput, ' typed during save')
+    releaseFirstPatch?.()
+    await pauseForAutosave()
+    expect(patchCount).toBe(1)
+
+    await user.click(screen.getAllByRole('button', { name: 'Save changes' })[0])
+    await waitFor(() => expect(patchCount).toBe(2))
   })
 
   it('keeps the created draft id when a later autosave fails', async () => {
@@ -218,11 +239,9 @@ describe('teacher lesson workspace', () => {
           {
             id: 'class-1',
             name: 'Grade 9-A',
-            gradeLevel: 9,
             studentCount: 20,
             createdAt: '2026-08-01T10:00:00.000Z',
             updatedAt: '2026-08-01T10:00:00.000Z',
-            activeInviteExpiresAt: null,
           },
         ]),
       ),
@@ -249,6 +268,55 @@ describe('teacher lesson workspace', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
 
     expect(await within(dialog).findByRole('alert')).toBeInTheDocument()
+  })
+
+  it('does not allow discarding while the first draft save is in flight', async () => {
+    const user = userEvent.setup()
+    let releaseCreate: (() => void) | undefined
+    const createGate = new Promise<void>((resolve) => {
+      releaseCreate = resolve
+    })
+    const createdLesson = lessonDetail({
+      classLinks: [],
+      content: '',
+      summary: '',
+      title: 'Pending draft',
+    })
+
+    server.use(
+      http.get(`${API_BASE_URL}/classes`, () => HttpResponse.json([])),
+      http.post(`${API_BASE_URL}/lessons`, async () => {
+        await createGate
+        return HttpResponse.json(createdLesson, { status: 201 })
+      }),
+      http.get(`${API_BASE_URL}/lessons/lesson-1`, () =>
+        HttpResponse.json(createdLesson),
+      ),
+    )
+
+    renderLessonEditor('/app/teacher/lessons/new')
+    fireEvent.change(
+      await screen.findByRole('textbox', { name: /^Lesson title/ }),
+      { target: { value: 'Pending draft' } },
+    )
+    await screen.findByRole(
+      'button',
+      { name: 'Saving…' },
+      { timeout: 3000 },
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Back to lesson library' }),
+    )
+
+    const dialog = screen.getByRole('alertdialog', {
+      name: 'Leave without saving?',
+    })
+    expect(
+      within(dialog).getByRole('button', { name: 'Leave without saving' }),
+    ).toBeDisabled()
+
+    releaseCreate?.()
+    await waitFor(() => expect(dialog).not.toBeInTheDocument())
   })
 })
 

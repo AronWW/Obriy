@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
-import { createHash, randomInt } from 'node:crypto';
+import { randomInt } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../common/types/auth-user.type';
 import {
@@ -22,7 +22,6 @@ import { UpdateClassDto } from './dto/update-class.dto';
 
 const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const INVITE_LENGTH = 8;
-const INVITE_LIFETIME_DAYS = 7;
 
 @Injectable()
 export class ClassesService {
@@ -35,59 +34,34 @@ export class ClassesService {
     this.assertRole(user, UserRole.TEACHER);
 
     const code = this.generateInviteCode();
-    const codeHash = this.hashInviteCode(code);
-    const expiresAt = this.createInviteExpiry();
-
-    const created = await this.prisma.$transaction(async (transaction) => {
-      const classroom = await transaction.class.create({
-        data: {
-          teacherId: user.id,
-          name: dto.name.trim(),
-          gradeLevel: dto.gradeLevel,
-        },
-        include: {
-          _count: { select: { students: true } },
-        },
-      });
-
-      await transaction.classInvite.create({
-        data: {
-          classId: classroom.id,
-          codeHash,
-          expiresAt,
-        },
-      });
-
-      return classroom;
+    const created = await this.prisma.class.create({
+      data: {
+        teacherId: user.id,
+        name: dto.name.trim(),
+        inviteCode: code,
+      },
+      include: {
+        _count: { select: { students: true } },
+      },
     });
 
     return new CreatedClassDto({
-      class: this.toClassSummary(created, expiresAt),
-      invite: new ClassInviteDto({ code, expiresAt }),
+      class: this.toClassSummary(created),
+      invite: new ClassInviteDto({ code }),
     });
   }
 
   async listMyClasses(user: AuthUser): Promise<ClassSummaryDto[]> {
     this.assertRole(user, UserRole.TEACHER);
-    const now = new Date();
-
     const classes = await this.prisma.class.findMany({
       where: { teacherId: user.id },
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
       include: {
         _count: { select: { students: true } },
-        invites: {
-          where: { revokedAt: null, expiresAt: { gt: now } },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: { expiresAt: true },
-        },
       },
     });
 
-    return classes.map((classroom) =>
-      this.toClassSummary(classroom, classroom.invites[0]?.expiresAt ?? null),
-    );
+    return classes.map((classroom) => this.toClassSummary(classroom));
   }
 
   async findOwnedClass(
@@ -96,10 +70,7 @@ export class ClassesService {
   ): Promise<ClassSummaryDto> {
     this.assertRole(user, UserRole.TEACHER);
     const classroom = await this.findOwnedClassRecord(user.id, classId);
-    return this.toClassSummary(
-      classroom,
-      classroom.invites[0]?.expiresAt ?? null,
-    );
+    return this.toClassSummary(classroom);
   }
 
   async updateOwnedClass(
@@ -110,62 +81,23 @@ export class ClassesService {
     this.assertRole(user, UserRole.TEACHER);
     await this.findOwnedClassRecord(user.id, classId);
 
-    const classroom = await this.prisma.$transaction(async (transaction) => {
-      const updated = await transaction.class.update({
-        where: { id: classId },
-        data: {
-          name: dto.name?.trim(),
-          gradeLevel: dto.gradeLevel,
-        },
-        include: {
-          _count: { select: { students: true } },
-          invites: {
-            where: { revokedAt: null, expiresAt: { gt: new Date() } },
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-            select: { expiresAt: true },
-          },
-        },
-      });
-
-      if (dto.gradeLevel !== undefined) {
-        await transaction.profile.updateMany({
-          where: { user: { studentClassId: classId } },
-          data: { gradeLevel: dto.gradeLevel },
-        });
-      }
-
-      return updated;
+    const classroom = await this.prisma.class.update({
+      where: { id: classId },
+      data: {
+        name: dto.name?.trim(),
+      },
+      include: {
+        _count: { select: { students: true } },
+      },
     });
 
-    return this.toClassSummary(
-      classroom,
-      classroom.invites[0]?.expiresAt ?? null,
-    );
+    return this.toClassSummary(classroom);
   }
 
-  async createInvite(user: AuthUser, classId: string): Promise<ClassInviteDto> {
+  async findInvite(user: AuthUser, classId: string): Promise<ClassInviteDto> {
     this.assertRole(user, UserRole.TEACHER);
-    await this.findOwnedClassRecord(user.id, classId);
-
-    const code = this.generateInviteCode();
-    const expiresAt = this.createInviteExpiry();
-
-    await this.prisma.$transaction([
-      this.prisma.classInvite.updateMany({
-        where: { classId, revokedAt: null },
-        data: { revokedAt: new Date() },
-      }),
-      this.prisma.classInvite.create({
-        data: {
-          classId,
-          codeHash: this.hashInviteCode(code),
-          expiresAt,
-        },
-      }),
-    ]);
-
-    return new ClassInviteDto({ code, expiresAt });
+    const classroom = await this.findOwnedClassRecord(user.id, classId);
+    return new ClassInviteDto({ code: classroom.inviteCode });
   }
 
   async listOwnedClassMembers(
@@ -215,53 +147,33 @@ export class ClassesService {
       });
     }
 
-    const codeHash = this.hashInviteCode(this.normalizeInviteCode(rawCode));
-    const invite = await this.prisma.classInvite.findUnique({
-      where: { codeHash },
+    const classroom = await this.prisma.class.findUnique({
+      where: { inviteCode: this.normalizeInviteCode(rawCode) },
       include: {
-        class: {
-          include: {
-            teacher: {
-              select: {
-                id: true,
-                profile: { select: { displayName: true } },
-              },
-            },
-            _count: { select: { students: true } },
+        teacher: {
+          select: {
+            id: true,
+            profile: { select: { displayName: true } },
           },
         },
+        _count: { select: { students: true } },
       },
     });
 
-    if (
-      !invite ||
-      invite.revokedAt ||
-      invite.expiresAt.getTime() <= Date.now()
-    ) {
+    if (!classroom) {
       throw new NotFoundException({
         code: 'INVALID_CLASS_INVITE',
-        message: 'Invitation code is invalid or expired',
+        message: 'Invitation code is invalid',
       });
     }
 
-    const updateResult = await this.prisma.$transaction(async (transaction) => {
-      const result = await transaction.user.updateMany({
-        where: {
-          id: user.id,
-          role: UserRole.STUDENT,
-          studentClassId: null,
-        },
-        data: { studentClassId: invite.classId },
-      });
-
-      if (result.count === 1) {
-        await transaction.profile.update({
-          where: { userId: user.id },
-          data: { gradeLevel: invite.class.gradeLevel },
-        });
-      }
-
-      return result;
+    const updateResult = await this.prisma.user.updateMany({
+      where: {
+        id: user.id,
+        role: UserRole.STUDENT,
+        studentClassId: null,
+      },
+      data: { studentClassId: classroom.id },
     });
 
     if (updateResult.count !== 1) {
@@ -271,13 +183,10 @@ export class ClassesService {
       });
     }
 
-    return this.toStudentClass(
-      {
-        ...invite.class,
-        _count: { students: invite.class._count.students + 1 },
-      },
-      null,
-    );
+    return this.toStudentClass({
+      ...classroom,
+      _count: { students: classroom._count.students + 1 },
+    });
   }
 
   async findMyClass(user: AuthUser): Promise<StudentClassDto | null> {
@@ -304,7 +213,7 @@ export class ClassesService {
       return null;
     }
 
-    return this.toStudentClass(student.studentClass, null);
+    return this.toStudentClass(student.studentClass);
   }
 
   async listMyClassmates(user: AuthUser): Promise<ClassMemberDto[]> {
@@ -391,12 +300,6 @@ export class ClassesService {
       where: { id: classId, teacherId },
       include: {
         _count: { select: { students: true } },
-        invites: {
-          where: { revokedAt: null, expiresAt: { gt: new Date() } },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: { expiresAt: true },
-        },
       },
     });
 
@@ -427,49 +330,39 @@ export class ClassesService {
     }
   }
 
-  private toClassSummary(
-    classroom: {
-      id: string;
-      name: string;
-      gradeLevel: number;
-      createdAt: Date;
-      updatedAt: Date;
-      _count: { students: number };
-    },
-    activeInviteExpiresAt: Date | null,
-  ): ClassSummaryDto {
+  private toClassSummary(classroom: {
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: { students: number };
+  }): ClassSummaryDto {
     return new ClassSummaryDto({
       id: classroom.id,
       name: classroom.name,
-      gradeLevel: classroom.gradeLevel,
       studentCount: classroom._count.students,
       createdAt: classroom.createdAt,
       updatedAt: classroom.updatedAt,
-      activeInviteExpiresAt,
     });
   }
 
-  private toStudentClass(
-    classroom: {
+  private toStudentClass(classroom: {
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: { students: number };
+    teacher: {
       id: string;
-      name: string;
-      gradeLevel: number;
-      createdAt: Date;
-      updatedAt: Date;
-      _count: { students: number };
-      teacher: {
-        id: string;
-        profile: { displayName: string } | null;
-      };
-    },
-    activeInviteExpiresAt: Date | null,
-  ): StudentClassDto {
+      profile: { displayName: string } | null;
+    };
+  }): StudentClassDto {
     if (!classroom.teacher.profile) {
       throw new InternalServerErrorException('Teacher profile is unavailable');
     }
 
     return new StudentClassDto({
-      ...this.toClassSummary(classroom, activeInviteExpiresAt),
+      ...this.toClassSummary(classroom),
       teacher: {
         id: classroom.teacher.id,
         displayName: classroom.teacher.profile.displayName,
@@ -508,18 +401,7 @@ export class ClassesService {
   }
 
   private normalizeInviteCode(code: string): string {
-    return code.toUpperCase().replace(/[\s-]/g, '');
-  }
-
-  private hashInviteCode(code: string): string {
-    return createHash('sha256')
-      .update(this.normalizeInviteCode(code))
-      .digest('hex');
-  }
-
-  private createInviteExpiry(): Date {
-    const expiresAt = new Date();
-    expiresAt.setUTCDate(expiresAt.getUTCDate() + INVITE_LIFETIME_DAYS);
-    return expiresAt;
+    const compact = code.toUpperCase().replace(/[\s-]/g, '');
+    return `${compact.slice(0, 4)}-${compact.slice(4)}`;
   }
 }

@@ -58,12 +58,16 @@ describe('Classes (e2e)', () => {
     const createResponse = await request(context.app.getHttpServer())
       .post('/classes')
       .set('Authorization', `Bearer ${tokens.teacher}`)
-      .send({ name: '8-А', gradeLevel: 8 })
+      .send({ name: '8-А' })
       .expect(201);
 
     const classId = getNestedString(createResponse.body, ['class', 'id']);
     const inviteCode = getNestedString(createResponse.body, ['invite', 'code']);
     expect(inviteCode).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    const createdInvite = (
+      createResponse.body as { invite: Record<string, unknown> }
+    ).invite;
+    expect(createdInvite).not.toHaveProperty('expiresAt');
 
     await request(context.app.getHttpServer())
       .get('/classes')
@@ -74,7 +78,6 @@ describe('Classes (e2e)', () => {
           expect.objectContaining({
             id: classId,
             name: '8-А',
-            gradeLevel: 8,
             studentCount: 0,
           }),
         ]);
@@ -85,10 +88,26 @@ describe('Classes (e2e)', () => {
       .set('Authorization', `Bearer ${tokens.otherTeacher}`)
       .expect(404);
 
+    const firstInviteResponse = await request(context.app.getHttpServer())
+      .get(`/classes/${classId}/invite`)
+      .set('Authorization', `Bearer ${tokens.teacher}`)
+      .expect(200);
+    const secondInviteResponse = await request(context.app.getHttpServer())
+      .get(`/classes/${classId}/invite`)
+      .set('Authorization', `Bearer ${tokens.teacher}`)
+      .expect(200);
+    expect(firstInviteResponse.body).toEqual({ code: inviteCode });
+    expect(secondInviteResponse.body).toEqual({ code: inviteCode });
+
+    await request(context.app.getHttpServer())
+      .get(`/classes/${classId}/invite`)
+      .set('Authorization', `Bearer ${tokens.otherTeacher}`)
+      .expect(404);
+
     await request(context.app.getHttpServer())
       .patch(`/classes/${classId}`)
       .set('Authorization', `Bearer ${tokens.teacher}`)
-      .send({ name: '8-Б', gradeLevel: 8 })
+      .send({ name: '8-Б' })
       .expect(200)
       .expect((response) => {
         expect(getNestedString(response.body, ['name'])).toBe('8-Б');
@@ -151,23 +170,10 @@ describe('Classes (e2e)', () => {
       .set('Authorization', `Bearer ${tokens.outsider}`)
       .expect(404);
 
-    const rotateResponse = await request(context.app.getHttpServer())
-      .post(`/classes/${classId}/invite`)
-      .set('Authorization', `Bearer ${tokens.teacher}`)
-      .expect(201);
-    const rotatedCode = getNestedString(rotateResponse.body, ['code']);
-    expect(rotatedCode).not.toBe(inviteCode);
-
     await request(context.app.getHttpServer())
       .post('/classes/join')
       .set('Authorization', `Bearer ${tokens.lateStudent}`)
-      .send({ code: inviteCode })
-      .expect(404);
-
-    await request(context.app.getHttpServer())
-      .post('/classes/join')
-      .set('Authorization', `Bearer ${tokens.lateStudent}`)
-      .send({ code: rotatedCode })
+      .send({ code: inviteCode.toLowerCase().replace('-', ' ') })
       .expect(201);
   });
 

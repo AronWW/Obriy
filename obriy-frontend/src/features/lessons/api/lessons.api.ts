@@ -6,6 +6,8 @@ import type {
   LessonFilters,
   LessonMoveDirection,
   LessonSummary,
+  StudentLesson,
+  StudentLessonSummary,
 } from '../model/lesson.types'
 
 export function listTeacherLessons(
@@ -103,4 +105,12 @@ export function moveClassLesson(
       body: { direction },
     },
   )
+}
+
+export function listStudentLessons(): Promise<StudentLessonSummary[]> {
+  return authorizedRequest<StudentLessonSummary[]>('/classes/me/lessons')
+}
+
+export function getStudentLesson(lessonId: string): Promise<StudentLesson> {
+  return authorizedRequest<StudentLesson>(`/classes/me/lessons/${lessonId}`)
 }

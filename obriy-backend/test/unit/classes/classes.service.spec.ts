@@ -8,20 +8,32 @@ describe('ClassesService access boundaries', () => {
   const userFindUnique = jest.fn();
   const userFindFirst = jest.fn();
   const userFindMany = jest.fn();
-  const inviteFindUnique = jest.fn();
+  const classCreate = jest.fn();
+  const classFindFirst = jest.fn();
+  const classFindUnique = jest.fn();
   const prisma = {
     user: {
       findUnique: userFindUnique,
       findFirst: userFindFirst,
       findMany: userFindMany,
     },
-    classInvite: { findUnique: inviteFindUnique },
+    class: {
+      create: classCreate,
+      findFirst: classFindFirst,
+      findUnique: classFindUnique,
+    },
   } as unknown as PrismaService;
   const service = new ClassesService(prisma);
   const student: AuthUser = {
     id: 'student-1',
     email: 'student@example.com',
     role: UserRole.STUDENT,
+    status: UserStatus.ACTIVE,
+  };
+  const teacher: AuthUser = {
+    id: 'teacher-1',
+    email: 'teacher@example.com',
+    role: UserRole.TEACHER,
     status: UserStatus.ACTIVE,
   };
 
@@ -33,6 +45,51 @@ describe('ClassesService access boundaries', () => {
     await expect(service.listMyClasses(student)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+  });
+
+  it('creates one permanent invite code together with the class', async () => {
+    classCreate.mockImplementation(
+      ({ data }: { data: { inviteCode: string; name: string } }) =>
+        Promise.resolve({
+          id: 'class-1',
+          name: data.name,
+          inviteCode: data.inviteCode,
+          createdAt: new Date('2026-08-05T12:00:00.000Z'),
+          updatedAt: new Date('2026-08-05T12:00:00.000Z'),
+          _count: { students: 0 },
+        }),
+    );
+
+    const created = await service.createClass(teacher, {
+      name: 'Conversation club',
+    });
+
+    expect(created.invite.code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    expect(classCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          teacherId: teacher.id,
+          name: 'Conversation club',
+          inviteCode: created.invite.code,
+        },
+      }),
+    );
+  });
+
+  it('returns the same stored invite code without rotating it', async () => {
+    classFindFirst.mockResolvedValue({
+      id: 'class-1',
+      inviteCode: 'ABCD-EFGH',
+      _count: { students: 0 },
+    });
+
+    await expect(service.findInvite(teacher, 'class-1')).resolves.toEqual({
+      code: 'ABCD-EFGH',
+    });
+    await expect(service.findInvite(teacher, 'class-1')).resolves.toEqual({
+      code: 'ABCD-EFGH',
+    });
+    expect(classCreate).not.toHaveBeenCalled();
   });
 
   it('returns only other students from the signed-in student class', async () => {
@@ -98,7 +155,7 @@ describe('ClassesService access boundaries', () => {
 
   it('rejects an unknown or expired invitation without changing the user', async () => {
     userFindUnique.mockResolvedValue({ studentClassId: null });
-    inviteFindUnique.mockResolvedValue(null);
+    classFindUnique.mockResolvedValue(null);
 
     await expect(
       service.joinClass(student, 'ABCD-EFGH'),

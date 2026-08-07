@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
-import { useSessionStore } from '../../auth/model/session.store'
+import { StudentClassLessonsSection } from '../../lessons/components/StudentClassLessonsSection'
 import {
   getStudentClass,
   joinClass,
@@ -26,8 +26,6 @@ interface JoinForm {
 export function StudentClassesPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const sessionUser = useSessionStore((state) => state.user)
-  const updateSessionUser = useSessionStore((state) => state.updateUser)
   const {
     formState: { errors },
     handleSubmit,
@@ -45,16 +43,7 @@ export function StudentClassesPage() {
   })
   const joinMutation = useMutation({
     mutationFn: joinClass,
-    onSuccess: (classroom) => {
-      if (sessionUser) {
-        updateSessionUser({
-          ...sessionUser,
-          profile: {
-            ...sessionUser.profile,
-            gradeLevel: classroom.gradeLevel,
-          },
-        })
-      }
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['classes', 'student'] })
     },
   })
@@ -176,7 +165,7 @@ export function StudentClassesPage() {
       <div className={styles.content}>
         <header className={styles.detailHero}>
           <div className={styles.classSeal} aria-hidden="true">
-            {classroom.gradeLevel}
+            <School size={24} />
           </div>
           <div>
             <p className={styles.eyebrow}>
@@ -184,15 +173,15 @@ export function StudentClassesPage() {
               {t('classes.student.current')}
             </p>
             <h1 id="student-class-title">{classroom.name}</h1>
-            <p>
-              {t('classes.common.grade', { grade: classroom.gradeLevel })}
-              {' · '}
+            <p className={styles.detailMeta}>
               {t('classes.student.teacher', {
                 name: classroom.teacher.displayName,
               })}
             </p>
           </div>
         </header>
+
+        <StudentClassLessonsSection />
 
         <section className={styles.membersPanel}>
           <div className={styles.sectionHeading}>

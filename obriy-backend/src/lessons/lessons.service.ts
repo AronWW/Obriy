@@ -6,7 +6,12 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { LessonStatus, Prisma, UserRole } from '@prisma/client';
+import {
+  LessonStatus,
+  LessonTaskSubmissionStatus,
+  Prisma,
+  UserRole,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../common/types/auth-user.type';
 import { CreateLessonDto } from './dto/create-lesson.dto';
@@ -15,8 +20,18 @@ import {
   LessonClassLinkDto,
   LessonDetailDto,
   LessonSummaryDto,
+  StudentLessonClassDto,
+  StudentLessonDetailDto,
+  StudentLessonSummaryDto,
+  StudentLessonTeacherDto,
 } from './dto/lesson.dto';
 import { ListLessonsQueryDto } from './dto/list-lessons-query.dto';
+import {
+  StudentLessonProgressDto,
+  StudentLessonProgressStatus,
+  StudentLessonTaskDto,
+  StudentTaskSubmissionDto,
+} from './dto/lesson-task.dto';
 import { ClassLessonMoveDirection } from './dto/move-class-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 
@@ -60,12 +75,89 @@ const classLessonSelect = {
   },
 } satisfies Prisma.ClassLessonSelect;
 
+const studentLessonSummarySelect = {
+  lessonId: true,
+  position: true,
+  lesson: {
+    select: {
+      id: true,
+      title: true,
+      summary: true,
+      contentLocale: true,
+      estimatedMinutes: true,
+    },
+  },
+} satisfies Prisma.ClassLessonSelect;
+
+const studentLessonDetailSelect = {
+  position: true,
+  class: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  lesson: {
+    select: {
+      id: true,
+      title: true,
+      summary: true,
+      content: true,
+      contentLocale: true,
+      estimatedMinutes: true,
+      teacher: {
+        select: {
+          id: true,
+          profile: {
+            select: { displayName: true },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.ClassLessonSelect;
+
+const studentTaskSubmissionSelect = {
+  id: true,
+  taskId: true,
+  answerText: true,
+  status: true,
+  teacherComment: true,
+  submittedAt: true,
+  reviewedAt: true,
+  updatedAt: true,
+} satisfies Prisma.LessonTaskSubmissionSelect;
+
+function createStudentLessonTaskSelect(studentId: string, classId: string) {
+  return {
+    id: true,
+    title: true,
+    prompt: true,
+    position: true,
+    isRequired: true,
+    submissions: {
+      where: { studentId, classId },
+      take: 1,
+      select: studentTaskSubmissionSelect,
+    },
+  } satisfies Prisma.LessonTaskSelect;
+}
+
 type LessonRecord = Prisma.LessonGetPayload<{ include: typeof lessonInclude }>;
 type LessonSummaryRecord = Prisma.LessonGetPayload<{
   select: typeof lessonSummarySelect;
 }>;
 type ClassLessonRecord = Prisma.ClassLessonGetPayload<{
   select: typeof classLessonSelect;
+}>;
+type StudentLessonSummaryRecord = Prisma.ClassLessonGetPayload<{
+  select: typeof studentLessonSummarySelect;
+}>;
+type StudentLessonDetailRecord = Prisma.ClassLessonGetPayload<{
+  select: typeof studentLessonDetailSelect;
+}>;
+type StudentLessonTaskRecord = Prisma.LessonTaskGetPayload<{
+  select: ReturnType<typeof createStudentLessonTaskSelect>;
 }>;
 
 @Injectable()
@@ -293,6 +385,83 @@ export class LessonsService {
     return this.toLessonDetailDto(lesson);
   }
 
+  async listMyStudentLessons(
+    user: AuthUser,
+  ): Promise<StudentLessonSummaryDto[]> {
+    this.assertStudent(user);
+    const classId = await this.findStudentClassId(user.id);
+
+    if (!classId) {
+      return [];
+    }
+
+    const links = await this.prisma.classLesson.findMany({
+      where: {
+        classId,
+        publishedAt: { not: null },
+        lesson: { status: LessonStatus.PUBLISHED },
+      },
+      orderBy: [{ position: 'asc' }, { lessonId: 'asc' }],
+      select: studentLessonSummarySelect,
+    });
+
+    const progressByLesson = await this.findStudentProgressByLesson(
+      user.id,
+      classId,
+      links.map((link) => link.lessonId),
+    );
+
+    return links.map((link) =>
+      this.toStudentLessonSummaryDto(
+        link,
+        progressByLesson.get(link.lessonId) ?? this.emptyStudentProgress(),
+      ),
+    );
+  }
+
+  async findMyStudentLesson(
+    user: AuthUser,
+    lessonId: string,
+  ): Promise<StudentLessonDetailDto> {
+    this.assertStudent(user);
+    const classId = await this.findStudentClassId(user.id);
+
+    if (!classId) {
+      throw this.lessonNotFound();
+    }
+
+    const link = await this.prisma.classLesson.findFirst({
+      where: {
+        classId,
+        lessonId,
+        publishedAt: { not: null },
+        lesson: { status: LessonStatus.PUBLISHED },
+      },
+      select: studentLessonDetailSelect,
+    });
+
+    if (!link) {
+      throw this.lessonNotFound();
+    }
+
+    const tasks = await this.prisma.lessonTask.findMany({
+      where: { lessonId },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
+      select: createStudentLessonTaskSelect(user.id, classId),
+    });
+    const progress = this.calculateStudentProgress(
+      tasks
+        .filter((task) => task.isRequired)
+        .map((task) => ({ status: task.submissions[0]?.status ?? null })),
+    );
+
+    return this.toStudentLessonDetailDto(
+      link,
+      progress,
+      tasks.map((task) => this.toStudentLessonTaskDto(task)),
+    );
+  }
+
   async listClassLessons(
     user: AuthUser,
     classId: string,
@@ -495,6 +664,87 @@ export class LessonsService {
     return lesson;
   }
 
+  private async findStudentClassId(userId: string): Promise<string | null> {
+    const student = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { studentClassId: true },
+    });
+
+    return student?.studentClassId ?? null;
+  }
+
+  private async findStudentProgressByLesson(
+    studentId: string,
+    classId: string,
+    lessonIds: string[],
+  ): Promise<Map<string, StudentLessonProgressDto>> {
+    const result = new Map<string, StudentLessonProgressDto>();
+
+    if (lessonIds.length === 0) {
+      return result;
+    }
+
+    const tasks = await this.prisma.lessonTask.findMany({
+      where: {
+        lessonId: { in: lessonIds },
+        isRequired: true,
+      },
+      select: {
+        lessonId: true,
+        submissions: {
+          where: { studentId, classId },
+          take: 1,
+          select: { status: true },
+        },
+      },
+    });
+
+    for (const lessonId of lessonIds) {
+      const lessonTasks = tasks
+        .filter((task) => task.lessonId === lessonId)
+        .map((task) => ({ status: task.submissions[0]?.status ?? null }));
+      result.set(lessonId, this.calculateStudentProgress(lessonTasks));
+    }
+
+    return result;
+  }
+
+  private calculateStudentProgress(
+    tasks: { status: LessonTaskSubmissionStatus | null }[],
+  ): StudentLessonProgressDto {
+    const requiredTotal = tasks.length;
+    const approved = tasks.filter(
+      (task) => task.status === LessonTaskSubmissionStatus.APPROVED,
+    ).length;
+    const submitted = tasks.filter(
+      (task) => task.status === LessonTaskSubmissionStatus.SUBMITTED,
+    ).length;
+    const returned = tasks.filter(
+      (task) => task.status === LessonTaskSubmissionStatus.RETURNED,
+    ).length;
+
+    let status = StudentLessonProgressStatus.IN_PROGRESS;
+    if (requiredTotal === 0) {
+      status = StudentLessonProgressStatus.NO_TASKS;
+    } else if (approved === requiredTotal) {
+      status = StudentLessonProgressStatus.COMPLETED;
+    } else if (approved + submitted + returned === 0) {
+      status = StudentLessonProgressStatus.NOT_STARTED;
+    }
+
+    return new StudentLessonProgressDto({
+      status,
+      requiredTotal,
+      approved,
+      submitted,
+      returned,
+    });
+  }
+
+  private emptyStudentProgress(): StudentLessonProgressDto {
+    return this.calculateStudentProgress([]);
+  }
+
   private async assertOwnedClass(
     client: PrismaService | Prisma.TransactionClient,
     teacherId: string,
@@ -598,6 +848,15 @@ export class LessonsService {
     }
   }
 
+  private assertStudent(user: AuthUser): void {
+    if (user.role !== UserRole.STUDENT) {
+      throw new ForbiddenException({
+        code: 'ROLE_FORBIDDEN',
+        message: 'Only student accounts may use this endpoint',
+      });
+    }
+  }
+
   private lessonNotFound(): NotFoundException {
     return new NotFoundException({
       code: 'LESSON_NOT_FOUND',
@@ -656,6 +915,73 @@ export class LessonsService {
       classId: link.classId,
       position: link.position,
       publishedAt: link.publishedAt,
+    });
+  }
+
+  private toStudentLessonSummaryDto(
+    link: StudentLessonSummaryRecord,
+    progress: StudentLessonProgressDto,
+  ): StudentLessonSummaryDto {
+    return new StudentLessonSummaryDto({
+      id: link.lesson.id,
+      title: link.lesson.title,
+      summary: link.lesson.summary,
+      contentLocale: link.lesson.contentLocale,
+      estimatedMinutes: link.lesson.estimatedMinutes,
+      position: link.position,
+      progress,
+    });
+  }
+
+  private toStudentLessonDetailDto(
+    link: StudentLessonDetailRecord,
+    progress: StudentLessonProgressDto,
+    tasks: StudentLessonTaskDto[],
+  ): StudentLessonDetailDto {
+    const teacherProfile = link.lesson.teacher.profile;
+
+    if (!teacherProfile) {
+      throw new InternalServerErrorException({
+        code: 'TEACHER_PROFILE_UNAVAILABLE',
+        message: 'Teacher profile is unavailable',
+      });
+    }
+
+    return new StudentLessonDetailDto({
+      id: link.lesson.id,
+      title: link.lesson.title,
+      summary: link.lesson.summary,
+      contentLocale: link.lesson.contentLocale,
+      estimatedMinutes: link.lesson.estimatedMinutes,
+      position: link.position,
+      progress,
+      content: link.lesson.content,
+      class: new StudentLessonClassDto({
+        id: link.class.id,
+        name: link.class.name,
+      }),
+      teacher: new StudentLessonTeacherDto({
+        id: link.lesson.teacher.id,
+        displayName: teacherProfile.displayName,
+      }),
+      tasks,
+    });
+  }
+
+  private toStudentLessonTaskDto(
+    task: StudentLessonTaskRecord,
+  ): StudentLessonTaskDto {
+    const submission = task.submissions[0];
+
+    return new StudentLessonTaskDto({
+      id: task.id,
+      title: task.title,
+      prompt: task.prompt,
+      position: task.position,
+      isRequired: task.isRequired,
+      submission: submission
+        ? new StudentTaskSubmissionDto({ ...submission })
+        : null,
     });
   }
 }

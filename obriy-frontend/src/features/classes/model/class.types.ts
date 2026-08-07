@@ -1,16 +1,13 @@
 export interface ClassSummary {
   id: string
   name: string
-  gradeLevel: number
   studentCount: number
   createdAt: string
   updatedAt: string
-  activeInviteExpiresAt: string | null
 }
 
 export interface ClassInvite {
   code: string
-  expiresAt: string
 }
 
 export interface CreatedClass {
@@ -40,5 +37,4 @@ export interface ClassmateProfile extends ClassMember {
 
 export interface CreateClassInput {
   name: string
-  gradeLevel: number
 }

@@ -49,6 +49,10 @@ describe('AppRouter auth boundaries', () => {
       http.get(`${API_BASE_URL}/parent-links/invitation`, () =>
         HttpResponse.json(null),
       ),
+      http.get(`${API_BASE_URL}/lessons`, () => HttpResponse.json([])),
+      http.get(`${API_BASE_URL}/classes/me/lessons`, () =>
+        HttpResponse.json([]),
+      ),
     )
   })
 
@@ -59,6 +63,16 @@ describe('AppRouter auth boundaries', () => {
       await screen.findByRole('navigation', { name: 'Основна навігація' }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'З поверненням' })).not.toBeInTheDocument()
+  })
+
+  it('redirects an authenticated user away from the public home page', async () => {
+    renderRouter('/')
+
+    await waitFor(() => {
+      expect(screen.getByTestId('current-location')).toHaveTextContent(
+        '/app/student',
+      )
+    })
   })
 
   it('keeps email token routes reachable for an authenticated browser session', async () => {
@@ -318,11 +332,9 @@ describe('AppRouter auth boundaries', () => {
         const classroom = {
           id: 'class-1',
           name: '8-А',
-          gradeLevel: 8,
           studentCount: 0,
           createdAt: '2026-07-28T12:00:00.000Z',
           updatedAt: '2026-07-28T12:00:00.000Z',
-          activeInviteExpiresAt: '2026-08-04T12:00:00.000Z',
         }
         classes = [classroom]
 
@@ -331,7 +343,6 @@ describe('AppRouter auth boundaries', () => {
             class: classroom,
             invite: {
               code: 'ABCD-EFGH',
-              expiresAt: '2026-08-04T12:00:00.000Z',
             },
           },
           { status: 201 },
@@ -351,16 +362,12 @@ describe('AppRouter auth boundaries', () => {
       screen.getByRole('textbox', { name: 'Назва класу' }),
       '8-А',
     )
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: 'Рік навчання' }),
-      '8',
-    )
     await user.click(
       screen.getByRole('button', { name: 'Створити й отримати код' }),
     )
 
     expect(await screen.findByText('ABCD-EFGH')).toBeInTheDocument()
-    expect(receivedBody).toEqual({ name: '8-А', gradeLevel: 8 })
+    expect(receivedBody).toEqual({ name: '8-А' })
     expect(
       await screen.findByRole('link', { name: 'Відкрити клас' }),
     ).toHaveAttribute('href', '/app/teacher/classes/class-1')
@@ -373,11 +380,9 @@ describe('AppRouter auth boundaries', () => {
         HttpResponse.json({
           id: 'class-1',
           name: '8-А',
-          gradeLevel: 8,
           studentCount: 2,
           createdAt: '2026-07-28T12:00:00.000Z',
           updatedAt: '2026-07-28T12:00:00.000Z',
-          activeInviteExpiresAt: null,
           teacher: { id: 'teacher-1', displayName: 'Пані Олена' },
         }),
       ),
@@ -429,11 +434,9 @@ describe('AppRouter auth boundaries', () => {
     const joinedClass = {
       id: 'class-1',
       name: '7-Б',
-      gradeLevel: 7,
       studentCount: 1,
       createdAt: '2026-07-28T12:00:00.000Z',
       updatedAt: '2026-07-28T12:00:00.000Z',
-      activeInviteExpiresAt: null,
       teacher: { id: 'teacher-1', displayName: 'Пан Тарас' },
     }
     server.use(
@@ -467,7 +470,7 @@ describe('AppRouter auth boundaries', () => {
       await screen.findByRole('heading', { name: '7-Б', level: 1 }),
     ).toBeInTheDocument()
     expect(receivedBody).toEqual({ code: 'ABCD-EFGH' })
-    expect(useSessionStore.getState().user?.profile.gradeLevel).toBe(7)
+    expect(useSessionStore.getState().user?.profile.gradeLevel).toBe(9)
   })
 
   it('keeps the real teacher profile inside the sidebar shell and saves it', async () => {

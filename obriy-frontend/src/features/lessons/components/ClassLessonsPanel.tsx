@@ -122,8 +122,8 @@ export function ClassLessonsPanel({ classId }: ClassLessonsPanelProps) {
       </div>
 
       <div className={styles.classLessonToolbar}>
-        <label>
-          <span className={styles.srOnly}>{t('lessons.classPanel.choose')}</span>
+        <label className={styles.classLibraryField}>
+          <span>{t('lessons.classPanel.choose')}</span>
           <select
             className={styles.classLibrarySelect}
             disabled={libraryQuery.isLoading || availableLessons.length === 0}
@@ -194,7 +194,6 @@ export function ClassLessonsPanel({ classId }: ClassLessonsPanelProps) {
                         ? t('lessons.classPanel.published')
                         : t('lessons.classPanel.hidden')}
                     </span>
-                    <span>{t(`lessons.locale.${lesson.contentLocale}`)}</span>
                     {lesson.estimatedMinutes !== null && (
                       <span>
                         {t('lessons.common.minutes', {

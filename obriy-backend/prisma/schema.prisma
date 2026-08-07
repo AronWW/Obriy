@@ -35,6 +35,12 @@ enum LessonStatus {
   ARCHIVED
 }
 
+enum LessonTaskSubmissionStatus {
+  SUBMITTED
+  APPROVED
+  RETURNED
+}
+
 model User {
   id              String     @id @default(uuid())
   email           String     @unique
@@ -56,6 +62,7 @@ model User {
   parentInvitations       ParentInvitation[]       @relation("ChildParentInvitations")
   taughtClasses           Class[]                  @relation("TeacherClasses")
   authoredLessons         Lesson[]                 @relation("TeacherLessons")
+  lessonTaskSubmissions   LessonTaskSubmission[]   @relation("StudentLessonTaskSubmissions")
   studentClassId          String?
   studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
 
@@ -182,30 +189,16 @@ model Class {
   id         String   @id @default(uuid())
   teacherId  String
   name       String
-  gradeLevel Int
+  inviteCode String   @unique @db.VarChar(9)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  teacher     User          @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
-  students    User[]        @relation("ClassStudents")
-  invites     ClassInvite[]
-  lessonLinks ClassLesson[]
+  teacher         User                   @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  students        User[]                 @relation("ClassStudents")
+  lessonLinks     ClassLesson[]
+  taskSubmissions LessonTaskSubmission[]
 
   @@index([teacherId])
-}
-
-model ClassInvite {
-  id        String    @id @default(uuid())
-  classId   String
-  codeHash  String    @unique
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
-
-  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-
-  @@index([classId])
-  @@index([expiresAt])
 }
 
 model Lesson {
@@ -222,6 +215,7 @@ model Lesson {
 
   teacher    User          @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
   classLinks ClassLesson[]
+  tasks      LessonTask[]
 
   @@index([teacherId, status, updatedAt])
 }
@@ -240,4 +234,43 @@ model ClassLesson {
   @@id([classId, lessonId])
   @@index([lessonId])
   @@index([classId, publishedAt, position])
+}
+
+model LessonTask {
+  id         String   @id @default(uuid())
+  lessonId   String
+  title      String   @db.VarChar(160)
+  prompt     String   @db.Text
+  position   Int
+  isRequired Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  lesson      Lesson                 @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  submissions LessonTaskSubmission[]
+
+  @@index([lessonId, position])
+}
+
+model LessonTaskSubmission {
+  id             String                     @id @default(uuid())
+  taskId         String
+  studentId      String
+  classId        String
+  answerText     String                     @db.Text
+  status         LessonTaskSubmissionStatus @default(SUBMITTED)
+  teacherComment String?                    @db.Text
+  submittedAt    DateTime                   @default(now())
+  reviewedAt     DateTime?
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  task    LessonTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student User       @relation("StudentLessonTaskSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, studentId, classId])
+  @@index([taskId, status])
+  @@index([studentId, classId, status])
+  @@index([classId, status, submittedAt])
 }

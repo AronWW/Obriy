@@ -5,14 +5,13 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import {
-  createClassInvite,
+  getClassInvite,
   getTeacherClass,
   listTeacherClassMembers,
   updateTeacherClass,
 } from '../api/classes.api'
 import { InvitePanel } from '../components/InvitePanel'
 import { MemberAvatar } from '../components/MemberAvatar'
-import type { ClassInvite } from '../model/class.types'
 import type { CreateClassInput } from '../model/class.types'
 import styles from '../ClassesPage.module.css'
 import { ClassLessonsPanel } from '../../lessons/components/ClassLessonsPanel'
@@ -21,7 +20,6 @@ export function TeacherClassDetailPage() {
   const { t } = useTranslation()
   const { classId = '' } = useParams()
   const queryClient = useQueryClient()
-  const [invite, setInvite] = useState<ClassInvite | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const {
     formState: { errors },
@@ -40,9 +38,10 @@ export function TeacherClassDetailPage() {
     queryFn: () => listTeacherClassMembers(classId),
     enabled: Boolean(classId),
   })
-  const inviteMutation = useMutation({
-    mutationFn: () => createClassInvite(classId),
-    onSuccess: setInvite,
+  const inviteQuery = useQuery({
+    queryKey: ['classes', 'teacher', classId, 'invite'],
+    queryFn: () => getClassInvite(classId),
+    enabled: Boolean(classId),
   })
   const updateMutation = useMutation({
     mutationFn: (input: CreateClassInput) =>
@@ -87,7 +86,6 @@ export function TeacherClassDetailPage() {
   const openEditor = () => {
     reset({
       name: classroom.name,
-      gradeLevel: classroom.gradeLevel,
     })
     updateMutation.reset()
     setIsEditing(true)
@@ -95,7 +93,6 @@ export function TeacherClassDetailPage() {
   const onSubmit = handleSubmit((input) => {
     updateMutation.mutate({
       name: input.name.trim(),
-      gradeLevel: Number(input.gradeLevel),
     })
   })
 
@@ -109,7 +106,7 @@ export function TeacherClassDetailPage() {
 
         <header className={styles.detailHero}>
           <div className={styles.classSeal} aria-hidden="true">
-            {classroom.gradeLevel}
+            <School size={24} />
           </div>
           <div>
             <p className={styles.eyebrow}>
@@ -117,9 +114,7 @@ export function TeacherClassDetailPage() {
               {t('classes.teacher.detail.eyebrow')}
             </p>
             <h1 id="class-detail-title">{classroom.name}</h1>
-            <p>
-              {t('classes.common.grade', { grade: classroom.gradeLevel })}
-              {' · '}
+            <p className={styles.detailMeta}>
               {t('classes.common.students', {
                 count: classroom.studentCount,
               })}
@@ -146,6 +141,9 @@ export function TeacherClassDetailPage() {
                 <h2 id="edit-class-title">
                   {t('classes.teacher.edit.title')}
                 </h2>
+                <span className={styles.formDescription}>
+                  {t('classes.teacher.edit.description')}
+                </span>
               </div>
               <button
                 className={styles.iconButton}
@@ -184,23 +182,6 @@ export function TeacherClassDetailPage() {
                     </small>
                   )}
                 </label>
-                <label>
-                  <span>{t('classes.teacher.create.grade')}</span>
-                  <select
-                    {...register('gradeLevel', {
-                      required: true,
-                      valueAsNumber: true,
-                    })}
-                  >
-                    {Array.from({ length: 12 }, (_, index) => index + 1).map(
-                      (grade) => (
-                        <option value={grade} key={grade}>
-                          {t('classes.common.grade', { grade })}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </label>
               </fieldset>
               {updateMutation.isError && (
                 <p className={styles.errorStatus} role="alert">
@@ -229,6 +210,8 @@ export function TeacherClassDetailPage() {
             </form>
           </section>
         )}
+
+        <ClassLessonsPanel classId={classId} />
 
         <div className={styles.detailGrid}>
           <section className={styles.membersPanel}>
@@ -282,18 +265,13 @@ export function TeacherClassDetailPage() {
 
           <div>
             <InvitePanel
-              invite={invite}
-              isRefreshing={inviteMutation.isPending}
-              onRefresh={() => inviteMutation.mutate()}
+              invite={inviteQuery.data ?? null}
+              isError={inviteQuery.isError}
+              isLoading={inviteQuery.isLoading}
+              onRetry={() => void inviteQuery.refetch()}
             />
-            {inviteMutation.isError && (
-              <p className={styles.errorStatus} role="alert">
-                {t('classes.teacher.invite.error')}
-              </p>
-            )}
           </div>
         </div>
-        <ClassLessonsPanel classId={classId} />
       </div>
     </section>
   )

@@ -1,0 +1,647 @@
+.section {
+  overflow: hidden;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--panel-solid), transparent 3%);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--ink), transparent 94%);
+}
+
+.sectionHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 15px;
+  align-items: start;
+  padding: clamp(22px, 4vw, 30px);
+  border-bottom: 1px solid var(--line);
+}
+
+.headingIcon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: var(--archive-blue);
+  background: color-mix(in srgb, var(--archive-blue), transparent 92%);
+  border: 1px solid color-mix(in srgb, var(--archive-blue), transparent 65%);
+  border-radius: 12px;
+}
+
+.eyebrow,
+.description,
+.sectionHeader h2,
+.formHeading h3,
+.formHeading p,
+.taskSectionHeading h3,
+.taskSectionHeading p,
+.taskCopy h3,
+.taskCopy p,
+.inlineConfirmation p,
+.submissionsHeading h4,
+.answerBlock p,
+.stateMessage,
+.emptyState,
+.noSubmissions,
+.errorState p,
+.error {
+  margin: 0;
+}
+
+.eyebrow {
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sectionHeader h2 {
+  margin-top: 5px;
+  font-family: var(--font-display);
+  font-size: clamp(25px, 4vw, 34px);
+  font-weight: 500;
+}
+
+.description {
+  max-width: 720px;
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.readOnlyNotice {
+  margin: 0;
+  padding: 12px clamp(22px, 4vw, 30px);
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold), transparent 92%);
+  border-bottom: 1px solid color-mix(in srgb, var(--gold), transparent 68%);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.createForm {
+  margin: clamp(20px, 4vw, 30px);
+  padding: clamp(19px, 3vw, 25px);
+  background: color-mix(in srgb, var(--panel-solid), transparent 5%);
+  border: 1px solid var(--line-soft);
+}
+
+.formHeading,
+.taskSectionHeading,
+.taskTitleRow,
+.submissionsHeading,
+.submissionHeader,
+.formActions,
+.confirmationActions,
+.reviewActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.formHeading {
+  align-items: flex-start;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.formHeading h3,
+.taskSectionHeading h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.formHeading p,
+.taskSectionHeading p {
+  margin-top: 5px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.requiredBadge,
+.countBadge,
+.statusBadge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.requiredBadge {
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold), transparent 92%);
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 63%);
+}
+
+.createForm fieldset,
+.editForm fieldset {
+  display: grid;
+  gap: 16px;
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.createForm label,
+.editForm label,
+.commentField {
+  display: grid;
+  gap: 7px;
+}
+
+.createForm label > span,
+.editForm label > span,
+.commentField > span,
+.answerBlock > span {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.commentField > span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.createForm input,
+.createForm textarea,
+.editForm input,
+.editForm textarea,
+.commentField textarea {
+  width: 100%;
+  padding: 11px 12px;
+  color: var(--ink);
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.createForm input,
+.editForm input {
+  min-height: 43px;
+}
+
+.createForm input:focus,
+.createForm textarea:focus,
+.editForm input:focus,
+.editForm textarea:focus,
+.commentField textarea:focus {
+  border-color: var(--archive-blue);
+  outline: 2px solid color-mix(in srgb, var(--archive-blue), transparent 78%);
+  outline-offset: 1px;
+}
+
+.createForm fieldset:disabled,
+.editForm fieldset:disabled {
+  opacity: 0.66;
+}
+
+.formActions,
+.reviewActions {
+  justify-content: flex-end;
+}
+
+.primaryButton,
+.secondaryButton,
+.deleteButton,
+.approveButton,
+.returnButton,
+.iconButton {
+  display: inline-flex;
+  min-height: 39px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    color var(--duration-fast),
+    background var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+.primaryButton {
+  color: var(--panel-solid);
+  background: var(--archive-blue-deep);
+  border: 1px solid var(--archive-blue-deep);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--archive-blue);
+  border-color: var(--archive-blue);
+}
+
+.secondaryButton,
+.returnButton {
+  color: var(--archive-blue);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.secondaryButton:hover:not(:disabled),
+.returnButton:hover:not(:disabled) {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.deleteButton {
+  color: var(--panel-solid);
+  background: var(--color-danger);
+  border: 1px solid var(--color-danger);
+}
+
+.approveButton {
+  color: var(--panel-solid);
+  background: var(--color-success);
+  border: 1px solid var(--color-success);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.deleteButton:disabled,
+.approveButton:disabled,
+.returnButton:disabled,
+.iconButton:disabled,
+.commentField textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.primaryButton > svg,
+.secondaryButton > svg,
+.deleteButton > svg,
+.approveButton > svg,
+.returnButton > svg,
+.commentField > span > svg {
+  flex: 0 0 auto;
+  transform: translateY(1px);
+}
+
+.taskSectionHeading {
+  margin: 0 clamp(20px, 4vw, 30px) 14px;
+}
+
+.countBadge {
+  min-width: 31px;
+  color: var(--gold);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.taskList {
+  display: grid;
+  gap: 16px;
+  padding: 0 clamp(20px, 4vw, 30px) clamp(24px, 4vw, 34px);
+}
+
+.taskCard {
+  background: color-mix(in srgb, var(--panel-solid), transparent 3%);
+  border: 1px solid var(--line);
+}
+
+.taskHeader {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 20px;
+}
+
+.taskOrdinal {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 15px;
+}
+
+.taskCopy {
+  min-width: 0;
+}
+
+.taskTitleRow {
+  justify-content: flex-start;
+}
+
+.taskCopy h3 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.taskCopy > p {
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.taskActions {
+  display: flex;
+  gap: 7px;
+}
+
+.iconButton {
+  width: 39px;
+  padding: 0;
+  color: var(--archive-blue);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.iconButton:hover:not(:disabled) {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.dangerButton {
+  color: var(--color-danger);
+}
+
+.dangerButton:hover:not(:disabled) {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.editForm,
+.inlineConfirmation {
+  margin: 0 20px 20px 82px;
+  padding: 18px;
+  background: color-mix(in srgb, var(--archive-blue), transparent 94%);
+  border: 1px solid var(--line-soft);
+}
+
+.editForm fieldset {
+  margin-top: 0;
+}
+
+.editForm legend {
+  margin-bottom: 14px;
+  padding: 0;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.inlineConfirmation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: color-mix(in srgb, var(--color-danger), transparent 93%);
+  border-color: color-mix(in srgb, var(--color-danger), transparent 64%);
+}
+
+.inlineConfirmation strong {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+.inlineConfirmation p {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.confirmationActions {
+  flex: 0 0 auto;
+}
+
+.submissionsSection {
+  padding: 18px 20px 20px;
+  background: color-mix(in srgb, var(--ink-soft), transparent 96%);
+  border-top: 1px solid var(--line-soft);
+}
+
+.submissionsHeading > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold);
+}
+
+.submissionsHeading h4 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.submissionsHeading > span {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.submissionList {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.submissionCard {
+  padding: 17px;
+  background: var(--panel-solid);
+  border: 1px solid var(--line-soft);
+}
+
+.submissionHeader > div {
+  min-width: 0;
+}
+
+.submissionHeader strong,
+.submissionHeader span {
+  display: block;
+}
+
+.submissionHeader strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.submissionHeader div > span {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.statusSubmitted {
+  color: var(--color-info);
+  background: color-mix(in srgb, var(--color-info), transparent 91%);
+  border: 1px solid color-mix(in srgb, var(--color-info), transparent 62%);
+}
+
+.statusApproved {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success), transparent 91%);
+  border: 1px solid color-mix(in srgb, var(--color-success), transparent 62%);
+}
+
+.statusReturned {
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning), transparent 91%);
+  border: 1px solid color-mix(in srgb, var(--color-warning), transparent 62%);
+}
+
+.answerBlock {
+  margin-top: 14px;
+  padding: 13px 14px;
+  background: color-mix(in srgb, var(--ink-soft), transparent 95%);
+  border-left: 2px solid var(--gold);
+}
+
+.answerBlock p {
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.answerBlock time {
+  display: block;
+  margin-top: 7px;
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
+.commentField {
+  margin-top: 14px;
+}
+
+.reviewActions {
+  margin-top: 11px;
+}
+
+.stateMessage,
+.emptyState,
+.noSubmissions,
+.errorState {
+  padding: 18px;
+  color: var(--ink-soft);
+  border: 1px dashed var(--line);
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.stateMessage,
+.emptyState,
+.errorState {
+  margin: 0 clamp(20px, 4vw, 30px) clamp(24px, 4vw, 34px);
+}
+
+.submissionsSection .stateMessage,
+.submissionsSection .errorState {
+  margin: 14px 0 0;
+}
+
+.noSubmissions {
+  margin-top: 14px;
+}
+
+.errorState .secondaryButton {
+  margin-top: 10px;
+}
+
+.error {
+  margin-top: 10px;
+  padding: 9px 11px;
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger), transparent 92%);
+  border-left: 3px solid var(--color-danger);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .taskHeader {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .taskActions {
+    grid-column: 2;
+  }
+
+  .editForm,
+  .inlineConfirmation {
+    margin-left: 20px;
+  }
+
+  .inlineConfirmation {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .sectionHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .headingIcon,
+  .taskOrdinal {
+    display: none;
+  }
+
+  .formHeading,
+  .taskTitleRow,
+  .submissionHeader,
+  .reviewActions,
+  .confirmationActions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .taskHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .taskActions {
+    grid-column: 1;
+  }
+
+  .editForm,
+  .inlineConfirmation {
+    margin-right: 14px;
+    margin-left: 14px;
+  }
+
+  .formActions,
+  .reviewActions,
+  .confirmationActions,
+  .reviewActions button,
+  .confirmationActions button,
+  .formActions button {
+    width: 100%;
+  }
+}

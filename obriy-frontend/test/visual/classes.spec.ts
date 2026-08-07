@@ -3,11 +3,9 @@ import { expect, test, type Page } from '@playwright/test'
 const classroom = {
   id: 'class-8a',
   name: '8-А · Історичні дослідники',
-  gradeLevel: 8,
   studentCount: 3,
   createdAt: '2026-07-28T12:00:00.000Z',
   updatedAt: '2026-07-28T12:00:00.000Z',
-  activeInviteExpiresAt: '2026-08-04T12:00:00.000Z',
 }
 
 const classmates = [
@@ -55,6 +53,16 @@ test('teacher class detail balances the roster and invitation controls', async (
     })
     },
   )
+  await page.route(
+    'http://localhost:3000/classes/class-8a/invite',
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'ABCD-EFGH' }),
+      })
+    },
+  )
 
   await page.goto('/app/teacher/classes/class-8a')
   await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -90,7 +98,6 @@ test('student class and classmates remain usable on mobile', async ({
       contentType: 'application/json',
       body: JSON.stringify({
         ...classroom,
-        activeInviteExpiresAt: null,
         teacher: { id: 'teacher-olena', displayName: 'Олена Коваль' },
       }),
     })

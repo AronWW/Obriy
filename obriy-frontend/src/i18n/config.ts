@@ -415,8 +415,9 @@ const resources = {
             eyebrow: 'Новий клас',
             title: 'Основна інформація',
             name: 'Назва класу',
-            namePlaceholder: 'Наприклад, 8-А',
-            grade: 'Рік навчання',
+            namePlaceholder: 'Наприклад, Розмовна англійська',
+            description:
+              'Дайте простору зрозумілу назву — цього достатньо, щоб почати.',
             submit: 'Створити й отримати код',
             creating: 'Створюємо…',
           },
@@ -424,6 +425,7 @@ const resources = {
             action: 'Редагувати',
             eyebrow: 'Налаштування класу',
             title: 'Оновити клас',
+            description: 'Змініть назву, за якою учні впізнають цей простір.',
             save: 'Зберегти',
             saving: 'Зберігаємо…',
             error: 'Не вдалося оновити клас.',
@@ -441,20 +443,16 @@ const resources = {
             loading: 'Завантажуємо список учнів…',
             error: 'Не вдалося завантажити список учнів.',
             empty:
-              'Поки ніхто не приєднався. Створіть код і передайте його учням.',
+              'Поки ніхто не приєднався. Передайте учням постійний код цього класу.',
           },
           invite: {
             title: 'Код запрошення',
             description:
-              'Передайте код учням цього класу. Код діє сім днів.',
+              'Постійний код цього класу. Він не змінюється і не має строку дії.',
+            loading: 'Завантажуємо код…',
             copy: 'Копіювати',
             copied: 'Скопійовано',
-            expires: 'Діє до {{date}}',
-            hidden:
-              'З міркувань безпеки повний код не зберігається. Створіть новий код, коли будете готові його передати.',
-            refresh: 'Створити новий код',
-            refreshing: 'Створюємо…',
-            error: 'Не вдалося створити код. Спробуйте ще раз.',
+            error: 'Не вдалося завантажити код.',
           },
         },
         student: {
@@ -607,6 +605,14 @@ const resources = {
           savePublished: 'Зберегти зміни',
           archived:
             'Урок в архіві й доступний лише для перегляду. Відновіть його з бібліотеки, щоб редагувати.',
+          sections: {
+            basicsTitle: 'Основна інформація',
+            basicsDescription:
+              'Назва й короткий опис допоможуть швидко знайти урок у бібліотеці.',
+            contentTitle: 'Матеріал уроку',
+            contentDescription:
+              'Основний текст, який побачить учень після публікації.',
+          },
           fields: {
             title: 'Назва уроку',
             titlePlaceholder: 'Наприклад, Київська Русь за князя Ярослава',
@@ -614,7 +620,6 @@ const resources = {
             summary: 'Короткий опис',
             summaryPlaceholder: 'Про що цей урок і що учень у ньому дізнається?',
             summaryHint: 'До 500 символів. Опис з’явиться у списку уроків.',
-            locale: 'Мова матеріалу',
             duration: 'Орієнтовний час',
             durationPlaceholder: 'Хвилини',
             content: 'Текст уроку',
@@ -666,6 +671,33 @@ const resources = {
           unlink: 'Від’єднати',
           unlinkNamed: 'Від’єднати «{{title}}» від класу',
         },
+        student: {
+          section: {
+            title: 'Уроки',
+            description: 'Матеріали, які вчитель відкрив для вашого класу.',
+            loading: 'Завантажуємо уроки…',
+            loadError: 'Не вдалося завантажити уроки.',
+            emptyTitle: 'Опублікованих уроків ще немає',
+            emptyDescription:
+              'Коли вчитель відкриє матеріал, він з’явиться тут.',
+            open: 'Відкрити урок',
+            openNamed: 'Відкрити урок «{{title}}»',
+          },
+          reader: {
+            back: 'Назад до класу',
+            loading: 'Відкриваємо урок…',
+            eyebrow: 'Матеріал класу',
+            unavailableTitle: 'Урок недоступний',
+            unavailableDescription:
+              'Його могли приховати або він не належить до вашого класу.',
+            loadErrorTitle: 'Не вдалося відкрити урок',
+            loadErrorDescription:
+              'Перевірте з’єднання та спробуйте ще раз.',
+            classLabel: 'Клас',
+            teacherLabel: 'Вчитель',
+            contentTitle: 'Текст уроку',
+          },
+        },
         validation: {
           duration: 'Укажіть ціле число від 1 до 180 хвилин.',
         },
@@ -676,6 +708,127 @@ const resources = {
           publishIncomplete:
             'Щоб опублікувати урок, заповніть назву, короткий опис і основний текст та збережіть зміни.',
           classAction: 'Не вдалося оновити уроки класу.',
+        },
+      },
+      lessonTasks: {
+        progress: {
+          NO_TASKS: 'Матеріал без завдань',
+          NOT_STARTED: 'Ще не розпочато',
+          IN_PROGRESS: 'У процесі',
+          COMPLETED: 'Завершено',
+        },
+        submission: {
+          SUBMITTED: 'На перевірці',
+          APPROVED: 'Зараховано',
+          RETURNED: 'Повернено на доопрацювання',
+        },
+        teacher: {
+          eyebrow: 'Практична частина',
+          title: 'Завдання уроку',
+          description:
+            'Додайте короткі письмові завдання й перевіряйте відповіді учнів без окремого розділу.',
+          readOnly:
+            'Архівований урок доступний лише для перегляду. Завдання та перевірку змінювати не можна.',
+          required: 'Обов’язкове',
+          create: {
+            title: 'Нове завдання',
+            description: 'Усі завдання в цій версії обов’язкові.',
+            submit: 'Додати завдання',
+            creating: 'Додаємо…',
+          },
+          fields: {
+            title: 'Назва завдання',
+            titlePlaceholder: 'Наприклад, Поясніть причини події',
+            prompt: 'Умова',
+            promptPlaceholder:
+              'Сформулюйте запитання або вкажіть, що має підготувати учень.',
+          },
+          list: {
+            title: 'Завдання в уроці',
+            description: 'Порядок відповідає порядку виконання.',
+            loading: 'Завантажуємо завдання…',
+            empty: 'У цьому уроці ще немає завдань.',
+          },
+          actions: {
+            retry: 'Спробувати ще раз',
+            edit: 'Редагувати',
+            editNamed: 'Редагувати завдання «{{title}}»',
+            delete: 'Видалити',
+            deleteNamed: 'Видалити завдання «{{title}}»',
+            cancel: 'Скасувати',
+            save: 'Зберегти',
+            saving: 'Зберігаємо…',
+          },
+          edit: {
+            title: 'Редагування завдання',
+          },
+          delete: {
+            title: 'Видалити завдання?',
+            description:
+              '«{{title}}» буде видалено назавжди. Завдання з уже надісланими відповідями видалити не можна.',
+            confirm: 'Видалити',
+            deleting: 'Видаляємо…',
+          },
+          submissions: {
+            title: 'Відповіді учнів',
+            count: 'Відповідей: {{count}}',
+            loading: 'Завантажуємо відповіді…',
+            empty: 'Учні ще не надіслали відповідей.',
+            answer: 'Відповідь',
+            submittedAt: 'Надіслано {{date}}',
+            comment: 'Коментар учителя',
+            commentNamed: 'Коментар для {{student}}',
+            commentPlaceholder:
+              'Поясніть, що вдалося або що потрібно доопрацювати.',
+          },
+          status: {
+            SUBMITTED: 'На перевірці',
+            APPROVED: 'Зараховано',
+            RETURNED: 'Повернено',
+          },
+          review: {
+            approve: 'Зарахувати',
+            return: 'Повернути',
+            saving: 'Зберігаємо…',
+          },
+          errors: {
+            create: 'Не вдалося додати завдання.',
+            update: 'Не вдалося оновити завдання.',
+            delete: 'Не вдалося видалити завдання.',
+            deleteHasSubmissions:
+              'Завдання не можна видалити, оскільки учні вже надіслали відповіді.',
+            loadTasks: 'Не вдалося завантажити завдання.',
+            loadSubmissions: 'Не вдалося завантажити відповіді учнів.',
+            review: 'Не вдалося зберегти результат перевірки.',
+          },
+        },
+        student: {
+          eyebrow: 'Практична частина',
+          title: 'Завдання уроку',
+          description:
+            'Виконайте обов’язкові завдання й дочекайтеся перевірки вчителя.',
+          noTasks: 'Матеріал без завдань',
+          noRequiredTasks: 'Без обов’язкових завдань',
+          progressFraction: '{{approved}} із {{total}} зараховано',
+          rowProgress: '{{approved}}/{{total}} · {{status}}',
+          submittedCount: 'На перевірці: {{count}}',
+          returnedCount: 'Повернено: {{count}}',
+          required: 'Обов’язкове',
+          optional: 'Додаткове',
+          teacherComment: 'Коментар учителя',
+          answer: 'Ваша відповідь',
+          reviseAnswer: 'Оновіть відповідь',
+          answerPlaceholder: 'Напишіть відповідь своїми словами…',
+          submit: 'Надіслати на перевірку',
+          resubmit: 'Надіслати повторно',
+          sending: 'Надсилаємо…',
+          yourAnswer: 'Ваша відповідь',
+        },
+        errors: {
+          network: 'Не вдалося з’єднатися із сервером.',
+          approvedLocked:
+            'Цю відповідь уже зараховано, тому змінювати її більше не можна.',
+          submit: 'Не вдалося надіслати відповідь. Спробуйте ще раз.',
         },
       },
       studentWorkspace: {
@@ -1403,8 +1556,9 @@ const resources = {
             eyebrow: 'New class',
             title: 'Basic information',
             name: 'Class name',
-            namePlaceholder: 'For example, 8-A',
-            grade: 'Grade level',
+            namePlaceholder: 'For example, Conversational English',
+            description:
+              'Give the space a clear name — that is enough to get started.',
             submit: 'Create and get code',
             creating: 'Creating…',
           },
@@ -1412,6 +1566,7 @@ const resources = {
             action: 'Edit',
             eyebrow: 'Class settings',
             title: 'Update class',
+            description: 'Change the name students use to recognise this space.',
             save: 'Save',
             saving: 'Saving…',
             error: 'Could not update the class.',
@@ -1429,20 +1584,16 @@ const resources = {
             loading: 'Loading students…',
             error: 'Could not load the student list.',
             empty:
-              'Nobody has joined yet. Create a code and share it with your students.',
+              'Nobody has joined yet. Share this class’s permanent code with your students.',
           },
           invite: {
             title: 'Invitation code',
             description:
-              'Share the code with students in this class. It is valid for seven days.',
+              'This class’s permanent code. It never changes or expires.',
+            loading: 'Loading code…',
             copy: 'Copy',
             copied: 'Copied',
-            expires: 'Valid until {{date}}',
-            hidden:
-              'For security, the full code is not stored. Create a new code when you are ready to share it.',
-            refresh: 'Create new code',
-            refreshing: 'Creating…',
-            error: 'Could not create a code. Try again.',
+            error: 'Could not load the code.',
           },
         },
         student: {
@@ -1595,6 +1746,14 @@ const resources = {
           savePublished: 'Save changes',
           archived:
             'This lesson is archived and read-only. Restore it from the library to continue editing.',
+          sections: {
+            basicsTitle: 'Basic information',
+            basicsDescription:
+              'The title and short description make the lesson easy to find.',
+            contentTitle: 'Lesson material',
+            contentDescription:
+              'The main text students will see after the lesson is published.',
+          },
           fields: {
             title: 'Lesson title',
             titlePlaceholder: 'For example, Kyivan Rus under Yaroslav',
@@ -1602,7 +1761,6 @@ const resources = {
             summary: 'Short description',
             summaryPlaceholder: 'What is this lesson about and what will students learn?',
             summaryHint: 'Up to 500 characters. This appears in lesson lists.',
-            locale: 'Material language',
             duration: 'Estimated time',
             durationPlaceholder: 'Minutes',
             content: 'Lesson text',
@@ -1654,6 +1812,33 @@ const resources = {
           unlink: 'Remove',
           unlinkNamed: 'Remove “{{title}}” from class',
         },
+        student: {
+          section: {
+            title: 'Lessons',
+            description: 'Materials your teacher has opened for your class.',
+            loading: 'Loading lessons…',
+            loadError: 'Could not load the lessons.',
+            emptyTitle: 'No published lessons yet',
+            emptyDescription:
+              'A material will appear here when your teacher opens it.',
+            open: 'Open lesson',
+            openNamed: 'Open lesson “{{title}}”',
+          },
+          reader: {
+            back: 'Back to class',
+            loading: 'Opening lesson…',
+            eyebrow: 'Class material',
+            unavailableTitle: 'Lesson unavailable',
+            unavailableDescription:
+              'It may have been hidden or may not belong to your class.',
+            loadErrorTitle: 'Could not open the lesson',
+            loadErrorDescription:
+              'Check your connection and try again.',
+            classLabel: 'Class',
+            teacherLabel: 'Teacher',
+            contentTitle: 'Lesson text',
+          },
+        },
         validation: {
           duration: 'Enter a whole number from 1 to 180 minutes.',
         },
@@ -1664,6 +1849,127 @@ const resources = {
           publishIncomplete:
             'Add a title, short description, and lesson text, then save before publishing.',
           classAction: 'Could not update the class lessons.',
+        },
+      },
+      lessonTasks: {
+        progress: {
+          NO_TASKS: 'Material without assignments',
+          NOT_STARTED: 'Not started',
+          IN_PROGRESS: 'In progress',
+          COMPLETED: 'Completed',
+        },
+        submission: {
+          SUBMITTED: 'Awaiting review',
+          APPROVED: 'Approved',
+          RETURNED: 'Returned for revision',
+        },
+        teacher: {
+          eyebrow: 'Practice',
+          title: 'Lesson assignments',
+          description:
+            'Add short written assignments and review student answers without a separate workspace.',
+          readOnly:
+            'This archived lesson is read-only. Its assignments and reviews cannot be changed.',
+          required: 'Required',
+          create: {
+            title: 'New assignment',
+            description: 'Every assignment is required in this version.',
+            submit: 'Add assignment',
+            creating: 'Adding…',
+          },
+          fields: {
+            title: 'Assignment title',
+            titlePlaceholder: 'For example, Explain the causes of the event',
+            prompt: 'Instructions',
+            promptPlaceholder:
+              'Ask a question or explain what the student should prepare.',
+          },
+          list: {
+            title: 'Assignments in this lesson',
+            description: 'They appear in the order students complete them.',
+            loading: 'Loading assignments…',
+            empty: 'This lesson has no assignments yet.',
+          },
+          actions: {
+            retry: 'Try again',
+            edit: 'Edit',
+            editNamed: 'Edit assignment “{{title}}”',
+            delete: 'Delete',
+            deleteNamed: 'Delete assignment “{{title}}”',
+            cancel: 'Cancel',
+            save: 'Save',
+            saving: 'Saving…',
+          },
+          edit: {
+            title: 'Edit assignment',
+          },
+          delete: {
+            title: 'Delete this assignment?',
+            description:
+              '“{{title}}” will be deleted permanently. Assignments with submitted answers cannot be deleted.',
+            confirm: 'Delete',
+            deleting: 'Deleting…',
+          },
+          submissions: {
+            title: 'Student answers',
+            count: 'Answers: {{count}}',
+            loading: 'Loading answers…',
+            empty: 'Students have not submitted any answers yet.',
+            answer: 'Answer',
+            submittedAt: 'Submitted {{date}}',
+            comment: 'Teacher comment',
+            commentNamed: 'Comment for {{student}}',
+            commentPlaceholder:
+              'Explain what worked or what the student should revise.',
+          },
+          status: {
+            SUBMITTED: 'Awaiting review',
+            APPROVED: 'Approved',
+            RETURNED: 'Returned',
+          },
+          review: {
+            approve: 'Approve',
+            return: 'Return',
+            saving: 'Saving…',
+          },
+          errors: {
+            create: 'Could not add the assignment.',
+            update: 'Could not update the assignment.',
+            delete: 'Could not delete the assignment.',
+            deleteHasSubmissions:
+              'This assignment cannot be deleted because students have already submitted answers.',
+            loadTasks: 'Could not load assignments.',
+            loadSubmissions: 'Could not load student answers.',
+            review: 'Could not save the review.',
+          },
+        },
+        student: {
+          eyebrow: 'Practice',
+          title: 'Lesson assignments',
+          description:
+            'Complete the required assignments and wait for your teacher’s review.',
+          noTasks: 'Material without assignments',
+          noRequiredTasks: 'No required assignments',
+          progressFraction: '{{approved}} of {{total}} approved',
+          rowProgress: '{{approved}}/{{total}} · {{status}}',
+          submittedCount: 'Awaiting review: {{count}}',
+          returnedCount: 'Returned: {{count}}',
+          required: 'Required',
+          optional: 'Optional',
+          teacherComment: 'Teacher comment',
+          answer: 'Your answer',
+          reviseAnswer: 'Revise your answer',
+          answerPlaceholder: 'Write the answer in your own words…',
+          submit: 'Submit for review',
+          resubmit: 'Submit again',
+          sending: 'Submitting…',
+          yourAnswer: 'Your answer',
+        },
+        errors: {
+          network: 'Could not connect to the server.',
+          approvedLocked:
+            'This answer has already been approved and can no longer be changed.',
+          submit: 'Could not submit the answer. Try again.',
         },
       },
       studentWorkspace: {

@@ -2,11 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
   BookOpen,
-  Check,
   Clock3,
   Eye,
   EyeOff,
-  Languages,
   Link2,
   Link2Off,
   Save,
@@ -29,6 +27,7 @@ import {
 import { ConfirmationDialog } from '../components/ConfirmationDialog'
 import { lessonQueryKeys } from '../model/lesson-query-keys'
 import type { Lesson, LessonDraftInput } from '../model/lesson.types'
+import { TeacherLessonTasks } from '../tasks/TeacherLessonTasks'
 import styles from '../Lessons.module.css'
 
 interface EditorValues {
@@ -369,96 +368,106 @@ export function TeacherLessonEditorPage() {
         )}
 
         <div className={styles.editorLayout}>
-          <form className={styles.editorForm} onSubmit={(event) => event.preventDefault()}>
-            <fieldset disabled={isArchived}>
-              <label className={styles.fullField}>
-                <span>{t('lessons.editor.fields.title')}</span>
-                <input
-                  maxLength={160}
-                  onChange={(event) =>
-                    updateEditorValue('title', event.target.value)
-                  }
-                  placeholder={t('lessons.editor.fields.titlePlaceholder')}
-                  value={values.title}
-                />
-                <small>{t('lessons.editor.fields.titleHint')}</small>
-              </label>
+          <form
+            className={styles.editorForm}
+            onSubmit={(event) => event.preventDefault()}
+          >
+              <fieldset disabled={isArchived}>
+                <section className={styles.editorFormSection}>
+                  <div className={styles.editorSectionHeading}>
+                    <h2>{t('lessons.editor.sections.basicsTitle')}</h2>
+                    <p>{t('lessons.editor.sections.basicsDescription')}</p>
+                  </div>
+                  <div className={styles.editorSectionFields}>
+                    <label className={styles.fullField}>
+                      <span>{t('lessons.editor.fields.title')}</span>
+                      <input
+                        className={styles.titleInput}
+                        maxLength={160}
+                        onChange={(event) =>
+                          updateEditorValue('title', event.target.value)
+                        }
+                        placeholder={t('lessons.editor.fields.titlePlaceholder')}
+                        value={values.title}
+                      />
+                      <small>{t('lessons.editor.fields.titleHint')}</small>
+                    </label>
 
-              <label className={styles.fullField}>
-                <span>{t('lessons.editor.fields.summary')}</span>
-                <textarea
-                  className={styles.summaryInput}
-                  maxLength={500}
-                  onChange={(event) =>
-                    updateEditorValue('summary', event.target.value)
-                  }
-                  placeholder={t('lessons.editor.fields.summaryPlaceholder')}
-                  rows={3}
-                  value={values.summary}
-                />
-                <small>{t('lessons.editor.fields.summaryHint')}</small>
-              </label>
+                    <label className={styles.fullField}>
+                      <span>{t('lessons.editor.fields.summary')}</span>
+                      <textarea
+                        className={styles.summaryInput}
+                        maxLength={500}
+                        onChange={(event) =>
+                          updateEditorValue('summary', event.target.value)
+                        }
+                        placeholder={t('lessons.editor.fields.summaryPlaceholder')}
+                        rows={3}
+                        value={values.summary}
+                      />
+                      <small>{t('lessons.editor.fields.summaryHint')}</small>
+                    </label>
 
-              <div className={styles.compactFields}>
-                <label>
-                  <span>
-                    <Languages size={14} aria-hidden="true" />
-                    {t('lessons.editor.fields.locale')}
-                  </span>
-                  <select
-                    onChange={(event) =>
-                      updateEditorValue(
-                        'contentLocale',
-                        event.target.value as 'UK' | 'EN',
-                      )
-                    }
-                    value={values.contentLocale}
-                  >
-                    <option value="UK">{t('lessons.locale.UK')}</option>
-                    <option value="EN">{t('lessons.locale.EN')}</option>
-                  </select>
-                </label>
-                <label>
-                  <span>
-                    <Clock3 size={14} aria-hidden="true" />
-                    {t('lessons.editor.fields.duration')}
-                  </span>
-                  <input
-                    aria-describedby={
-                      durationError ? 'lesson-duration-error' : undefined
-                    }
-                    inputMode="numeric"
-                    max={180}
-                    min={1}
-                    onChange={(event) =>
-                      updateEditorValue('estimatedMinutes', event.target.value)
-                    }
-                    placeholder={t('lessons.editor.fields.durationPlaceholder')}
-                    type="number"
-                    value={values.estimatedMinutes}
-                  />
-                  {durationError && (
-                    <small className={styles.fieldError} id="lesson-duration-error">
-                      {durationError}
-                    </small>
-                  )}
-                </label>
-              </div>
+                    <div className={styles.lessonSettingsRow}>
+                      <label>
+                        <span>
+                          <Clock3 size={14} aria-hidden="true" />
+                          {t('lessons.editor.fields.duration')}
+                        </span>
+                        <input
+                          aria-describedby={
+                            durationError ? 'lesson-duration-error' : undefined
+                          }
+                          inputMode="numeric"
+                          max={180}
+                          min={1}
+                          onChange={(event) =>
+                            updateEditorValue(
+                              'estimatedMinutes',
+                              event.target.value,
+                            )
+                          }
+                          placeholder={t(
+                            'lessons.editor.fields.durationPlaceholder',
+                          )}
+                          type="number"
+                          value={values.estimatedMinutes}
+                        />
+                        {durationError && (
+                          <small
+                            className={styles.fieldError}
+                            id="lesson-duration-error"
+                          >
+                            {durationError}
+                          </small>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                </section>
 
-              <label className={styles.fullField}>
-                <span>{t('lessons.editor.fields.content')}</span>
-                <textarea
-                  className={styles.contentInput}
-                  onChange={(event) =>
-                    updateEditorValue('content', event.target.value)
-                  }
-                  placeholder={t('lessons.editor.fields.contentPlaceholder')}
-                  rows={18}
-                  value={values.content}
-                />
-                <small>{t('lessons.editor.fields.contentHint')}</small>
-              </label>
-            </fieldset>
+                <section className={styles.editorFormSection}>
+                  <div className={styles.editorSectionHeading}>
+                    <h2>{t('lessons.editor.sections.contentTitle')}</h2>
+                    <p>{t('lessons.editor.sections.contentDescription')}</p>
+                  </div>
+                  <div className={styles.editorSectionFields}>
+                    <label className={styles.fullField}>
+                      <span>{t('lessons.editor.fields.content')}</span>
+                      <textarea
+                        className={styles.contentInput}
+                        onChange={(event) =>
+                          updateEditorValue('content', event.target.value)
+                        }
+                        placeholder={t('lessons.editor.fields.contentPlaceholder')}
+                        rows={18}
+                        value={values.content}
+                      />
+                      <small>{t('lessons.editor.fields.contentHint')}</small>
+                    </label>
+                  </div>
+                </section>
+              </fieldset>
           </form>
 
           <aside className={styles.classAssignmentPanel}>
@@ -585,28 +594,15 @@ export function TeacherLessonEditorPage() {
               </ul>
             )}
           </aside>
-        </div>
 
-        <div className={styles.editorFooterActions}>
-          <button className={styles.secondaryButton} onClick={leaveEditor} type="button">
-            {t('lessons.common.cancel')}
-          </button>
-          <button
-            className={styles.primaryButton}
-            disabled={
-              isArchived ||
-              Boolean(durationError) ||
-              saveMutation.isPending ||
-              (!isDirty && Boolean(activeLessonId))
-            }
-            onClick={saveNow}
-            type="button"
-          >
-            <Check size={16} aria-hidden="true" />
-            {lessonStatus === 'PUBLISHED'
-              ? t('lessons.editor.savePublished')
-              : t('lessons.editor.saveNow')}
-          </button>
+          {activeLessonId && (
+            <div className={styles.editorTasks}>
+              <TeacherLessonTasks
+                lessonId={activeLessonId}
+                readOnly={isArchived}
+              />
+            </div>
+          )}
         </div>
       </div>
 

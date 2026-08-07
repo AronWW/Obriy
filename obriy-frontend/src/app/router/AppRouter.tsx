@@ -21,6 +21,7 @@ import { StudentOverviewPage } from '../../features/student-overview'
 import { StudentProfilePage } from '../../features/student-profile'
 import { TeacherProfilePage } from '../../features/teacher-profile'
 import {
+  StudentLessonReaderPage,
   TeacherLessonEditorPage,
   TeacherLessonsPage,
 } from '../../features/lessons'
@@ -41,7 +42,9 @@ import { StudentPlaceholderPage } from '../../pages/student/StudentPlaceholderPa
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route element={<PublicOnlyRoute />}>
+        <Route path="/" element={<HomePage />} />
+      </Route>
       <Route path="/parent-invite" element={<ParentInviteLandingPage />} />
 
       <Route path="/auth" element={<AuthLayout />}>
@@ -64,6 +67,10 @@ export function AppRouter() {
           <Route path="/app/student" element={<DesignLabPage />}>
             <Route index element={<StudentOverviewPage />} />
             <Route path="classes" element={<StudentClassesPage />} />
+            <Route
+              path="lessons/:lessonId"
+              element={<StudentLessonReaderPage />}
+            />
             <Route
               path="classmates/:studentId"
               element={<ClassmateProfilePage />}

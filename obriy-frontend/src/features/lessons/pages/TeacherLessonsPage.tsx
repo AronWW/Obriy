@@ -4,7 +4,6 @@ import {
   BookOpen,
   Clock3,
   Edit3,
-  Languages,
   Plus,
   RotateCcw,
   Search,
@@ -164,10 +163,6 @@ export function TeacherLessonsPage() {
                       className={`${styles.statusBadge} ${styles[`status${lesson.status}`]}`}
                     >
                       {t(`lessons.status.${lesson.status}`)}
-                    </span>
-                    <span className={styles.lessonMetaItem}>
-                      <Languages size={14} aria-hidden="true" />
-                      {t(`lessons.locale.${lesson.contentLocale}`)}
                     </span>
                     {lesson.estimatedMinutes !== null && (
                       <span className={styles.lessonMetaItem}>

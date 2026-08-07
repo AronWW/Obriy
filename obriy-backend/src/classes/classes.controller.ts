@@ -100,13 +100,13 @@ export class ClassesController {
     return this.classesService.updateOwnedClass(user, classId, dto);
   }
 
-  @ApiCreatedResponse({ type: ClassInviteDto })
-  @Post(':classId/invite')
-  createInvite(
+  @ApiOkResponse({ type: ClassInviteDto })
+  @Get(':classId/invite')
+  findInvite(
     @CurrentUser() user: AuthUser,
     @Param('classId') classId: string,
   ): Promise<ClassInviteDto> {
-    return this.classesService.createInvite(user, classId);
+    return this.classesService.findInvite(user, classId);
   }
 
   @ApiOkResponse({ type: ClassMemberDto, isArray: true })

@@ -50,9 +50,52 @@ const lessons = [
 ]
 
 const classrooms = [
-  classroom('class-9a', '9-А · Історичні дослідники', 9),
-  classroom('class-9b', '9-Б', 9),
-  classroom('class-8a', '8-А', 8),
+  classroom('class-9a', '9-А · Історичні дослідники'),
+  classroom('class-9b', '9-Б'),
+  classroom('class-8a', '8-А'),
+]
+
+const lessonTasks = [
+  {
+    id: 'task-causes',
+    lessonId: 'lesson-revolution',
+    title: 'Поясніть причини революції',
+    prompt:
+      'Назвіть дві передумови Української революції та коротко поясніть їхній вплив.',
+    position: 0,
+    isRequired: true,
+    createdAt: '2026-08-01T10:15:00.000Z',
+    updatedAt: '2026-08-01T10:15:00.000Z',
+  },
+  {
+    id: 'task-source',
+    lessonId: 'lesson-revolution',
+    title: 'Проаналізуйте джерело',
+    prompt: 'Сформулюйте головну думку наведеного уривка.',
+    position: 1,
+    isRequired: true,
+    createdAt: '2026-08-01T10:20:00.000Z',
+    updatedAt: '2026-08-01T10:20:00.000Z',
+  },
+]
+
+const taskSubmissions = [
+  {
+    id: 'submission-sofia',
+    taskId: 'task-causes',
+    taskTitle: 'Поясніть причини революції',
+    taskPosition: 0,
+    taskIsRequired: true,
+    answerText:
+      'Національний рух посилився, а падіння імперії створило можливість відновити державність.',
+    status: 'SUBMITTED',
+    teacherComment: null,
+    submittedAt: '2026-08-01T13:10:00.000Z',
+    reviewedAt: null,
+    updatedAt: '2026-08-01T13:10:00.000Z',
+    student: { id: 'student-sofia', displayName: 'Софія Марченко' },
+    class: { id: 'class-9a', name: '9-А · Історичні дослідники' },
+  },
 ]
 
 test('teacher lesson library uses large horizontal rows on desktop day', async ({
@@ -129,6 +172,23 @@ test('lesson editor and class assignment stay usable on mobile night', async ({
       body: JSON.stringify(classrooms),
     })
   })
+  await page.route('**/lessons/lesson-revolution/tasks', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(lessonTasks),
+    })
+  })
+  await page.route(
+    '**/lessons/lesson-revolution/task-submissions',
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(taskSubmissions),
+      })
+    },
+  )
 
   await page.goto('/app/teacher/lessons/lesson-revolution/edit')
   await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -143,7 +203,9 @@ test('lesson editor and class assignment stay usable on mobile night', async ({
   await expect(page.getByRole('heading', { name: 'Класи', level: 2 })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Приховати' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Опублікувати' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Додати' })).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Додати', exact: true }),
+  ).toBeVisible()
   await expect(
     page.getByRole('textbox', { name: /^Назва уроку/ }),
   ).toHaveValue('Українська революція 1917–1921')
@@ -153,6 +215,18 @@ test('lesson editor and class assignment stay usable on mobile night', async ({
   await expect(
     page.getByRole('button', { name: 'Зберегти зміни' }).first(),
   ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Завдання уроку', level: 2 }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', {
+      name: 'Поясніть причини революції',
+      level: 3,
+    }),
+  ).toBeVisible()
+  await expect(page.getByText('Софія Марченко')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Зарахувати' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Повернути' })).toBeVisible()
 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'night')
   const classHeadingBox = await page
@@ -163,7 +237,7 @@ test('lesson editor and class assignment stay usable on mobile night', async ({
     .boundingBox()
   expect(classHeadingBox).not.toBeNull()
   expect(titleInputBox).not.toBeNull()
-  expect(classHeadingBox!.y).toBeLessThan(titleInputBox!.y)
+  expect(classHeadingBox!.y).toBeGreaterThan(titleInputBox!.y)
   await expectNoHorizontalOverflow(page)
 
   await page.screenshot({
@@ -232,14 +306,12 @@ function classLink(
   }
 }
 
-function classroom(id: string, name: string, gradeLevel: number) {
+function classroom(id: string, name: string) {
   return {
     id,
     name,
-    gradeLevel,
     studentCount: 18,
     createdAt: '2026-07-20T09:00:00.000Z',
     updatedAt: '2026-08-01T09:00:00.000Z',
-    activeInviteExpiresAt: null,
   }
 }

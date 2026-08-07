@@ -42,10 +42,8 @@ export function listTeacherClassMembers(
   return authorizedRequest<ClassMember[]>(`/classes/${classId}/members`)
 }
 
-export function createClassInvite(classId: string): Promise<ClassInvite> {
-  return authorizedRequest<ClassInvite>(`/classes/${classId}/invite`, {
-    method: 'POST',
-  })
+export function getClassInvite(classId: string): Promise<ClassInvite> {
+  return authorizedRequest<ClassInvite>(`/classes/${classId}/invite`)
 }
 
 export function getStudentClass(): Promise<StudentClass | null> {

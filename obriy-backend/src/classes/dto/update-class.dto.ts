@@ -1,14 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, type TransformFnParams } from 'class-transformer';
-import {
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-  MinLength,
-} from 'class-validator';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 function trimString({ value }: TransformFnParams): unknown {
   const input: unknown = value;
@@ -23,11 +15,4 @@ export class UpdateClassDto {
   @MinLength(2)
   @MaxLength(80)
   name?: string;
-
-  @ApiPropertyOptional({ example: 8, minimum: 1, maximum: 12 })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(12)
-  gradeLevel?: number;
 }

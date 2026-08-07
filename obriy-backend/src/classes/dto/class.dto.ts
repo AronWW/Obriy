@@ -7,9 +7,6 @@ export class ClassSummaryDto {
   @ApiProperty({ example: '8-А' })
   name: string;
 
-  @ApiProperty({ example: 8 })
-  gradeLevel: number;
-
   @ApiProperty({ example: 18 })
   studentCount: number;
 
@@ -18,9 +15,6 @@ export class ClassSummaryDto {
 
   @ApiProperty({ type: String, format: 'date-time' })
   updatedAt: Date;
-
-  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
-  activeInviteExpiresAt: Date | null;
 
   constructor(data: ClassSummaryDto) {
     Object.assign(this, data);
@@ -31,12 +25,8 @@ export class ClassInviteDto {
   @ApiProperty({ example: '7KXM-P9QD' })
   code: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
-  expiresAt: Date;
-
   constructor(data: ClassInviteDto) {
     this.code = data.code;
-    this.expiresAt = data.expiresAt;
   }
 }
 

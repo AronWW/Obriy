@@ -41,6 +41,98 @@ enum LessonTaskSubmissionStatus {
   RETURNED
 }
 
+enum AssignmentType {
+  WRITTEN
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  MATCHING
+  ORDERING
+  CATEGORIZATION
+  FILL_BLANKS
+  IMAGE_HOTSPOT
+  MAP_POINT
+  MAP_REGION
+  MAP_MULTI_REGION
+}
+
+enum AssignmentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AssignmentRevisionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AssignmentReleaseStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum AssignmentScorePolicy {
+  BEST
+  LATEST
+}
+
+enum AssignmentLatePolicy {
+  DISALLOW
+  ALLOW
+  ALLOW_WITH_PENALTY
+}
+
+enum AssignmentStudentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  AWAITING_REVIEW
+  NEEDS_REVISION
+  COMPLETED
+  EXPIRED
+}
+
+enum AssignmentAttemptStatus {
+  IN_PROGRESS
+  AWAITING_REVIEW
+  GRADED
+  RETURNED
+  EXPIRED
+  CANCELLED
+}
+
+enum AssignmentAttachmentKind {
+  PROMPT
+  RESPONSE
+}
+
+enum AssignmentAttachmentStatus {
+  PENDING
+  READY
+  REJECTED
+  DELETED
+}
+
+enum AssignmentReviewAction {
+  APPROVED
+  RETURNED
+  SCORE_OVERRIDDEN
+  COMMENT_UPDATED
+}
+
+enum MapPresetSourceType {
+  BUILT_IN
+  CUSTOM_GEOJSON
+}
+
+enum MapPresetStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 model User {
   id              String     @id @default(uuid())
   email           String     @unique
@@ -63,6 +155,12 @@ model User {
   taughtClasses           Class[]                  @relation("TeacherClasses")
   authoredLessons         Lesson[]                 @relation("TeacherLessons")
   lessonTaskSubmissions   LessonTaskSubmission[]   @relation("StudentLessonTaskSubmissions")
+  authoredAssignments     Assignment[]             @relation("TeacherAssignments")
+  assignmentStates        AssignmentStudentState[] @relation("StudentAssignmentStates")
+  reviewedAttempts        AssignmentAttempt[]      @relation("AssignmentAttemptReviewer")
+  assignmentReviewEvents  AssignmentReviewEvent[]  @relation("AssignmentReviewEventReviewer")
+  assignmentAttachments   AssignmentAttachment[]   @relation("AssignmentAttachmentUploader")
+  createdMapPresets       MapPreset[]              @relation("MapPresetCreator")
   studentClassId          String?
   studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
 
@@ -193,10 +291,11 @@ model Class {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  teacher         User                   @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
-  students        User[]                 @relation("ClassStudents")
-  lessonLinks     ClassLesson[]
-  taskSubmissions LessonTaskSubmission[]
+  teacher            User                   @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  students           User[]                 @relation("ClassStudents")
+  lessonLinks        ClassLesson[]
+  taskSubmissions    LessonTaskSubmission[]
+  assignmentReleases AssignmentRelease[]
 
   @@index([teacherId])
 }
@@ -213,9 +312,11 @@ model Lesson {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  teacher    User          @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
-  classLinks ClassLesson[]
-  tasks      LessonTask[]
+  teacher            User                @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
+  classLinks         ClassLesson[]
+  tasks              LessonTask[]
+  assignmentLinks    LessonAssignment[]
+  assignmentReleases AssignmentRelease[]
 
   @@index([teacherId, status, updatedAt])
 }
@@ -273,4 +374,248 @@ model LessonTaskSubmission {
   @@index([taskId, status])
   @@index([studentId, classId, status])
   @@index([classId, status, submittedAt])
+}
+
+model Assignment {
+  id                    String           @id @default(uuid())
+  teacherId             String
+  type                  AssignmentType
+  contentLocale         Locale
+  status                AssignmentStatus @default(DRAFT)
+  defaultMaxPoints      Decimal          @default(1) @db.Decimal(8, 2)
+  defaultPassingPercent Decimal          @default(100) @db.Decimal(5, 2)
+  archivedAt            DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  teacher     User                 @relation("TeacherAssignments", fields: [teacherId], references: [id], onDelete: Cascade)
+  revisions   AssignmentRevision[]
+  lessonLinks LessonAssignment[]
+  releases    AssignmentRelease[]
+
+  @@index([teacherId, status, updatedAt])
+  @@index([teacherId, type, updatedAt])
+}
+
+model AssignmentRevision {
+  id            String                   @id @default(uuid())
+  assignmentId  String
+  mapPresetId   String?
+  version       Int
+  status        AssignmentRevisionStatus @default(DRAFT)
+  title         String                   @db.VarChar(160)
+  prompt        String                   @db.Text
+  instructions  String?                  @db.Text
+  explanation   String?                  @db.Text
+  publicConfig  Json
+  schemaVersion Int                      @default(1)
+  editVersion   Int                      @default(1)
+  publishedAt   DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  assignment  Assignment             @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  mapPreset   MapPreset?             @relation(fields: [mapPresetId], references: [id], onDelete: Restrict)
+  solution    AssignmentSolution?
+  lessonLinks LessonAssignment[]
+  releases    AssignmentRelease[]
+  attempts    AssignmentAttempt[]
+  attachments AssignmentAttachment[]
+
+  @@unique([assignmentId, version])
+  @@unique([id, assignmentId])
+  @@index([assignmentId, status, version])
+  @@index([mapPresetId])
+}
+
+model AssignmentSolution {
+  revisionId    String   @id
+  gradingConfig Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  revision AssignmentRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+}
+
+model LessonAssignment {
+  id           String   @id @default(uuid())
+  lessonId     String
+  assignmentId String
+  revisionId   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lesson     Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  assignment Assignment         @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  revision   AssignmentRevision @relation(fields: [revisionId, assignmentId], references: [id, assignmentId], onDelete: Restrict)
+
+  @@unique([lessonId, assignmentId])
+  @@index([assignmentId])
+  @@index([revisionId])
+}
+
+model AssignmentRelease {
+  id                 String                  @id @default(uuid())
+  assignmentId       String
+  revisionId         String
+  classId            String
+  lessonId           String?
+  status             AssignmentReleaseStatus @default(DRAFT)
+  maxPoints          Decimal                 @db.Decimal(8, 2)
+  passingPercent     Decimal                 @default(100) @db.Decimal(5, 2)
+  isRequired         Boolean                 @default(true)
+  availableFrom      DateTime?
+  dueAt              DateTime?
+  timeLimitSeconds   Int?
+  maxAttempts        Int?
+  scorePolicy        AssignmentScorePolicy   @default(BEST)
+  latePolicy         AssignmentLatePolicy    @default(DISALLOW)
+  latePenaltyPercent Decimal?                @db.Decimal(5, 2)
+  xpReward           Int                     @default(0)
+  publishedAt        DateTime?
+  closedAt           DateTime?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  assignment    Assignment               @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  revision      AssignmentRevision       @relation(fields: [revisionId, assignmentId], references: [id, assignmentId], onDelete: Restrict)
+  class         Class                    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  lesson        Lesson?                  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  studentStates AssignmentStudentState[]
+
+  @@index([assignmentId, status, createdAt])
+  @@index([revisionId])
+  @@index([classId, status, availableFrom, dueAt])
+  @@index([lessonId, classId, status])
+}
+
+model AssignmentStudentState {
+  id             String                  @id @default(uuid())
+  releaseId      String
+  studentId      String
+  status         AssignmentStudentStatus @default(NOT_STARTED)
+  attemptCount   Int                     @default(0)
+  scorePoints    Decimal?                @db.Decimal(8, 2)
+  scorePercent   Decimal?                @db.Decimal(5, 2)
+  bestPoints     Decimal?                @db.Decimal(8, 2)
+  bestPercent    Decimal?                @db.Decimal(5, 2)
+  isLate         Boolean                 @default(false)
+  startedAt      DateTime?
+  lastActivityAt DateTime?
+  submittedAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  release  AssignmentRelease   @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  student  User                @relation("StudentAssignmentStates", fields: [studentId], references: [id], onDelete: Cascade)
+  attempts AssignmentAttempt[]
+
+  @@unique([releaseId, studentId])
+  @@index([studentId, status, updatedAt])
+  @@index([releaseId, status, completedAt])
+}
+
+model AssignmentAttempt {
+  id              String                  @id @default(uuid())
+  studentStateId  String
+  revisionId      String
+  reviewedById    String?
+  attemptNumber   Int
+  clientAttemptId String                  @db.VarChar(64)
+  status          AssignmentAttemptStatus @default(IN_PROGRESS)
+  responseData    Json?
+  gradingData     Json?
+  feedbackData    Json?
+  maxPoints       Decimal                 @db.Decimal(8, 2)
+  scorePoints     Decimal?                @db.Decimal(8, 2)
+  scorePercent    Decimal?                @db.Decimal(5, 2)
+  isPassed        Boolean?
+  isLate          Boolean                 @default(false)
+  teacherComment  String?                 @db.Text
+  startedAt       DateTime                @default(now())
+  expiresAt       DateTime?
+  submittedAt     DateTime?
+  gradedAt        DateTime?
+  reviewedAt      DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  studentState AssignmentStudentState  @relation(fields: [studentStateId], references: [id], onDelete: Cascade)
+  revision     AssignmentRevision      @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  reviewedBy   User?                   @relation("AssignmentAttemptReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  attachments  AssignmentAttachment[]
+  reviewEvents AssignmentReviewEvent[]
+
+  @@unique([studentStateId, attemptNumber])
+  @@unique([studentStateId, clientAttemptId])
+  @@index([revisionId, status])
+  @@index([status, submittedAt])
+  @@index([reviewedById])
+}
+
+model AssignmentAttachment {
+  id             String                     @id @default(uuid())
+  revisionId     String?
+  attemptId      String?
+  uploadedById   String?
+  kind           AssignmentAttachmentKind
+  status         AssignmentAttachmentStatus @default(PENDING)
+  storageKey     String                     @unique @db.VarChar(500)
+  originalName   String                     @db.VarChar(255)
+  mimeType       String                     @db.VarChar(127)
+  sizeBytes      BigInt
+  checksumSha256 String?                    @db.VarChar(64)
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  revision   AssignmentRevision? @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  attempt    AssignmentAttempt?  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  uploadedBy User?               @relation("AssignmentAttachmentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([revisionId, kind])
+  @@index([attemptId, kind])
+  @@index([uploadedById])
+}
+
+model AssignmentReviewEvent {
+  id           String                 @id @default(uuid())
+  attemptId    String
+  reviewerId   String?
+  action       AssignmentReviewAction
+  previousData Json?
+  nextData     Json?
+  comment      String?                @db.Text
+  createdAt    DateTime               @default(now())
+
+  attempt  AssignmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  reviewer User?             @relation("AssignmentReviewEventReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([attemptId, createdAt])
+  @@index([reviewerId, createdAt])
+}
+
+model MapPreset {
+  id              String              @id @default(uuid())
+  createdById     String?
+  key             String              @unique @db.VarChar(120)
+  name            String              @db.VarChar(160)
+  contentLocale   Locale
+  sourceType      MapPresetSourceType
+  status          MapPresetStatus     @default(ACTIVE)
+  geojsonUrl      String?             @db.VarChar(1000)
+  idProperty      String?             @db.VarChar(100)
+  year            Int?
+  attribution     String              @db.Text
+  bounds          Json?
+  defaultViewport Json?
+  archivedAt      DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  createdBy User?                @relation("MapPresetCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  revisions AssignmentRevision[]
+
+  @@index([createdById, status, updatedAt])
+  @@index([sourceType, status])
 }

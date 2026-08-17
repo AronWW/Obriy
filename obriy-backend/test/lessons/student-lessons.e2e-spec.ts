@@ -124,9 +124,11 @@ describe('Student lessons (e2e)', () => {
           progress: {
             status: 'NO_TASKS',
             requiredTotal: 0,
-            approved: 0,
-            submitted: 0,
-            returned: 0,
+            completed: 0,
+            awaitingReview: 0,
+            needsRevision: 0,
+            inProgress: 0,
+            expired: 0,
           },
         });
         for (const lesson of body) {
@@ -167,14 +169,15 @@ describe('Student lessons (e2e)', () => {
           progress: {
             status: 'NO_TASKS',
             requiredTotal: 0,
-            approved: 0,
-            submitted: 0,
-            returned: 0,
+            completed: 0,
+            awaitingReview: 0,
+            needsRevision: 0,
+            inProgress: 0,
+            expired: 0,
           },
           content,
           class: { id: currentClassId, name: 'Current class' },
           teacher: { id: ids.teacher, displayName: 'Teacher Example' },
-          tasks: [],
         });
         expect(getResponseBody(response).teacher).not.toHaveProperty('email');
       });

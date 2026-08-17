@@ -104,6 +104,32 @@ export class AssignmentsService {
       });
     }
 
+    const publicConfigResult = validateAssignmentDraftPublicConfig(
+      dto.type,
+      CURRENT_ASSIGNMENT_SCHEMA_VERSION,
+      dto.draft?.publicConfig ?? defaults.data.publicConfig,
+    );
+    if (!publicConfigResult.success) {
+      throw this.invalidConfig(publicConfigResult.issues);
+    }
+    const solutionResult = validateAssignmentSolution(
+      dto.type,
+      CURRENT_ASSIGNMENT_SCHEMA_VERSION,
+      dto.draft?.gradingConfig ?? defaults.data.gradingConfig,
+    );
+    if (!solutionResult.success) {
+      throw this.invalidConfig(solutionResult.issues, 'gradingConfig');
+    }
+    if (dto.type === AssignmentType.WRITTEN && dto.draft?.mapPresetId) {
+      throw this.invalidConfig([
+        {
+          path: ['mapPresetId'],
+          code: 'INVALID_CONFIGURATION',
+          message: 'Written assignments cannot use a map preset.',
+        },
+      ]);
+    }
+
     const contentLocale =
       dto.contentLocale ?? (await this.findPreferredLocale(user.id));
     const assignmentId = await this.prisma.$transaction(async (transaction) => {
@@ -118,15 +144,20 @@ export class AssignmentsService {
             create: {
               version: 1,
               status: AssignmentRevisionStatus.DRAFT,
-              title: '',
-              prompt: '',
-              publicConfig: this.toInputJsonValue(defaults.data.publicConfig),
+              mapPresetId: dto.draft?.mapPresetId,
+              title: dto.draft?.title ?? '',
+              prompt: dto.draft?.prompt ?? '',
+              instructions: this.normalizeOptionalText(
+                dto.draft?.instructions ?? null,
+              ),
+              explanation: this.normalizeOptionalText(
+                dto.draft?.explanation ?? null,
+              ),
+              publicConfig: this.toInputJsonValue(publicConfigResult.data),
               schemaVersion: CURRENT_ASSIGNMENT_SCHEMA_VERSION,
               solution: {
                 create: {
-                  gradingConfig: this.toInputJsonValue(
-                    defaults.data.gradingConfig,
-                  ),
+                  gradingConfig: this.toInputJsonValue(solutionResult.data),
                 },
               },
             },

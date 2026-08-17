@@ -36,10 +36,10 @@ describe('teacher lesson workspace', () => {
       user: teacher,
     })
     server.use(
-      http.get(`${API_BASE_URL}/lessons/:lessonId/tasks`, () =>
+      http.get(`${API_BASE_URL}/lessons/:lessonId/assignments`, () =>
         HttpResponse.json([]),
       ),
-      http.get(`${API_BASE_URL}/lessons/:lessonId/task-submissions`, () =>
+      http.get(`${API_BASE_URL}/lessons/:lessonId/assignment-attempts`, () =>
         HttpResponse.json([]),
       ),
     )
@@ -268,6 +268,98 @@ describe('teacher lesson workspace', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
 
     expect(await within(dialog).findByRole('alert')).toBeInTheDocument()
+  })
+
+  it('reviews a submitted written answer with a partial score', async () => {
+    const user = userEvent.setup()
+    let reviewBody: unknown
+    const lesson = lessonDetail()
+    const pendingReview = {
+      attemptId: 'attempt-1',
+      releaseId: 'release-1',
+      assignmentId: 'assignment-1',
+      type: 'WRITTEN',
+      assignmentTitle: 'Historical reflection',
+      prompt: 'Explain why the event mattered.',
+      responseText: 'It changed the political system.',
+      attemptNumber: 1,
+      status: 'AWAITING_REVIEW',
+      maxPoints: 5,
+      passingPercent: 60,
+      scorePoints: null,
+      scorePercent: null,
+      isPassed: null,
+      teacherComment: null,
+      submittedAt: '2026-08-13T10:00:00.000Z',
+      reviewedAt: null,
+      updatedAt: '2026-08-13T10:00:00.000Z',
+      student: { id: 'student-1', displayName: 'Maksym Bondar' },
+      class: { id: 'class-1', name: 'Grade 9-A' },
+    }
+
+    server.use(
+      http.get(`${API_BASE_URL}/lessons/lesson-1`, () =>
+        HttpResponse.json(lesson),
+      ),
+      http.get(`${API_BASE_URL}/classes`, () => HttpResponse.json([])),
+      http.get(
+        `${API_BASE_URL}/lessons/lesson-1/assignment-attempts`,
+        () => HttpResponse.json([pendingReview]),
+      ),
+      http.patch(
+        `${API_BASE_URL}/assignment-attempts/attempt-1/review`,
+        async ({ request }) => {
+          reviewBody = await request.json()
+          return HttpResponse.json({
+            ...pendingReview,
+            status: 'GRADED',
+            scorePoints: 3.5,
+            scorePercent: 70,
+            isPassed: true,
+            teacherComment: 'A clear answer.',
+            reviewedAt: '2026-08-13T11:00:00.000Z',
+          })
+        },
+      ),
+    )
+
+    renderLessonEditor('/app/teacher/lessons/lesson-1/edit')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Student answers' }),
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Maksym Bondar')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Review' }))
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Historical reflection',
+    })
+    expect(
+      within(dialog).getByText('It changed the political system.'),
+    ).toBeInTheDocument()
+    const scoreInput = within(dialog).getByRole('spinbutton', {
+      name: 'Points awarded',
+    })
+    await user.clear(scoreInput)
+    await user.type(scoreInput, '3.5')
+    await user.type(
+      within(dialog).getByRole('textbox', { name: 'Teacher comment' }),
+      'A clear answer.',
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Approve answer' }),
+    )
+
+    await waitFor(() =>
+      expect(reviewBody).toEqual({
+        decision: 'APPROVED',
+        scorePoints: 3.5,
+        teacherComment: 'A clear answer.',
+      }),
+    )
+    expect(
+      await screen.findByText('The answer was reviewed and approved.'),
+    ).toBeInTheDocument()
   })
 
   it('does not allow discarding while the first draft save is in flight', async () => {

@@ -500,7 +500,9 @@
 }
 
 .editorTasks {
+  display: grid;
   min-width: 0;
+  gap: 16px;
   grid-area: tasks;
 }
 

@@ -8,13 +8,15 @@ import i18n from '../../../i18n/config'
 import { API_BASE_URL } from '../../../shared/config/env'
 import { server } from '../../../test/server'
 import { useSessionStore } from '../../auth/model/session.store'
+import type {
+  StudentAssignmentAttempt,
+  StudentLessonAssignment,
+} from '../../assignments/model/assignment.types'
 import { StudentClassesPage } from '../../classes/pages/StudentClassesPage'
 import type {
   StudentLessonProgress,
-  StudentLessonTask,
-  StudentTaskSubmission,
-} from '../model/lesson-task.types'
-import type { StudentLessonSummary } from '../model/lesson.types'
+  StudentLessonSummary,
+} from '../model/lesson.types'
 import { StudentLessonReaderPage } from './StudentLessonReaderPage'
 
 const student = {
@@ -41,6 +43,12 @@ describe('student lessons', () => {
       status: 'authenticated',
       user: student,
     })
+    server.use(
+      http.get(
+        `${API_BASE_URL}/classes/me/lessons/:lessonId/assignments`,
+        () => HttpResponse.json([]),
+      ),
+    )
   })
 
   it('shows wide lesson rows before classmates and omits a missing duration', async () => {
@@ -76,7 +84,7 @@ describe('student lessons', () => {
             estimatedMinutes: 25,
             position: 1,
             progress: studentProgress({
-              approved: 2,
+              completed: 2,
               requiredTotal: 2,
               status: 'COMPLETED',
             }),
@@ -177,179 +185,51 @@ describe('student lessons', () => {
       'href',
       '/app/student/classes',
     )
-    expect(screen.getByText('Material without assignments')).toBeInTheDocument()
-  })
-
-  it('submits, locks, and resubmits answers from their derived states', async () => {
-    const user = userEvent.setup()
-    const submittedBodies: Array<{ answerText: string; taskId: string }> = []
-    const detail = {
-      ...studentLesson({
-        progress: studentProgress({
-          approved: 1,
-          requiredTotal: 4,
-          returned: 1,
-          status: 'IN_PROGRESS',
-          submitted: 1,
-        }),
-      }),
-      content: 'Read this lesson before answering.',
-      class: { id: 'class-1', name: 'Grade 9-A' },
-      teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
-      tasks: [
-        studentTask({ id: 'task-new', title: 'New answer' }),
-        studentTask({
-          id: 'task-returned',
-          title: 'Revise this',
-          submission: studentSubmission({
-            answerText: 'First attempt',
-            id: 'submission-returned',
-            status: 'RETURNED',
-            taskId: 'task-returned',
-            teacherComment: 'Add one concrete example.',
-          }),
-        }),
-        studentTask({
-          id: 'task-review',
-          title: 'Waiting answer',
-          submission: studentSubmission({
-            answerText: 'Waiting for review',
-            id: 'submission-review',
-            status: 'SUBMITTED',
-            taskId: 'task-review',
-          }),
-        }),
-        studentTask({
-          id: 'task-approved',
-          title: 'Approved answer',
-          submission: studentSubmission({
-            answerText: 'Already approved',
-            id: 'submission-approved',
-            status: 'APPROVED',
-            taskId: 'task-approved',
-          }),
-        }),
-      ],
-    }
-
-    server.use(
-      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
-        HttpResponse.json(detail),
-      ),
-      http.get(`${API_BASE_URL}/classes/me/lessons`, () =>
-        HttpResponse.json([detail]),
-      ),
-      http.put(
-        `${API_BASE_URL}/classes/me/lessons/lesson-1/tasks/:taskId/submission`,
-        async ({ params, request }) => {
-          const body = (await request.json()) as { answerText: string }
-          const taskId = String(params.taskId)
-          submittedBodies.push({ answerText: body.answerText, taskId })
-          const submission = studentSubmission({
-            answerText: body.answerText,
-            id: `submission-${taskId}`,
-            status: 'SUBMITTED',
-            taskId,
-          })
-          const task = detail.tasks.find((item) => item.id === taskId)
-          if (task) {
-            task.submission = submission
-          }
-          return HttpResponse.json(submission)
-        },
-      ),
-    )
-
-    renderStudentReader('/app/student/lessons/lesson-1')
-
-    const newTask = (await screen.findByRole('heading', { name: 'New answer' }))
-      .closest('li')
-    expect(newTask).not.toBeNull()
-    await user.type(
-      within(newTask!).getByRole('textbox', { name: 'Your answer' }),
-      'My new answer',
-    )
-    await user.click(
-      within(newTask!).getByRole('button', { name: 'Submit for review' }),
-    )
-    await waitFor(() => expect(submittedBodies).toHaveLength(1))
-    expect(submittedBodies[0]).toEqual({
-      answerText: 'My new answer',
-      taskId: 'task-new',
-    })
-
-    const returnedTask = screen
-      .getByRole('heading', { name: 'Revise this' })
-      .closest('li')
     expect(
-      within(returnedTask!).getByText('Add one concrete example.'),
+      await screen.findByText('There are no assignments for this lesson yet.'),
     ).toBeInTheDocument()
-    const reviseInput = within(returnedTask!).getByRole('textbox', {
-      name: 'Revise your answer',
-    })
-    await user.clear(reviseInput)
-    await user.type(reviseInput, 'Revised with a concrete example')
-    await user.click(
-      within(returnedTask!).getByRole('button', { name: 'Submit again' }),
-    )
-    await waitFor(() => expect(submittedBodies).toHaveLength(2))
-    expect(submittedBodies[1]).toEqual({
-      answerText: 'Revised with a concrete example',
-      taskId: 'task-returned',
-    })
-
-    const approvedTask = screen
-      .getByRole('heading', { name: 'Approved answer' })
-      .closest('li')
-    expect(within(approvedTask!).getByText('Approved')).toBeInTheDocument()
-    expect(within(approvedTask!).queryByRole('textbox')).toBeNull()
-    expect(screen.getByText('1 of 4 approved')).toBeInTheDocument()
   })
 
-  it('refreshes stale lesson data when the server says an answer is already approved', async () => {
+  it('autosaves a written answer, submits it, and then locks editing', async () => {
     const user = userEvent.setup()
-    let approvedOnServer = false
+    const savedBodies: string[] = []
+    const submittedBodies: string[] = []
+    const assignment = studentAssignment()
 
     server.use(
       http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
         HttpResponse.json({
-          ...studentLesson({
-            progress: studentProgress({
-              approved: approvedOnServer ? 1 : 0,
-              requiredTotal: 1,
-              status: approvedOnServer ? 'COMPLETED' : 'NOT_STARTED',
-            }),
-          }),
-          content: 'Read before answering.',
+          ...studentLesson(),
+          content: 'Read this lesson before answering.',
           class: { id: 'class-1', name: 'Grade 9-A' },
           teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
-          tasks: [
-            studentTask({
-              id: 'task-conflict',
-              title: 'Already reviewed',
-              submission: approvedOnServer
-                ? studentSubmission({
-                    answerText: 'Approved in another session',
-                    id: 'submission-conflict',
-                    status: 'APPROVED',
-                    taskId: 'task-conflict',
-                  })
-                : null,
-            }),
-          ],
         }),
       ),
+      http.get(
+        `${API_BASE_URL}/classes/me/lessons/lesson-1/assignments`,
+        () => HttpResponse.json([assignment]),
+      ),
       http.put(
-        `${API_BASE_URL}/classes/me/lessons/lesson-1/tasks/task-conflict/submission`,
-        () => {
-          approvedOnServer = true
+        `${API_BASE_URL}/assignment-releases/release-1/draft`,
+        async ({ request }) => {
+          const body = (await request.json()) as { text: string }
+          savedBodies.push(body.text)
           return HttpResponse.json(
-            {
-              statusCode: 409,
-              code: 'TASK_SUBMISSION_APPROVED',
-              message: 'This answer has already been approved.',
-            },
-            { status: 409 },
+            studentAttempt({ responseText: body.text }),
+          )
+        },
+      ),
+      http.post(
+        `${API_BASE_URL}/assignment-releases/release-1/submit`,
+        async ({ request }) => {
+          const body = (await request.json()) as { text: string }
+          submittedBodies.push(body.text)
+          return HttpResponse.json(
+            studentAttempt({
+              responseText: body.text,
+              status: 'AWAITING_REVIEW',
+              submittedAt: '2026-08-13T12:00:00.000Z',
+            }),
           )
         },
       ),
@@ -357,53 +237,68 @@ describe('student lessons', () => {
 
     renderStudentReader('/app/student/lessons/lesson-1')
 
-    const task = (
-      await screen.findByRole('heading', { name: 'Already reviewed' })
-    ).closest('li')
-    expect(task).not.toBeNull()
-    await user.type(
-      within(task!).getByRole('textbox', { name: 'Your answer' }),
-      'Stale local answer',
-    )
-    await user.click(
-      within(task!).getByRole('button', { name: 'Submit for review' }),
-    )
-
-    await waitFor(() =>
-      expect(within(task!).queryByRole('textbox')).not.toBeInTheDocument(),
-    )
-    expect(within(task!).getByText('Approved')).toBeInTheDocument()
     expect(
-      within(task!).getByText('Approved in another session'),
+      await screen.findByRole('heading', { name: 'Historical reflection' }),
     ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+    const answer = await screen.findByRole('textbox', {
+      name: /Your answer/,
+    })
+    await user.type(answer, 'My reasoned answer')
+
+    await waitFor(() => expect(savedBodies).toEqual(['My reasoned answer']), {
+      timeout: 2_500,
+    })
+    expect(screen.getByText('Draft saved')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Submit for review' }))
+    await waitFor(() =>
+      expect(submittedBodies).toEqual(['My reasoned answer']),
+    )
+    expect(answer).toBeDisabled()
+    expect(screen.getByText('Answer submitted')).toBeInTheDocument()
+    expect(screen.getAllByText('Awaiting review').length).toBeGreaterThan(0)
   })
 
-  it('still renders optional tasks when there are no required tasks', async () => {
+  it('shows the reviewed score and teacher feedback to the student', async () => {
+    const user = userEvent.setup()
     server.use(
       http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
         HttpResponse.json({
           ...studentLesson(),
-          content: 'Optional practice follows.',
+          content: 'Read this lesson before answering.',
           class: { id: 'class-1', name: 'Grade 9-A' },
           teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
-          progress: studentProgress({ status: 'NO_TASKS' }),
-          tasks: [
-            studentTask({
-              id: 'task-optional',
-              isRequired: false,
-              title: 'Optional reflection',
-            }),
-          ],
         }),
+      ),
+      http.get(
+        `${API_BASE_URL}/classes/me/lessons/lesson-1/assignments`,
+        () =>
+          HttpResponse.json([
+            studentAssignment({
+              stateStatus: 'COMPLETED',
+              attempt: studentAttempt({
+                status: 'GRADED',
+                responseText: 'My reviewed answer',
+                teacherComment: 'Strong explanation.',
+                scorePoints: 3,
+                scorePercent: 60,
+                isPassed: true,
+                submittedAt: '2026-08-13T12:00:00.000Z',
+                reviewedAt: '2026-08-13T13:00:00.000Z',
+              }),
+            }),
+          ]),
       ),
     )
 
     renderStudentReader('/app/student/lessons/lesson-1')
 
-    expect(
-      await screen.findByRole('heading', { name: 'Optional reflection' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('No required assignments')).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'View answer' }))
+    expect(screen.getByText('3 / 5 points')).toBeInTheDocument()
+    expect(screen.getByText(/60%.*passing result/)).toBeInTheDocument()
+    expect(screen.getByText('Strong explanation.')).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: /Your answer/ })).toBeDisabled()
   })
 
   it('shows a stable unavailable state for an inaccessible lesson', async () => {
@@ -469,7 +364,7 @@ function studentClass() {
 
 function studentLesson(
   overrides: Partial<StudentLessonSummary> = {},
-): StudentLessonSummary & { tasks: [] } {
+): StudentLessonSummary {
   return {
     id: 'lesson-1',
     title: 'First settlement',
@@ -478,7 +373,6 @@ function studentLesson(
     estimatedMinutes: 20,
     position: 0,
     progress: studentProgress(),
-    tasks: [],
     ...overrides,
   }
 }
@@ -489,39 +383,58 @@ function studentProgress(
   return {
     status: 'NO_TASKS',
     requiredTotal: 0,
-    approved: 0,
-    submitted: 0,
-    returned: 0,
+    completed: 0,
+    awaitingReview: 0,
+    needsRevision: 0,
+    inProgress: 0,
+    expired: 0,
     ...overrides,
   }
 }
 
-function studentTask(
-  overrides: Partial<StudentLessonTask> = {},
-): StudentLessonTask {
+function studentAssignment(
+  overrides: Partial<StudentLessonAssignment> = {},
+): StudentLessonAssignment {
   return {
-    id: 'task-1',
-    title: 'Explain the event',
-    prompt: 'Explain the event in two or three sentences.',
-    position: 0,
+    releaseId: 'release-1',
+    assignmentId: 'assignment-1',
+    revisionId: 'revision-1',
+    type: 'WRITTEN',
+    title: 'Historical reflection',
+    prompt: 'Explain why this event mattered.',
+    instructions: null,
+    publicConfig: {
+      responseMode: 'LONG',
+      minLength: 0,
+      maxLength: 5_000,
+      allowAttachments: false,
+      rubric: [],
+    },
+    maxPoints: 5,
+    passingPercent: 60,
     isRequired: true,
-    submission: null,
+    dueAt: null,
+    stateStatus: 'NOT_STARTED',
+    attempt: null,
     ...overrides,
   }
 }
 
-function studentSubmission(
-  overrides: Partial<StudentTaskSubmission> = {},
-): StudentTaskSubmission {
+function studentAttempt(
+  overrides: Partial<StudentAssignmentAttempt> = {},
+): StudentAssignmentAttempt {
   return {
-    id: 'submission-1',
-    taskId: 'task-1',
-    answerText: 'Student answer',
-    status: 'SUBMITTED',
+    id: 'attempt-1',
+    attemptNumber: 1,
+    status: 'IN_PROGRESS',
+    responseText: '',
     teacherComment: null,
-    submittedAt: '2026-08-01T12:00:00.000Z',
+    scorePoints: null,
+    scorePercent: null,
+    isPassed: null,
+    submittedAt: null,
     reviewedAt: null,
-    updatedAt: '2026-08-01T12:00:00.000Z',
+    updatedAt: '2026-08-13T12:00:00.000Z',
     ...overrides,
   }
 }

@@ -89,12 +89,12 @@ export function StudentClassLessonsSection() {
                       <CheckCircle2 size={13} aria-hidden="true" />
                     )}
                     {lesson.progress.status === 'NO_TASKS'
-                      ? t('lessonTasks.progress.NO_TASKS')
-                      : t('lessonTasks.student.rowProgress', {
-                          approved: lesson.progress.approved,
+                      ? t('assignments.student.lessonProgress.NO_TASKS')
+                      : t('assignments.student.lessonProgress.row', {
+                          completed: lesson.progress.completed,
                           total: lesson.progress.requiredTotal,
                           status: t(
-                            `lessonTasks.progress.${lesson.progress.status}`,
+                            `assignments.student.lessonProgress.${lesson.progress.status}`,
                           ),
                         })}
                   </span>

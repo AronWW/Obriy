@@ -10,7 +10,7 @@ Planned sequence:
    migration `20260808120000_create_assignments_module`.
 2. Implement and cut over the backend/frontend to `AssignmentsModule`.
 3. Remove the legacy `LessonTask` models and code.
-4. Review and explicitly approve `20260808_drop_legacy_lesson_tasks.sql`.
+4. The destructive legacy cleanup was explicitly approved and promoted to the
+   official migration `20260813200000_drop_legacy_lesson_tasks`.
 
-The second draft permanently deletes all legacy lesson-task submissions. It
-must never be applied before the application cutover and a fresh backup/check.
+No destructive migration drafts remain in this directory.

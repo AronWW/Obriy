@@ -35,12 +35,6 @@ enum LessonStatus {
   ARCHIVED
 }
 
-enum LessonTaskSubmissionStatus {
-  SUBMITTED
-  APPROVED
-  RETURNED
-}
-
 enum AssignmentType {
   WRITTEN
   SINGLE_CHOICE
@@ -154,7 +148,6 @@ model User {
   parentInvitations       ParentInvitation[]       @relation("ChildParentInvitations")
   taughtClasses           Class[]                  @relation("TeacherClasses")
   authoredLessons         Lesson[]                 @relation("TeacherLessons")
-  lessonTaskSubmissions   LessonTaskSubmission[]   @relation("StudentLessonTaskSubmissions")
   authoredAssignments     Assignment[]             @relation("TeacherAssignments")
   assignmentStates        AssignmentStudentState[] @relation("StudentAssignmentStates")
   reviewedAttempts        AssignmentAttempt[]      @relation("AssignmentAttemptReviewer")
@@ -291,10 +284,9 @@ model Class {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  teacher            User                   @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
-  students           User[]                 @relation("ClassStudents")
+  teacher            User                @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  students           User[]              @relation("ClassStudents")
   lessonLinks        ClassLesson[]
-  taskSubmissions    LessonTaskSubmission[]
   assignmentReleases AssignmentRelease[]
 
   @@index([teacherId])
@@ -314,7 +306,6 @@ model Lesson {
 
   teacher            User                @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
   classLinks         ClassLesson[]
-  tasks              LessonTask[]
   assignmentLinks    LessonAssignment[]
   assignmentReleases AssignmentRelease[]
 
@@ -335,45 +326,6 @@ model ClassLesson {
   @@id([classId, lessonId])
   @@index([lessonId])
   @@index([classId, publishedAt, position])
-}
-
-model LessonTask {
-  id         String   @id @default(uuid())
-  lessonId   String
-  title      String   @db.VarChar(160)
-  prompt     String   @db.Text
-  position   Int
-  isRequired Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  lesson      Lesson                 @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  submissions LessonTaskSubmission[]
-
-  @@index([lessonId, position])
-}
-
-model LessonTaskSubmission {
-  id             String                     @id @default(uuid())
-  taskId         String
-  studentId      String
-  classId        String
-  answerText     String                     @db.Text
-  status         LessonTaskSubmissionStatus @default(SUBMITTED)
-  teacherComment String?                    @db.Text
-  submittedAt    DateTime                   @default(now())
-  reviewedAt     DateTime?
-  createdAt      DateTime                   @default(now())
-  updatedAt      DateTime                   @updatedAt
-
-  task    LessonTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  student User       @relation("StudentLessonTaskSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
-  class   Class      @relation(fields: [classId], references: [id], onDelete: Cascade)
-
-  @@unique([taskId, studentId, classId])
-  @@index([taskId, status])
-  @@index([studentId, classId, status])
-  @@index([classId, status, submittedAt])
 }
 
 model Assignment {

@@ -7,8 +7,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AssignmentLatePolicy,
+  AssignmentReleaseStatus,
+  AssignmentStudentStatus,
   LessonStatus,
-  LessonTaskSubmissionStatus,
   Prisma,
   UserRole,
 } from '@prisma/client';
@@ -29,9 +31,7 @@ import { ListLessonsQueryDto } from './dto/list-lessons-query.dto';
 import {
   StudentLessonProgressDto,
   StudentLessonProgressStatus,
-  StudentLessonTaskDto,
-  StudentTaskSubmissionDto,
-} from './dto/lesson-task.dto';
+} from './dto/student-lesson-progress.dto';
 import { ClassLessonMoveDirection } from './dto/move-class-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 
@@ -117,32 +117,6 @@ const studentLessonDetailSelect = {
   },
 } satisfies Prisma.ClassLessonSelect;
 
-const studentTaskSubmissionSelect = {
-  id: true,
-  taskId: true,
-  answerText: true,
-  status: true,
-  teacherComment: true,
-  submittedAt: true,
-  reviewedAt: true,
-  updatedAt: true,
-} satisfies Prisma.LessonTaskSubmissionSelect;
-
-function createStudentLessonTaskSelect(studentId: string, classId: string) {
-  return {
-    id: true,
-    title: true,
-    prompt: true,
-    position: true,
-    isRequired: true,
-    submissions: {
-      where: { studentId, classId },
-      take: 1,
-      select: studentTaskSubmissionSelect,
-    },
-  } satisfies Prisma.LessonTaskSelect;
-}
-
 type LessonRecord = Prisma.LessonGetPayload<{ include: typeof lessonInclude }>;
 type LessonSummaryRecord = Prisma.LessonGetPayload<{
   select: typeof lessonSummarySelect;
@@ -155,9 +129,6 @@ type StudentLessonSummaryRecord = Prisma.ClassLessonGetPayload<{
 }>;
 type StudentLessonDetailRecord = Prisma.ClassLessonGetPayload<{
   select: typeof studentLessonDetailSelect;
-}>;
-type StudentLessonTaskRecord = Prisma.LessonTaskGetPayload<{
-  select: ReturnType<typeof createStudentLessonTaskSelect>;
 }>;
 
 @Injectable()
@@ -337,6 +308,7 @@ export class LessonsService {
           where: { id: existing.id },
           data: { status: LessonStatus.ARCHIVED },
         });
+        await this.archiveLessonAssignmentReleases(transaction, existing.id);
       }
 
       return transaction.lesson.findUnique({
@@ -444,21 +416,15 @@ export class LessonsService {
       throw this.lessonNotFound();
     }
 
-    const tasks = await this.prisma.lessonTask.findMany({
-      where: { lessonId },
-      orderBy: [{ position: 'asc' }, { id: 'asc' }],
-      select: createStudentLessonTaskSelect(user.id, classId),
-    });
-    const progress = this.calculateStudentProgress(
-      tasks
-        .filter((task) => task.isRequired)
-        .map((task) => ({ status: task.submissions[0]?.status ?? null })),
+    const progressByLesson = await this.findStudentProgressByLesson(
+      user.id,
+      classId,
+      [lessonId],
     );
 
     return this.toStudentLessonDetailDto(
       link,
-      progress,
-      tasks.map((task) => this.toStudentLessonTaskDto(task)),
+      progressByLesson.get(lessonId) ?? this.emptyStudentProgress(),
     );
   }
 
@@ -549,6 +515,20 @@ export class LessonsService {
         });
       }
 
+      if (published) {
+        await this.activateLessonAssignmentReleases(
+          transaction,
+          classId,
+          lessonId,
+        );
+      } else {
+        await this.archiveLessonAssignmentReleases(
+          transaction,
+          lessonId,
+          classId,
+        );
+      }
+
       return transaction.classLesson.findUnique({
         where,
         select: classLessonSelect,
@@ -582,6 +562,12 @@ export class LessonsService {
       if (result.count !== 1) {
         throw this.classLessonNotFound();
       }
+
+      await this.archiveLessonAssignmentReleases(
+        transaction,
+        lessonId,
+        classId,
+      );
     });
   }
 
@@ -684,65 +670,196 @@ export class LessonsService {
       return result;
     }
 
-    const tasks = await this.prisma.lessonTask.findMany({
+    const releases = await this.prisma.assignmentRelease.findMany({
       where: {
         lessonId: { in: lessonIds },
+        classId,
+        status: AssignmentReleaseStatus.ACTIVE,
         isRequired: true,
       },
       select: {
         lessonId: true,
-        submissions: {
-          where: { studentId, classId },
+        dueAt: true,
+        latePolicy: true,
+        studentStates: {
+          where: { studentId },
           take: 1,
           select: { status: true },
         },
       },
     });
 
+    const now = new Date();
     for (const lessonId of lessonIds) {
-      const lessonTasks = tasks
-        .filter((task) => task.lessonId === lessonId)
-        .map((task) => ({ status: task.submissions[0]?.status ?? null }));
-      result.set(lessonId, this.calculateStudentProgress(lessonTasks));
+      const lessonReleases = releases
+        .filter((release) => release.lessonId === lessonId)
+        .map((release) => ({
+          status: this.resolveProgressStatus(
+            release.studentStates[0]?.status,
+            release.dueAt,
+            release.latePolicy,
+            now,
+          ),
+        }));
+      result.set(lessonId, this.calculateStudentProgress(lessonReleases));
     }
 
     return result;
   }
 
   private calculateStudentProgress(
-    tasks: { status: LessonTaskSubmissionStatus | null }[],
+    assignments: { status: AssignmentStudentStatus }[],
   ): StudentLessonProgressDto {
-    const requiredTotal = tasks.length;
-    const approved = tasks.filter(
-      (task) => task.status === LessonTaskSubmissionStatus.APPROVED,
+    const requiredTotal = assignments.length;
+    const completed = assignments.filter(
+      (assignment) => assignment.status === AssignmentStudentStatus.COMPLETED,
     ).length;
-    const submitted = tasks.filter(
-      (task) => task.status === LessonTaskSubmissionStatus.SUBMITTED,
+    const awaitingReview = assignments.filter(
+      (assignment) =>
+        assignment.status === AssignmentStudentStatus.AWAITING_REVIEW,
     ).length;
-    const returned = tasks.filter(
-      (task) => task.status === LessonTaskSubmissionStatus.RETURNED,
+    const needsRevision = assignments.filter(
+      (assignment) =>
+        assignment.status === AssignmentStudentStatus.NEEDS_REVISION,
+    ).length;
+    const inProgress = assignments.filter(
+      (assignment) => assignment.status === AssignmentStudentStatus.IN_PROGRESS,
+    ).length;
+    const expired = assignments.filter(
+      (assignment) => assignment.status === AssignmentStudentStatus.EXPIRED,
     ).length;
 
     let status = StudentLessonProgressStatus.IN_PROGRESS;
     if (requiredTotal === 0) {
       status = StudentLessonProgressStatus.NO_TASKS;
-    } else if (approved === requiredTotal) {
+    } else if (completed === requiredTotal) {
       status = StudentLessonProgressStatus.COMPLETED;
-    } else if (approved + submitted + returned === 0) {
+    } else if (
+      completed + awaitingReview + needsRevision + inProgress + expired ===
+      0
+    ) {
       status = StudentLessonProgressStatus.NOT_STARTED;
     }
 
     return new StudentLessonProgressDto({
       status,
       requiredTotal,
-      approved,
-      submitted,
-      returned,
+      completed,
+      awaitingReview,
+      needsRevision,
+      inProgress,
+      expired,
     });
+  }
+
+  private resolveProgressStatus(
+    persistedStatus: AssignmentStudentStatus | undefined,
+    dueAt: Date | null,
+    latePolicy: AssignmentLatePolicy,
+    now: Date,
+  ): AssignmentStudentStatus {
+    const status = persistedStatus ?? AssignmentStudentStatus.NOT_STARTED;
+    if (
+      status !== AssignmentStudentStatus.AWAITING_REVIEW &&
+      status !== AssignmentStudentStatus.COMPLETED &&
+      dueAt &&
+      dueAt < now &&
+      latePolicy === AssignmentLatePolicy.DISALLOW
+    ) {
+      return AssignmentStudentStatus.EXPIRED;
+    }
+    return status;
   }
 
   private emptyStudentProgress(): StudentLessonProgressDto {
     return this.calculateStudentProgress([]);
+  }
+
+  private async activateLessonAssignmentReleases(
+    transaction: Prisma.TransactionClient,
+    classId: string,
+    lessonId: string,
+  ): Promise<void> {
+    const links = await transaction.lessonAssignment.findMany({
+      where: { lessonId },
+      select: {
+        assignmentId: true,
+        revisionId: true,
+        assignment: {
+          select: {
+            defaultMaxPoints: true,
+            defaultPassingPercent: true,
+          },
+        },
+      },
+    });
+    if (links.length === 0) {
+      return;
+    }
+
+    const existing = await transaction.assignmentRelease.findMany({
+      where: {
+        classId,
+        lessonId,
+        assignmentId: { in: links.map((link) => link.assignmentId) },
+        status: {
+          in: [
+            AssignmentReleaseStatus.DRAFT,
+            AssignmentReleaseStatus.SCHEDULED,
+            AssignmentReleaseStatus.ACTIVE,
+          ],
+        },
+      },
+      select: { assignmentId: true },
+    });
+    const releasedAssignmentIds = new Set(
+      existing.map((release) => release.assignmentId),
+    );
+    const publishedAt = new Date();
+    const releaseData = links
+      .filter((link) => !releasedAssignmentIds.has(link.assignmentId))
+      .map((link) => ({
+        assignmentId: link.assignmentId,
+        revisionId: link.revisionId,
+        classId,
+        lessonId,
+        status: AssignmentReleaseStatus.ACTIVE,
+        maxPoints: link.assignment.defaultMaxPoints,
+        passingPercent: link.assignment.defaultPassingPercent,
+        isRequired: true,
+        publishedAt,
+      }));
+    if (releaseData.length === 0) {
+      return;
+    }
+    await transaction.assignmentRelease.createMany({
+      data: releaseData,
+      skipDuplicates: true,
+    });
+  }
+
+  private async archiveLessonAssignmentReleases(
+    transaction: Prisma.TransactionClient,
+    lessonId: string,
+    classId?: string,
+  ): Promise<void> {
+    await transaction.assignmentRelease.updateMany({
+      where: {
+        lessonId,
+        ...(classId ? { classId } : {}),
+        status: {
+          in: [
+            AssignmentReleaseStatus.DRAFT,
+            AssignmentReleaseStatus.SCHEDULED,
+            AssignmentReleaseStatus.ACTIVE,
+          ],
+        },
+      },
+      data: {
+        status: AssignmentReleaseStatus.ARCHIVED,
+        closedAt: new Date(),
+      },
+    });
   }
 
   private async assertOwnedClass(
@@ -936,7 +1053,6 @@ export class LessonsService {
   private toStudentLessonDetailDto(
     link: StudentLessonDetailRecord,
     progress: StudentLessonProgressDto,
-    tasks: StudentLessonTaskDto[],
   ): StudentLessonDetailDto {
     const teacherProfile = link.lesson.teacher.profile;
 
@@ -964,24 +1080,6 @@ export class LessonsService {
         id: link.lesson.teacher.id,
         displayName: teacherProfile.displayName,
       }),
-      tasks,
-    });
-  }
-
-  private toStudentLessonTaskDto(
-    task: StudentLessonTaskRecord,
-  ): StudentLessonTaskDto {
-    const submission = task.submissions[0];
-
-    return new StudentLessonTaskDto({
-      id: task.id,
-      title: task.title,
-      prompt: task.prompt,
-      position: task.position,
-      isRequired: task.isRequired,
-      submission: submission
-        ? new StudentTaskSubmissionDto({ ...submission })
-        : null,
     });
   }
 }

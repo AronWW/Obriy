@@ -37,9 +37,11 @@ const lessons = [
     progress: {
       status: 'IN_PROGRESS',
       requiredTotal: 2,
-      approved: 1,
-      submitted: 1,
-      returned: 0,
+      completed: 1,
+      awaitingReview: 1,
+      needsRevision: 0,
+      inProgress: 0,
+      expired: 0,
     },
   },
   {
@@ -53,9 +55,11 @@ const lessons = [
     progress: {
       status: 'NO_TASKS',
       requiredTotal: 0,
-      approved: 0,
-      submitted: 0,
-      returned: 0,
+      completed: 0,
+      awaitingReview: 0,
+      needsRevision: 0,
+      inProgress: 0,
+      expired: 0,
     },
   },
 ]
@@ -124,37 +128,43 @@ test('student lesson reader stays focused and readable on mobile night', async (
           'На початку XX століття українське суспільство шукало шлях до власної держави.\n\nУ цьому уроці простежимо ключові події та постаті революції.\nЗверніть увагу на причинно-наслідкові зв’язки.',
         class: { id: classroom.id, name: classroom.name },
         teacher: classroom.teacher,
-        tasks: [
-          {
-            id: 'task-causes',
-            title: 'Причини революції',
-            prompt:
-              'Назвіть дві причини революції та коротко поясніть їхній вплив.',
-            position: 0,
-            isRequired: true,
-            submission: null,
-          },
-          {
-            id: 'task-conclusion',
-            title: 'Підсумок уроку',
-            prompt: 'Сформулюйте головний висновок одним абзацом.',
-            position: 1,
-            isRequired: true,
-            submission: {
-              id: 'submission-conclusion',
-              taskId: 'task-conclusion',
-              answerText: 'Революція стала важливим етапом боротьби за державність.',
-              status: 'APPROVED',
-              teacherComment: 'Влучний підсумок.',
-              submittedAt: '2026-08-01T11:00:00.000Z',
-              reviewedAt: '2026-08-01T12:00:00.000Z',
-              updatedAt: '2026-08-01T12:00:00.000Z',
-            },
-          },
-        ],
       }),
     })
   })
+  await page.route(
+    '**/classes/me/lessons/lesson-revolution/assignments',
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            releaseId: 'release-causes',
+            assignmentId: 'assignment-causes',
+            revisionId: 'revision-causes',
+            type: 'WRITTEN',
+            title: 'Причини революції',
+            prompt:
+              'Назвіть дві причини революції та коротко поясніть їхній вплив.',
+            instructions: null,
+            publicConfig: {
+              responseMode: 'LONG',
+              minLength: 0,
+              maxLength: 5000,
+              allowAttachments: false,
+              rubric: [],
+            },
+            maxPoints: 5,
+            passingPercent: 60,
+            isRequired: true,
+            dueAt: null,
+            stateStatus: 'NOT_STARTED',
+            attempt: null,
+          },
+        ]),
+      })
+    },
+  )
 
   await page.goto('/app/student/lessons/lesson-revolution')
   await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -170,7 +180,7 @@ test('student lesson reader stays focused and readable on mobile night', async (
   await expect(page.getByText('Олена Коваль')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Текст уроку' })).toBeVisible()
   await expect(
-    page.getByRole('heading', { name: 'Завдання уроку', level: 2 }),
+    page.getByRole('heading', { name: 'Завдання до уроку', level: 2 }),
   ).toBeVisible()
   await expect(
     page.getByRole('heading', { name: 'Причини революції' }),

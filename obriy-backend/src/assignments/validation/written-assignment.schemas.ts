@@ -7,6 +7,7 @@ import type {
 
 export const WRITTEN_SCHEMA_VERSION = 1;
 export const WRITTEN_ABSOLUTE_MAX_TEXT_LENGTH = 20_000;
+export const WRITTEN_DEFAULT_MAX_TEXT_LENGTH = 5_000;
 export const WRITTEN_MAX_RUBRIC_ITEMS = 50;
 export const WRITTEN_MAX_ATTACHMENTS = 20;
 
@@ -98,7 +99,7 @@ export type WrittenStudentResponse = z.infer<
 export const WRITTEN_DEFAULT_PUBLIC_CONFIG = Object.freeze({
   responseMode: 'LONG' as const,
   minLength: 0,
-  maxLength: WRITTEN_ABSOLUTE_MAX_TEXT_LENGTH,
+  maxLength: WRITTEN_DEFAULT_MAX_TEXT_LENGTH,
   allowAttachments: true,
   rubric: Object.freeze([]),
 });

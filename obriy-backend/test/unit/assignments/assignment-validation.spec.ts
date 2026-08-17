@@ -1,5 +1,5 @@
 import {
-  WRITTEN_ABSOLUTE_MAX_TEXT_LENGTH,
+  WRITTEN_DEFAULT_MAX_TEXT_LENGTH,
   createAssignmentValidationDefaults,
   validateAssignmentDraftPublicConfig,
   validateAssignmentPublishPayload,
@@ -40,7 +40,7 @@ describe('WRITTEN assignment validation', () => {
         publicConfig: {
           responseMode: 'LONG',
           minLength: 0,
-          maxLength: WRITTEN_ABSOLUTE_MAX_TEXT_LENGTH,
+          maxLength: WRITTEN_DEFAULT_MAX_TEXT_LENGTH,
           allowAttachments: true,
           rubric: [],
         },

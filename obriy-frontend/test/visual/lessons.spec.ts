@@ -55,10 +55,21 @@ const classrooms = [
   classroom('class-8a', '8-А'),
 ]
 
-const lessonTasks = [
+const lessonAssignments = [
   {
     id: 'task-causes',
     lessonId: 'lesson-revolution',
+    assignmentId: 'assignment-causes',
+    revisionId: 'revision-causes-v1',
+    revisionVersion: 1,
+    type: 'WRITTEN',
+    contentLocale: 'UK',
+    maxPoints: 5,
+    passingPercent: 60,
+    hasUpdate: false,
+    activeReleaseCount: 1,
+    releaseCount: 1,
+    linkedAt: '2026-08-01T10:15:00.000Z',
     title: 'Поясніть причини революції',
     prompt:
       'Назвіть дві передумови Української революції та коротко поясніть їхній вплив.',
@@ -70,6 +81,17 @@ const lessonTasks = [
   {
     id: 'task-source',
     lessonId: 'lesson-revolution',
+    assignmentId: 'assignment-source',
+    revisionId: 'revision-source-v1',
+    revisionVersion: 1,
+    type: 'WRITTEN',
+    contentLocale: 'UK',
+    maxPoints: 5,
+    passingPercent: 60,
+    hasUpdate: false,
+    activeReleaseCount: 0,
+    releaseCount: 0,
+    linkedAt: '2026-08-01T10:20:00.000Z',
     title: 'Проаналізуйте джерело',
     prompt: 'Сформулюйте головну думку наведеного уривка.',
     position: 1,
@@ -79,16 +101,30 @@ const lessonTasks = [
   },
 ]
 
-const taskSubmissions = [
+const assignmentReviews = [
   {
     id: 'submission-sofia',
+    attemptId: 'submission-sofia',
+    releaseId: 'release-causes-9a',
+    assignmentId: 'assignment-causes',
+    type: 'WRITTEN',
+    assignmentTitle: 'Поясніть причини революції',
+    prompt: 'Назвіть дві передумови та коротко поясніть їхній вплив.',
+    responseText:
+      'Національний рух посилився, а падіння імперії створило можливість відновити державність.',
+    attemptNumber: 1,
+    maxPoints: 5,
+    passingPercent: 60,
+    scorePoints: null,
+    scorePercent: null,
+    isPassed: null,
     taskId: 'task-causes',
     taskTitle: 'Поясніть причини революції',
     taskPosition: 0,
     taskIsRequired: true,
     answerText:
       'Національний рух посилився, а падіння імперії створило можливість відновити державність.',
-    status: 'SUBMITTED',
+    status: 'AWAITING_REVIEW',
     teacherComment: null,
     submittedAt: '2026-08-01T13:10:00.000Z',
     reviewedAt: null,
@@ -172,20 +208,20 @@ test('lesson editor and class assignment stay usable on mobile night', async ({
       body: JSON.stringify(classrooms),
     })
   })
-  await page.route('**/lessons/lesson-revolution/tasks', async (route) => {
+  await page.route('**/lessons/lesson-revolution/assignments', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(lessonTasks),
+      body: JSON.stringify(lessonAssignments),
     })
   })
   await page.route(
-    '**/lessons/lesson-revolution/task-submissions',
+    '**/lessons/lesson-revolution/assignment-attempts',
     async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(taskSubmissions),
+        body: JSON.stringify(assignmentReviews),
       })
     },
   )
@@ -219,14 +255,16 @@ test('lesson editor and class assignment stay usable on mobile night', async ({
     page.getByRole('heading', { name: 'Завдання уроку', level: 2 }),
   ).toBeVisible()
   await expect(
-    page.getByRole('heading', {
-      name: 'Поясніть причини революції',
-      level: 3,
-    }),
+    page
+      .getByLabel('Завдання уроку')
+      .getByRole('heading', {
+        name: 'Поясніть причини революції',
+        level: 3,
+      }),
   ).toBeVisible()
   await expect(page.getByText('Софія Марченко')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Зарахувати' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Повернути' })).toBeVisible()
+  await expect(page.locator('#lesson-assignments-title')).toBeVisible()
+  await expect(page.locator('#lesson-reviews-title')).toBeVisible()
 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'night')
   const classHeadingBox = await page

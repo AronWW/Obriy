@@ -15,6 +15,10 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
 import { registerWorkspaceNavigationGuard } from '../../../shared/navigation/workspace-navigation-guard'
+import {
+  TeacherLessonAssignments,
+  TeacherLessonReviews,
+} from '../../assignments'
 import { useSessionStore } from '../../auth/model/session.store'
 import { listTeacherClasses } from '../../classes/api/classes.api'
 import {
@@ -27,7 +31,6 @@ import {
 import { ConfirmationDialog } from '../components/ConfirmationDialog'
 import { lessonQueryKeys } from '../model/lesson-query-keys'
 import type { Lesson, LessonDraftInput } from '../model/lesson.types'
-import { TeacherLessonTasks } from '../tasks/TeacherLessonTasks'
 import styles from '../Lessons.module.css'
 
 interface EditorValues {
@@ -597,10 +600,11 @@ export function TeacherLessonEditorPage() {
 
           {activeLessonId && (
             <div className={styles.editorTasks}>
-              <TeacherLessonTasks
+              <TeacherLessonAssignments
                 lessonId={activeLessonId}
                 readOnly={isArchived}
               />
+              <TeacherLessonReviews lessonId={activeLessonId} />
             </div>
           )}
         </div>

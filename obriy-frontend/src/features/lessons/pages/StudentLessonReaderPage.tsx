@@ -9,9 +9,9 @@ import {
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
+import { StudentLessonAssignments } from '../../assignments'
 import { getStudentLesson } from '../api/lessons.api'
 import { lessonQueryKeys } from '../model/lesson-query-keys'
-import { StudentLessonTasks } from '../tasks/StudentLessonTasks'
 import styles from '../Lessons.module.css'
 
 export function StudentLessonReaderPage() {
@@ -120,11 +120,7 @@ export function StudentLessonReaderPage() {
               </div>
             </article>
 
-            <StudentLessonTasks
-              lessonId={lessonQuery.data.id}
-              progress={lessonQuery.data.progress}
-              tasks={lessonQuery.data.tasks}
-            />
+            <StudentLessonAssignments lessonId={lessonQuery.data.id} />
           </>
         )}
       </div>

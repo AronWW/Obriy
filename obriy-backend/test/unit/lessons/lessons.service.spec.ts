@@ -4,8 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AssignmentLatePolicy,
+  AssignmentReleaseStatus,
+  AssignmentStudentStatus,
   LessonStatus,
-  LessonTaskSubmissionStatus,
   Locale,
   UserRole,
   UserStatus,
@@ -24,7 +26,7 @@ describe('LessonsService access and draft boundaries', () => {
   const lessonFindMany = jest.fn();
   const classLessonFindMany = jest.fn();
   const classLessonFindFirst = jest.fn();
-  const lessonTaskFindMany = jest.fn();
+  const assignmentReleaseFindMany = jest.fn();
   const prisma = {
     user: { findUnique: userFindUnique },
     lesson: {
@@ -36,7 +38,7 @@ describe('LessonsService access and draft boundaries', () => {
       findMany: classLessonFindMany,
       findFirst: classLessonFindFirst,
     },
-    lessonTask: { findMany: lessonTaskFindMany },
+    assignmentRelease: { findMany: assignmentReleaseFindMany },
   } as unknown as PrismaService;
   const service = new LessonsService(prisma);
   const teacher: AuthUser = {
@@ -188,14 +190,18 @@ describe('LessonsService access and draft boundaries', () => {
         },
       },
     ]);
-    lessonTaskFindMany.mockResolvedValue([
+    assignmentReleaseFindMany.mockResolvedValue([
       {
         lessonId: 'lesson-a',
-        submissions: [{ status: LessonTaskSubmissionStatus.SUBMITTED }],
+        dueAt: null,
+        latePolicy: AssignmentLatePolicy.DISALLOW,
+        studentStates: [{ status: AssignmentStudentStatus.AWAITING_REVIEW }],
       },
       {
         lessonId: 'lesson-b',
-        submissions: [{ status: LessonTaskSubmissionStatus.APPROVED }],
+        dueAt: null,
+        latePolicy: AssignmentLatePolicy.DISALLOW,
+        studentStates: [{ status: AssignmentStudentStatus.COMPLETED }],
       },
     ]);
 
@@ -210,9 +216,11 @@ describe('LessonsService access and draft boundaries', () => {
         progress: {
           status: 'IN_PROGRESS',
           requiredTotal: 1,
-          approved: 0,
-          submitted: 1,
-          returned: 0,
+          completed: 0,
+          awaitingReview: 1,
+          needsRevision: 0,
+          inProgress: 0,
+          expired: 0,
         },
       },
       {
@@ -225,9 +233,11 @@ describe('LessonsService access and draft boundaries', () => {
         progress: {
           status: 'COMPLETED',
           requiredTotal: 1,
-          approved: 1,
-          submitted: 0,
-          returned: 0,
+          completed: 1,
+          awaitingReview: 0,
+          needsRevision: 0,
+          inProgress: 0,
+          expired: 0,
         },
       },
     ]);
@@ -253,15 +263,19 @@ describe('LessonsService access and draft boundaries', () => {
         },
       },
     });
-    expect(lessonTaskFindMany).toHaveBeenCalledWith({
+    expect(assignmentReleaseFindMany).toHaveBeenCalledWith({
       where: {
         lessonId: { in: ['lesson-a', 'lesson-b'] },
+        classId: 'class-1',
+        status: AssignmentReleaseStatus.ACTIVE,
         isRequired: true,
       },
       select: {
         lessonId: true,
-        submissions: {
-          where: { studentId: student.id, classId: 'class-1' },
+        dueAt: true,
+        latePolicy: true,
+        studentStates: {
+          where: { studentId: student.id },
           take: 1,
           select: { status: true },
         },
@@ -326,33 +340,12 @@ describe('LessonsService access and draft boundaries', () => {
         },
       },
     });
-    lessonTaskFindMany.mockResolvedValue([
+    assignmentReleaseFindMany.mockResolvedValue([
       {
-        id: 'task-required',
-        title: 'Required response',
-        prompt: 'Explain the circuit.',
-        position: 1,
-        isRequired: true,
-        submissions: [],
-      },
-      {
-        id: 'task-optional',
-        title: 'Optional reflection',
-        prompt: 'What surprised you?',
-        position: 2,
-        isRequired: false,
-        submissions: [
-          {
-            id: 'submission-1',
-            taskId: 'task-optional',
-            answerText: 'The switch.',
-            status: LessonTaskSubmissionStatus.APPROVED,
-            teacherComment: null,
-            submittedAt: new Date('2026-08-01T10:00:00.000Z'),
-            reviewedAt: new Date('2026-08-01T11:00:00.000Z'),
-            updatedAt: new Date('2026-08-01T11:00:00.000Z'),
-          },
-        ],
+        lessonId: 'lesson-1',
+        dueAt: null,
+        latePolicy: AssignmentLatePolicy.DISALLOW,
+        studentStates: [],
       },
     ]);
 
@@ -368,40 +361,15 @@ describe('LessonsService access and draft boundaries', () => {
       progress: {
         status: 'NOT_STARTED',
         requiredTotal: 1,
-        approved: 0,
-        submitted: 0,
-        returned: 0,
+        completed: 0,
+        awaitingReview: 0,
+        needsRevision: 0,
+        inProgress: 0,
+        expired: 0,
       },
       content,
       class: { id: 'class-1', name: 'Robotics' },
       teacher: { id: 'teacher-1', displayName: 'Ms Rivera' },
-      tasks: [
-        {
-          id: 'task-required',
-          title: 'Required response',
-          prompt: 'Explain the circuit.',
-          position: 1,
-          isRequired: true,
-          submission: null,
-        },
-        {
-          id: 'task-optional',
-          title: 'Optional reflection',
-          prompt: 'What surprised you?',
-          position: 2,
-          isRequired: false,
-          submission: {
-            id: 'submission-1',
-            taskId: 'task-optional',
-            answerText: 'The switch.',
-            status: LessonTaskSubmissionStatus.APPROVED,
-            teacherComment: null,
-            submittedAt: new Date('2026-08-01T10:00:00.000Z'),
-            reviewedAt: new Date('2026-08-01T11:00:00.000Z'),
-            updatedAt: new Date('2026-08-01T11:00:00.000Z'),
-          },
-        },
-      ],
     });
   });
 });

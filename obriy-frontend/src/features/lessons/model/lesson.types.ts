@@ -1,8 +1,4 @@
 import type { Locale } from '../../auth/model/auth.types'
-import type {
-  StudentLessonProgress,
-  StudentLessonTask,
-} from './lesson-task.types'
 
 export type LessonStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 
@@ -76,7 +72,22 @@ export interface StudentLesson extends StudentLessonSummary {
     id: string
     displayName: string
   }
-  tasks: StudentLessonTask[]
+}
+
+export type StudentLessonProgressStatus =
+  | 'NO_TASKS'
+  | 'NOT_STARTED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+
+export interface StudentLessonProgress {
+  status: StudentLessonProgressStatus
+  requiredTotal: number
+  completed: number
+  awaitingReview: number
+  needsRevision: number
+  inProgress: number
+  expired: number
 }
 
 export type LessonMoveDirection = 'UP' | 'DOWN'

@@ -1,9 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LessonStatus, Locale } from '@prisma/client';
-import {
-  StudentLessonProgressDto,
-  StudentLessonTaskDto,
-} from './lesson-task.dto';
+import { StudentLessonProgressDto } from './student-lesson-progress.dto';
 
 export class LessonClassLinkDto {
   @ApiProperty()
@@ -166,14 +163,10 @@ export class StudentLessonDetailDto extends StudentLessonSummaryDto {
   @ApiProperty({ type: StudentLessonTeacherDto })
   teacher: StudentLessonTeacherDto;
 
-  @ApiProperty({ type: StudentLessonTaskDto, isArray: true })
-  tasks: StudentLessonTaskDto[];
-
   constructor(data: StudentLessonDetailDto) {
     super(data);
     this.content = data.content;
     this.class = data.class;
     this.teacher = data.teacher;
-    this.tasks = data.tasks;
   }
 }

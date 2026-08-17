@@ -21,6 +21,10 @@ import { StudentOverviewPage } from '../../features/student-overview'
 import { StudentProfilePage } from '../../features/student-profile'
 import { TeacherProfilePage } from '../../features/teacher-profile'
 import {
+  TeacherAssignmentEditorPage,
+  TeacherAssignmentsPage,
+} from '../../features/assignments'
+import {
   StudentLessonReaderPage,
   TeacherLessonEditorPage,
   TeacherLessonsPage,
@@ -113,9 +117,14 @@ export function AppRouter() {
               path="lessons/:lessonId/edit"
               element={<TeacherLessonEditorPage />}
             />
+            <Route path="tasks" element={<TeacherAssignmentsPage />} />
             <Route
-              path="tasks"
-              element={<TeacherPlaceholderPage section="tasks" />}
+              path="tasks/new/:assignmentType"
+              element={<TeacherAssignmentEditorPage />}
+            />
+            <Route
+              path="tasks/:assignmentId/edit"
+              element={<TeacherAssignmentEditorPage />}
             />
             <Route
               path="analytics"

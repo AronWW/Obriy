@@ -20,6 +20,7 @@ import { ClassesModule } from './classes/classes.module';
 import { ParentLinksModule } from './parent-links/parent-links.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { AssignmentsModule } from './assignments/assignments.module';
+import { TestsModule } from './tests/tests.module';
 import { validateEnvironment } from './config/env.validation';
 
 const i18nPath = existsSync(join(__dirname, 'i18n'))
@@ -48,6 +49,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     ParentLinksModule,
     LessonsModule,
     AssignmentsModule,
+    TestsModule,
   ],
   controllers: [AppController],
   providers: [

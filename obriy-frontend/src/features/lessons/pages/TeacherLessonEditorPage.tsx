@@ -15,12 +15,9 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
 import { registerWorkspaceNavigationGuard } from '../../../shared/navigation/workspace-navigation-guard'
-import {
-  TeacherLessonAssignments,
-  TeacherLessonReviews,
-} from '../../assignments'
 import { useSessionStore } from '../../auth/model/session.store'
 import { listTeacherClasses } from '../../classes/api/classes.api'
+import { TeacherLessonTests, TeacherTestReviews } from '../../tests'
 import {
   createLesson,
   getLesson,
@@ -600,11 +597,12 @@ export function TeacherLessonEditorPage() {
 
           {activeLessonId && (
             <div className={styles.editorTasks}>
-              <TeacherLessonAssignments
+              <TeacherLessonTests
+                contentLocale={values.contentLocale}
                 lessonId={activeLessonId}
                 readOnly={isArchived}
               />
-              <TeacherLessonReviews lessonId={activeLessonId} />
+              <TeacherTestReviews lessonId={activeLessonId} />
             </div>
           )}
         </div>

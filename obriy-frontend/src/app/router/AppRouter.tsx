@@ -24,6 +24,7 @@ import {
   TeacherAssignmentEditorPage,
   TeacherAssignmentsPage,
 } from '../../features/assignments'
+import { TeacherTestEditorPage, TeacherTestsPage } from '../../features/tests'
 import {
   StudentLessonReaderPage,
   TeacherLessonEditorPage,
@@ -125,6 +126,12 @@ export function AppRouter() {
             <Route
               path="tasks/:assignmentId/edit"
               element={<TeacherAssignmentEditorPage />}
+            />
+            <Route path="tests" element={<TeacherTestsPage />} />
+            <Route path="tests/new" element={<TeacherTestEditorPage />} />
+            <Route
+              path="tests/:testId/edit"
+              element={<TeacherTestEditorPage />}
             />
             <Route
               path="analytics"

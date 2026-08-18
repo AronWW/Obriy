@@ -4,11 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  AssignmentLatePolicy,
-  AssignmentReleaseStatus,
-  AssignmentStudentStatus,
   LessonStatus,
   Locale,
+  TestLatePolicy,
+  TestReleaseStatus,
+  TestStudentStatus,
   UserRole,
   UserStatus,
 } from '@prisma/client';
@@ -26,7 +26,7 @@ describe('LessonsService access and draft boundaries', () => {
   const lessonFindMany = jest.fn();
   const classLessonFindMany = jest.fn();
   const classLessonFindFirst = jest.fn();
-  const assignmentReleaseFindMany = jest.fn();
+  const testReleaseFindMany = jest.fn();
   const prisma = {
     user: { findUnique: userFindUnique },
     lesson: {
@@ -38,7 +38,7 @@ describe('LessonsService access and draft boundaries', () => {
       findMany: classLessonFindMany,
       findFirst: classLessonFindFirst,
     },
-    assignmentRelease: { findMany: assignmentReleaseFindMany },
+    testRelease: { findMany: testReleaseFindMany },
   } as unknown as PrismaService;
   const service = new LessonsService(prisma);
   const teacher: AuthUser = {
@@ -190,18 +190,18 @@ describe('LessonsService access and draft boundaries', () => {
         },
       },
     ]);
-    assignmentReleaseFindMany.mockResolvedValue([
+    testReleaseFindMany.mockResolvedValue([
       {
         lessonId: 'lesson-a',
         dueAt: null,
-        latePolicy: AssignmentLatePolicy.DISALLOW,
-        studentStates: [{ status: AssignmentStudentStatus.AWAITING_REVIEW }],
+        latePolicy: TestLatePolicy.DISALLOW,
+        studentStates: [{ status: TestStudentStatus.AWAITING_REVIEW }],
       },
       {
         lessonId: 'lesson-b',
         dueAt: null,
-        latePolicy: AssignmentLatePolicy.DISALLOW,
-        studentStates: [{ status: AssignmentStudentStatus.COMPLETED }],
+        latePolicy: TestLatePolicy.DISALLOW,
+        studentStates: [{ status: TestStudentStatus.COMPLETED }],
       },
     ]);
 
@@ -263,11 +263,11 @@ describe('LessonsService access and draft boundaries', () => {
         },
       },
     });
-    expect(assignmentReleaseFindMany).toHaveBeenCalledWith({
+    expect(testReleaseFindMany).toHaveBeenCalledWith({
       where: {
         lessonId: { in: ['lesson-a', 'lesson-b'] },
         classId: 'class-1',
-        status: AssignmentReleaseStatus.ACTIVE,
+        status: TestReleaseStatus.ACTIVE,
         isRequired: true,
       },
       select: {
@@ -340,11 +340,11 @@ describe('LessonsService access and draft boundaries', () => {
         },
       },
     });
-    assignmentReleaseFindMany.mockResolvedValue([
+    testReleaseFindMany.mockResolvedValue([
       {
         lessonId: 'lesson-1',
         dueAt: null,
-        latePolicy: AssignmentLatePolicy.DISALLOW,
+        latePolicy: TestLatePolicy.DISALLOW,
         studentStates: [],
       },
     ]);

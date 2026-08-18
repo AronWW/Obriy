@@ -1,0 +1,5 @@
+export { TeacherTestEditorPage } from './pages/TeacherTestEditorPage'
+export { TeacherTestsPage } from './pages/TeacherTestsPage'
+export { TeacherLessonTests } from './components/TeacherLessonTests'
+export { StudentLessonTests } from './components/StudentLessonTests'
+export { TeacherTestReviews } from './components/TeacherTestReviews'

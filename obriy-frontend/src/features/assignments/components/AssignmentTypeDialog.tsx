@@ -55,7 +55,10 @@ export function AssignmentTypeDialog({
     >
       <div className={styles.typeGrid}>
         {typeOptions.map(({ icon: Icon, type }) => {
-          const isAvailable = type === 'WRITTEN'
+          const isAvailable =
+            type === 'WRITTEN' ||
+            type === 'SINGLE_CHOICE' ||
+            type === 'MULTIPLE_CHOICE'
 
           return (
             <button

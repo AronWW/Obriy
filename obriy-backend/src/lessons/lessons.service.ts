@@ -7,11 +7,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  AssignmentLatePolicy,
-  AssignmentReleaseStatus,
-  AssignmentStudentStatus,
   LessonStatus,
   Prisma,
+  TestLatePolicy,
+  TestReleaseStatus,
+  TestStudentStatus,
   UserRole,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -308,7 +308,7 @@ export class LessonsService {
           where: { id: existing.id },
           data: { status: LessonStatus.ARCHIVED },
         });
-        await this.archiveLessonAssignmentReleases(transaction, existing.id);
+        await this.archiveLessonTestReleases(transaction, existing.id);
       }
 
       return transaction.lesson.findUnique({
@@ -516,17 +516,9 @@ export class LessonsService {
       }
 
       if (published) {
-        await this.activateLessonAssignmentReleases(
-          transaction,
-          classId,
-          lessonId,
-        );
+        await this.activateLessonTestReleases(transaction, classId, lessonId);
       } else {
-        await this.archiveLessonAssignmentReleases(
-          transaction,
-          lessonId,
-          classId,
-        );
+        await this.archiveLessonTestReleases(transaction, lessonId, classId);
       }
 
       return transaction.classLesson.findUnique({
@@ -563,11 +555,7 @@ export class LessonsService {
         throw this.classLessonNotFound();
       }
 
-      await this.archiveLessonAssignmentReleases(
-        transaction,
-        lessonId,
-        classId,
-      );
+      await this.archiveLessonTestReleases(transaction, lessonId, classId);
     });
   }
 
@@ -670,11 +658,11 @@ export class LessonsService {
       return result;
     }
 
-    const releases = await this.prisma.assignmentRelease.findMany({
+    const releases = await this.prisma.testRelease.findMany({
       where: {
         lessonId: { in: lessonIds },
         classId,
-        status: AssignmentReleaseStatus.ACTIVE,
+        status: TestReleaseStatus.ACTIVE,
         isRequired: true,
       },
       select: {
@@ -708,25 +696,23 @@ export class LessonsService {
   }
 
   private calculateStudentProgress(
-    assignments: { status: AssignmentStudentStatus }[],
+    tests: { status: TestStudentStatus }[],
   ): StudentLessonProgressDto {
-    const requiredTotal = assignments.length;
-    const completed = assignments.filter(
-      (assignment) => assignment.status === AssignmentStudentStatus.COMPLETED,
+    const requiredTotal = tests.length;
+    const completed = tests.filter(
+      (test) => test.status === TestStudentStatus.COMPLETED,
     ).length;
-    const awaitingReview = assignments.filter(
-      (assignment) =>
-        assignment.status === AssignmentStudentStatus.AWAITING_REVIEW,
+    const awaitingReview = tests.filter(
+      (test) => test.status === TestStudentStatus.AWAITING_REVIEW,
     ).length;
-    const needsRevision = assignments.filter(
-      (assignment) =>
-        assignment.status === AssignmentStudentStatus.NEEDS_REVISION,
+    const needsRevision = tests.filter(
+      (test) => test.status === TestStudentStatus.NEEDS_REVISION,
     ).length;
-    const inProgress = assignments.filter(
-      (assignment) => assignment.status === AssignmentStudentStatus.IN_PROGRESS,
+    const inProgress = tests.filter(
+      (test) => test.status === TestStudentStatus.IN_PROGRESS,
     ).length;
-    const expired = assignments.filter(
-      (assignment) => assignment.status === AssignmentStudentStatus.EXPIRED,
+    const expired = tests.filter(
+      (test) => test.status === TestStudentStatus.EXPIRED,
     ).length;
 
     let status = StudentLessonProgressStatus.IN_PROGRESS;
@@ -753,20 +739,20 @@ export class LessonsService {
   }
 
   private resolveProgressStatus(
-    persistedStatus: AssignmentStudentStatus | undefined,
+    persistedStatus: TestStudentStatus | undefined,
     dueAt: Date | null,
-    latePolicy: AssignmentLatePolicy,
+    latePolicy: TestLatePolicy,
     now: Date,
-  ): AssignmentStudentStatus {
-    const status = persistedStatus ?? AssignmentStudentStatus.NOT_STARTED;
+  ): TestStudentStatus {
+    const status = persistedStatus ?? TestStudentStatus.NOT_STARTED;
     if (
-      status !== AssignmentStudentStatus.AWAITING_REVIEW &&
-      status !== AssignmentStudentStatus.COMPLETED &&
+      status !== TestStudentStatus.AWAITING_REVIEW &&
+      status !== TestStudentStatus.COMPLETED &&
       dueAt &&
       dueAt < now &&
-      latePolicy === AssignmentLatePolicy.DISALLOW
+      latePolicy === TestLatePolicy.DISALLOW
     ) {
-      return AssignmentStudentStatus.EXPIRED;
+      return TestStudentStatus.EXPIRED;
     }
     return status;
   }
@@ -775,20 +761,23 @@ export class LessonsService {
     return this.calculateStudentProgress([]);
   }
 
-  private async activateLessonAssignmentReleases(
+  private async activateLessonTestReleases(
     transaction: Prisma.TransactionClient,
     classId: string,
     lessonId: string,
   ): Promise<void> {
-    const links = await transaction.lessonAssignment.findMany({
+    const links = await transaction.lessonTest.findMany({
       where: { lessonId },
       select: {
-        assignmentId: true,
-        revisionId: true,
-        assignment: {
+        testId: true,
+        testRevisionId: true,
+        revision: {
           select: {
-            defaultMaxPoints: true,
-            defaultPassingPercent: true,
+            passingPercent: true,
+            maxAttempts: true,
+            timeLimitSeconds: true,
+            scorePolicy: true,
+            items: { select: { maxPoints: true } },
           },
         },
       },
@@ -797,66 +786,67 @@ export class LessonsService {
       return;
     }
 
-    const existing = await transaction.assignmentRelease.findMany({
+    const existing = await transaction.testRelease.findMany({
       where: {
         classId,
         lessonId,
-        assignmentId: { in: links.map((link) => link.assignmentId) },
+        testId: { in: links.map((link) => link.testId) },
         status: {
           in: [
-            AssignmentReleaseStatus.DRAFT,
-            AssignmentReleaseStatus.SCHEDULED,
-            AssignmentReleaseStatus.ACTIVE,
+            TestReleaseStatus.DRAFT,
+            TestReleaseStatus.SCHEDULED,
+            TestReleaseStatus.ACTIVE,
           ],
         },
       },
-      select: { assignmentId: true },
+      select: { testId: true },
     });
-    const releasedAssignmentIds = new Set(
-      existing.map((release) => release.assignmentId),
-    );
+    const releasedTestIds = new Set(existing.map((release) => release.testId));
     const publishedAt = new Date();
     const releaseData = links
-      .filter((link) => !releasedAssignmentIds.has(link.assignmentId))
+      .filter((link) => !releasedTestIds.has(link.testId))
       .map((link) => ({
-        assignmentId: link.assignmentId,
-        revisionId: link.revisionId,
+        testId: link.testId,
+        testRevisionId: link.testRevisionId,
         classId,
         lessonId,
-        status: AssignmentReleaseStatus.ACTIVE,
-        maxPoints: link.assignment.defaultMaxPoints,
-        passingPercent: link.assignment.defaultPassingPercent,
+        status: TestReleaseStatus.ACTIVE,
+        maxPoints: link.revision.items.reduce(
+          (sum, item) => sum + Number(item.maxPoints),
+          0,
+        ),
+        passingPercent: link.revision.passingPercent,
         isRequired: true,
+        timeLimitSeconds: link.revision.timeLimitSeconds,
+        maxAttempts: link.revision.maxAttempts,
+        scorePolicy: link.revision.scorePolicy,
         publishedAt,
       }));
     if (releaseData.length === 0) {
       return;
     }
-    await transaction.assignmentRelease.createMany({
-      data: releaseData,
-      skipDuplicates: true,
-    });
+    await transaction.testRelease.createMany({ data: releaseData });
   }
 
-  private async archiveLessonAssignmentReleases(
+  private async archiveLessonTestReleases(
     transaction: Prisma.TransactionClient,
     lessonId: string,
     classId?: string,
   ): Promise<void> {
-    await transaction.assignmentRelease.updateMany({
+    await transaction.testRelease.updateMany({
       where: {
         lessonId,
         ...(classId ? { classId } : {}),
         status: {
           in: [
-            AssignmentReleaseStatus.DRAFT,
-            AssignmentReleaseStatus.SCHEDULED,
-            AssignmentReleaseStatus.ACTIVE,
+            TestReleaseStatus.DRAFT,
+            TestReleaseStatus.SCHEDULED,
+            TestReleaseStatus.ACTIVE,
           ],
         },
       },
       data: {
-        status: AssignmentReleaseStatus.ARCHIVED,
+        status: TestReleaseStatus.ARCHIVED,
         closedAt: new Date(),
       },
     });

@@ -61,43 +61,6 @@ enum AssignmentRevisionStatus {
   ARCHIVED
 }
 
-enum AssignmentReleaseStatus {
-  DRAFT
-  SCHEDULED
-  ACTIVE
-  CLOSED
-  ARCHIVED
-}
-
-enum AssignmentScorePolicy {
-  BEST
-  LATEST
-}
-
-enum AssignmentLatePolicy {
-  DISALLOW
-  ALLOW
-  ALLOW_WITH_PENALTY
-}
-
-enum AssignmentStudentStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  AWAITING_REVIEW
-  NEEDS_REVISION
-  COMPLETED
-  EXPIRED
-}
-
-enum AssignmentAttemptStatus {
-  IN_PROGRESS
-  AWAITING_REVIEW
-  GRADED
-  RETURNED
-  EXPIRED
-  CANCELLED
-}
-
 enum AssignmentAttachmentKind {
   PROMPT
   RESPONSE
@@ -110,7 +73,63 @@ enum AssignmentAttachmentStatus {
   DELETED
 }
 
-enum AssignmentReviewAction {
+enum TestStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum TestRevisionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum TestReleaseStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum TestScorePolicy {
+  BEST
+  LATEST
+}
+
+enum TestLatePolicy {
+  DISALLOW
+  ALLOW
+  ALLOW_WITH_PENALTY
+}
+
+enum TestStudentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  AWAITING_REVIEW
+  NEEDS_REVISION
+  COMPLETED
+  EXPIRED
+}
+
+enum TestAttemptStatus {
+  IN_PROGRESS
+  AWAITING_REVIEW
+  GRADED
+  RETURNED
+  EXPIRED
+  CANCELLED
+}
+
+enum TestAnswerStatus {
+  DRAFT
+  AWAITING_REVIEW
+  GRADED
+  RETURNED
+}
+
+enum TestReviewAction {
   APPROVED
   RETURNED
   SCORE_OVERRIDDEN
@@ -149,11 +168,12 @@ model User {
   taughtClasses           Class[]                  @relation("TeacherClasses")
   authoredLessons         Lesson[]                 @relation("TeacherLessons")
   authoredAssignments     Assignment[]             @relation("TeacherAssignments")
-  assignmentStates        AssignmentStudentState[] @relation("StudentAssignmentStates")
-  reviewedAttempts        AssignmentAttempt[]      @relation("AssignmentAttemptReviewer")
-  assignmentReviewEvents  AssignmentReviewEvent[]  @relation("AssignmentReviewEventReviewer")
   assignmentAttachments   AssignmentAttachment[]   @relation("AssignmentAttachmentUploader")
   createdMapPresets       MapPreset[]              @relation("MapPresetCreator")
+  authoredTests           Test[]                   @relation("TeacherTests")
+  testStates              TestStudentState[]       @relation("StudentTestStates")
+  reviewedTestAnswers     TestAnswer[]             @relation("TestAnswerReviewer")
+  testAnswerReviewEvents  TestAnswerReviewEvent[]  @relation("TestAnswerReviewEventReviewer")
   studentClassId          String?
   studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
 
@@ -287,7 +307,7 @@ model Class {
   teacher            User                @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
   students           User[]              @relation("ClassStudents")
   lessonLinks        ClassLesson[]
-  assignmentReleases AssignmentRelease[]
+  testReleases       TestRelease[]
 
   @@index([teacherId])
 }
@@ -306,8 +326,8 @@ model Lesson {
 
   teacher            User                @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
   classLinks         ClassLesson[]
-  assignmentLinks    LessonAssignment[]
-  assignmentReleases AssignmentRelease[]
+  testLinks          LessonTest[]
+  testReleases       TestRelease[]
 
   @@index([teacherId, status, updatedAt])
 }
@@ -342,8 +362,7 @@ model Assignment {
 
   teacher     User                 @relation("TeacherAssignments", fields: [teacherId], references: [id], onDelete: Cascade)
   revisions   AssignmentRevision[]
-  lessonLinks LessonAssignment[]
-  releases    AssignmentRelease[]
+  testItems   TestItem[]
 
   @@index([teacherId, status, updatedAt])
   @@index([teacherId, type, updatedAt])
@@ -369,10 +388,8 @@ model AssignmentRevision {
   assignment  Assignment             @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   mapPreset   MapPreset?             @relation(fields: [mapPresetId], references: [id], onDelete: Restrict)
   solution    AssignmentSolution?
-  lessonLinks LessonAssignment[]
-  releases    AssignmentRelease[]
-  attempts    AssignmentAttempt[]
   attachments AssignmentAttachment[]
+  testItems   TestItem[]
 
   @@unique([assignmentId, version])
   @@unique([id, assignmentId])
@@ -389,127 +406,10 @@ model AssignmentSolution {
   revision AssignmentRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
 }
 
-model LessonAssignment {
-  id           String   @id @default(uuid())
-  lessonId     String
-  assignmentId String
-  revisionId   String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  lesson     Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  assignment Assignment         @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  revision   AssignmentRevision @relation(fields: [revisionId, assignmentId], references: [id, assignmentId], onDelete: Restrict)
-
-  @@unique([lessonId, assignmentId])
-  @@index([assignmentId])
-  @@index([revisionId])
-}
-
-model AssignmentRelease {
-  id                 String                  @id @default(uuid())
-  assignmentId       String
-  revisionId         String
-  classId            String
-  lessonId           String?
-  status             AssignmentReleaseStatus @default(DRAFT)
-  maxPoints          Decimal                 @db.Decimal(8, 2)
-  passingPercent     Decimal                 @default(100) @db.Decimal(5, 2)
-  isRequired         Boolean                 @default(true)
-  availableFrom      DateTime?
-  dueAt              DateTime?
-  timeLimitSeconds   Int?
-  maxAttempts        Int?
-  scorePolicy        AssignmentScorePolicy   @default(BEST)
-  latePolicy         AssignmentLatePolicy    @default(DISALLOW)
-  latePenaltyPercent Decimal?                @db.Decimal(5, 2)
-  xpReward           Int                     @default(0)
-  publishedAt        DateTime?
-  closedAt           DateTime?
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-
-  assignment    Assignment               @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
-  revision      AssignmentRevision       @relation(fields: [revisionId, assignmentId], references: [id, assignmentId], onDelete: Restrict)
-  class         Class                    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  lesson        Lesson?                  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
-  studentStates AssignmentStudentState[]
-
-  @@index([assignmentId, status, createdAt])
-  @@index([revisionId])
-  @@index([classId, status, availableFrom, dueAt])
-  @@index([lessonId, classId, status])
-}
-
-model AssignmentStudentState {
-  id             String                  @id @default(uuid())
-  releaseId      String
-  studentId      String
-  status         AssignmentStudentStatus @default(NOT_STARTED)
-  attemptCount   Int                     @default(0)
-  scorePoints    Decimal?                @db.Decimal(8, 2)
-  scorePercent   Decimal?                @db.Decimal(5, 2)
-  bestPoints     Decimal?                @db.Decimal(8, 2)
-  bestPercent    Decimal?                @db.Decimal(5, 2)
-  isLate         Boolean                 @default(false)
-  startedAt      DateTime?
-  lastActivityAt DateTime?
-  submittedAt    DateTime?
-  completedAt    DateTime?
-  createdAt      DateTime                @default(now())
-  updatedAt      DateTime                @updatedAt
-
-  release  AssignmentRelease   @relation(fields: [releaseId], references: [id], onDelete: Cascade)
-  student  User                @relation("StudentAssignmentStates", fields: [studentId], references: [id], onDelete: Cascade)
-  attempts AssignmentAttempt[]
-
-  @@unique([releaseId, studentId])
-  @@index([studentId, status, updatedAt])
-  @@index([releaseId, status, completedAt])
-}
-
-model AssignmentAttempt {
-  id              String                  @id @default(uuid())
-  studentStateId  String
-  revisionId      String
-  reviewedById    String?
-  attemptNumber   Int
-  clientAttemptId String                  @db.VarChar(64)
-  status          AssignmentAttemptStatus @default(IN_PROGRESS)
-  responseData    Json?
-  gradingData     Json?
-  feedbackData    Json?
-  maxPoints       Decimal                 @db.Decimal(8, 2)
-  scorePoints     Decimal?                @db.Decimal(8, 2)
-  scorePercent    Decimal?                @db.Decimal(5, 2)
-  isPassed        Boolean?
-  isLate          Boolean                 @default(false)
-  teacherComment  String?                 @db.Text
-  startedAt       DateTime                @default(now())
-  expiresAt       DateTime?
-  submittedAt     DateTime?
-  gradedAt        DateTime?
-  reviewedAt      DateTime?
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
-
-  studentState AssignmentStudentState  @relation(fields: [studentStateId], references: [id], onDelete: Cascade)
-  revision     AssignmentRevision      @relation(fields: [revisionId], references: [id], onDelete: Restrict)
-  reviewedBy   User?                   @relation("AssignmentAttemptReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  attachments  AssignmentAttachment[]
-  reviewEvents AssignmentReviewEvent[]
-
-  @@unique([studentStateId, attemptNumber])
-  @@unique([studentStateId, clientAttemptId])
-  @@index([revisionId, status])
-  @@index([status, submittedAt])
-  @@index([reviewedById])
-}
-
 model AssignmentAttachment {
   id             String                     @id @default(uuid())
   revisionId     String?
-  attemptId      String?
+  testAnswerId   String?
   uploadedById   String?
   kind           AssignmentAttachmentKind
   status         AssignmentAttachmentStatus @default(PENDING)
@@ -522,28 +422,242 @@ model AssignmentAttachment {
   updatedAt      DateTime                   @updatedAt
 
   revision   AssignmentRevision? @relation(fields: [revisionId], references: [id], onDelete: Cascade)
-  attempt    AssignmentAttempt?  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  testAnswer TestAnswer?         @relation(fields: [testAnswerId], references: [id], onDelete: Cascade)
   uploadedBy User?               @relation("AssignmentAttachmentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
 
   @@index([revisionId, kind])
-  @@index([attemptId, kind])
+  @@index([testAnswerId, kind])
   @@index([uploadedById])
 }
 
-model AssignmentReviewEvent {
-  id           String                 @id @default(uuid())
-  attemptId    String
+model Test {
+  id            String     @id @default(uuid())
+  teacherId     String
+  contentLocale Locale
+  status        TestStatus @default(DRAFT)
+  archivedAt    DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  teacher     User           @relation("TeacherTests", fields: [teacherId], references: [id], onDelete: Cascade)
+  revisions   TestRevision[]
+  lessonLinks LessonTest[]
+  releases    TestRelease[]
+
+  @@index([teacherId, status, updatedAt])
+  @@index([teacherId, updatedAt])
+}
+
+model TestRevision {
+  id               String             @id @default(uuid())
+  testId           String
+  version          Int
+  status           TestRevisionStatus @default(DRAFT)
+  title            String             @db.VarChar(160)
+  description      String             @db.VarChar(500)
+  instructions     String?            @db.Text
+  passingPercent   Decimal            @default(100) @db.Decimal(5, 2)
+  maxAttempts      Int?               @default(1)
+  timeLimitSeconds Int?
+  scorePolicy      TestScorePolicy    @default(BEST)
+  shuffleItems     Boolean            @default(false)
+  schemaVersion    Int                @default(1)
+  editVersion      Int                @default(1)
+  publishedAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  test        Test          @relation(fields: [testId], references: [id], onDelete: Cascade)
+  items       TestItem[]
+  lessonLinks LessonTest[]
+  releases    TestRelease[]
+  attempts    TestAttempt[]
+
+  @@unique([testId, version])
+  @@unique([id, testId])
+  @@index([testId, status, version])
+}
+
+model TestItem {
+  id                   String   @id @default(uuid())
+  testRevisionId       String
+  assignmentId         String
+  assignmentRevisionId String
+  position             Int
+  maxPoints            Decimal  @db.Decimal(8, 2)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  testRevision       TestRevision       @relation(fields: [testRevisionId], references: [id], onDelete: Cascade)
+  assignment         Assignment         @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  assignmentRevision AssignmentRevision @relation(fields: [assignmentRevisionId, assignmentId], references: [id, assignmentId], onDelete: Restrict)
+  answers            TestAnswer[]
+
+  @@unique([testRevisionId, position])
+  @@unique([testRevisionId, assignmentId])
+  @@unique([id, testRevisionId])
+  @@index([assignmentId])
+  @@index([assignmentRevisionId])
+}
+
+model LessonTest {
+  id             String   @id @default(uuid())
+  lessonId       String
+  testId         String
+  testRevisionId String
+  position       Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  lesson   Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  test     Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  revision TestRevision @relation(fields: [testRevisionId, testId], references: [id, testId], onDelete: Restrict)
+
+  @@unique([lessonId, testId])
+  @@index([lessonId, position])
+  @@index([testId])
+  @@index([testRevisionId])
+}
+
+model TestRelease {
+  id                 String            @id @default(uuid())
+  testId             String
+  testRevisionId     String
+  classId            String
+  lessonId           String?
+  status             TestReleaseStatus @default(DRAFT)
+  maxPoints          Decimal           @db.Decimal(8, 2)
+  passingPercent     Decimal           @default(100) @db.Decimal(5, 2)
+  isRequired         Boolean           @default(true)
+  availableFrom      DateTime?
+  dueAt              DateTime?
+  timeLimitSeconds   Int?
+  maxAttempts        Int?
+  scorePolicy        TestScorePolicy   @default(BEST)
+  latePolicy         TestLatePolicy    @default(DISALLOW)
+  latePenaltyPercent Decimal?          @db.Decimal(5, 2)
+  xpReward           Int               @default(0)
+  publishedAt        DateTime?
+  closedAt           DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  test          Test               @relation(fields: [testId], references: [id], onDelete: Restrict)
+  revision      TestRevision       @relation(fields: [testRevisionId, testId], references: [id, testId], onDelete: Restrict)
+  class         Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
+  lesson        Lesson?            @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  studentStates TestStudentState[]
+
+  @@index([testId, status, createdAt])
+  @@index([testRevisionId])
+  @@index([classId, status, availableFrom, dueAt])
+  @@index([lessonId, classId, status])
+}
+
+model TestStudentState {
+  id             String            @id @default(uuid())
+  releaseId      String
+  studentId      String
+  status         TestStudentStatus @default(NOT_STARTED)
+  attemptCount   Int               @default(0)
+  scorePoints    Decimal?          @db.Decimal(8, 2)
+  scorePercent   Decimal?          @db.Decimal(5, 2)
+  bestPoints     Decimal?          @db.Decimal(8, 2)
+  bestPercent    Decimal?          @db.Decimal(5, 2)
+  isLate         Boolean           @default(false)
+  startedAt      DateTime?
+  lastActivityAt DateTime?
+  submittedAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  release  TestRelease   @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  student  User          @relation("StudentTestStates", fields: [studentId], references: [id], onDelete: Cascade)
+  attempts TestAttempt[]
+
+  @@unique([releaseId, studentId])
+  @@index([studentId, status, updatedAt])
+  @@index([releaseId, status, completedAt])
+}
+
+model TestAttempt {
+  id                 String            @id @default(uuid())
+  studentStateId     String
+  testRevisionId     String
+  attemptNumber      Int
+  clientAttemptId    String            @db.VarChar(64)
+  status             TestAttemptStatus @default(IN_PROGRESS)
+  maxPoints          Decimal           @db.Decimal(8, 2)
+  scorePoints        Decimal?          @db.Decimal(8, 2)
+  scorePercent       Decimal?          @db.Decimal(5, 2)
+  isPassed           Boolean?
+  pendingReviewCount Int               @default(0)
+  isLate             Boolean           @default(false)
+  startedAt          DateTime          @default(now())
+  expiresAt          DateTime?
+  submittedAt        DateTime?
+  gradedAt           DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  studentState TestStudentState @relation(fields: [studentStateId], references: [id], onDelete: Cascade)
+  testRevision TestRevision     @relation(fields: [testRevisionId], references: [id], onDelete: Restrict)
+  answers      TestAnswer[]
+
+  @@unique([studentStateId, attemptNumber])
+  @@unique([studentStateId, clientAttemptId])
+  @@unique([id, testRevisionId])
+  @@index([testRevisionId, status])
+  @@index([status, submittedAt])
+}
+
+model TestAnswer {
+  id             String           @id @default(uuid())
+  testAttemptId  String
+  testRevisionId String
+  testItemId     String
+  reviewedById   String?
+  status         TestAnswerStatus @default(DRAFT)
+  responseData   Json?
+  gradingData    Json?
+  feedbackData   Json?
+  maxPoints      Decimal          @db.Decimal(8, 2)
+  scorePoints    Decimal?         @db.Decimal(8, 2)
+  scorePercent   Decimal?         @db.Decimal(5, 2)
+  isCorrect      Boolean?
+  teacherComment String?          @db.Text
+  gradedAt       DateTime?
+  reviewedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  testAttempt  TestAttempt             @relation(fields: [testAttemptId, testRevisionId], references: [id, testRevisionId], onDelete: Cascade)
+  testItem     TestItem                @relation(fields: [testItemId, testRevisionId], references: [id, testRevisionId], onDelete: Restrict)
+  reviewedBy   User?                   @relation("TestAnswerReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewEvents TestAnswerReviewEvent[]
+  attachments  AssignmentAttachment[]
+
+  @@unique([testAttemptId, testItemId])
+  @@index([testItemId, status])
+  @@index([status, reviewedAt])
+  @@index([reviewedById])
+}
+
+model TestAnswerReviewEvent {
+  id           String           @id @default(uuid())
+  testAnswerId String
   reviewerId   String?
-  action       AssignmentReviewAction
+  action       TestReviewAction
   previousData Json?
   nextData     Json?
-  comment      String?                @db.Text
-  createdAt    DateTime               @default(now())
+  comment      String?          @db.Text
+  createdAt    DateTime         @default(now())
 
-  attempt  AssignmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  reviewer User?             @relation("AssignmentReviewEventReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  testAnswer TestAnswer @relation(fields: [testAnswerId], references: [id], onDelete: Cascade)
+  reviewer   User?      @relation("TestAnswerReviewEventReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
 
-  @@index([attemptId, createdAt])
+  @@index([testAnswerId, createdAt])
   @@index([reviewerId, createdAt])
 }
 

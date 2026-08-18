@@ -11,6 +11,11 @@ import {
   WRITTEN_SCHEMA_VERSION,
   writtenAssignmentValidationDefinition,
 } from './written-assignment.schemas';
+import {
+  CHOICE_SCHEMA_VERSION,
+  multipleChoiceAssignmentValidationDefinition,
+  singleChoiceAssignmentValidationDefinition,
+} from './choice-assignment.schemas';
 
 type UnknownAssignmentValidationDefinition = AssignmentValidationDefinition<
   unknown,
@@ -28,6 +33,12 @@ const assignmentValidationRegistry: Readonly<
 > = Object.freeze({
   WRITTEN: Object.freeze({
     [WRITTEN_SCHEMA_VERSION]: writtenAssignmentValidationDefinition,
+  }),
+  SINGLE_CHOICE: Object.freeze({
+    [CHOICE_SCHEMA_VERSION]: singleChoiceAssignmentValidationDefinition,
+  }),
+  MULTIPLE_CHOICE: Object.freeze({
+    [CHOICE_SCHEMA_VERSION]: multipleChoiceAssignmentValidationDefinition,
   }),
 });
 

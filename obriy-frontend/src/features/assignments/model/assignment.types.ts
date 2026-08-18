@@ -31,6 +31,21 @@ export interface WrittenPublicConfig {
   rubric: AssignmentRubricItem[]
 }
 
+export interface ChoiceOption {
+  id: string
+  text: string
+}
+
+export interface ChoicePublicConfig {
+  options: ChoiceOption[]
+  shuffleOptions: boolean
+}
+
+export interface ChoiceGradingConfig {
+  correctOptionIds: string[]
+  scoringMode: 'ALL_OR_NOTHING' | 'PARTIAL'
+}
+
 export interface AssignmentRevisionSummary {
   id: string
   version: number
@@ -96,6 +111,7 @@ export interface AssignmentFilters {
   search?: string
   status?: AssignmentStatus
   type?: AssignmentType
+  contentLocale?: ContentLocale
 }
 
 export interface AssignmentDraftInput {
@@ -103,6 +119,11 @@ export interface AssignmentDraftInput {
   prompt: string
   instructions: string | null
   explanation: string | null
+  publicConfig: WrittenPublicConfig | ChoicePublicConfig
+  gradingConfig: { mode: 'MANUAL' } | ChoiceGradingConfig
+}
+
+export interface WrittenAssignmentDraftInput extends AssignmentDraftInput {
   publicConfig: WrittenPublicConfig
   gradingConfig: { mode: 'MANUAL' }
 }
@@ -119,104 +140,4 @@ export interface UpdateAssignmentDraftInput extends AssignmentDraftInput {
   expectedEditVersion: number
   defaultMaxPoints: number
   defaultPassingPercent: number
-}
-
-export interface LessonAssignment {
-  id: string
-  lessonId: string
-  assignmentId: string
-  revisionId: string
-  revisionVersion: number
-  type: AssignmentType
-  contentLocale: ContentLocale
-  title: string
-  prompt: string
-  maxPoints: number
-  passingPercent: number
-  hasUpdate: boolean
-  activeReleaseCount: number
-  releaseCount: number
-  linkedAt: string
-}
-
-export type AssignmentStudentStatus =
-  | 'NOT_STARTED'
-  | 'IN_PROGRESS'
-  | 'AWAITING_REVIEW'
-  | 'NEEDS_REVISION'
-  | 'COMPLETED'
-  | 'EXPIRED'
-
-export type AssignmentAttemptStatus =
-  | 'IN_PROGRESS'
-  | 'AWAITING_REVIEW'
-  | 'GRADED'
-  | 'RETURNED'
-  | 'EXPIRED'
-  | 'CANCELLED'
-
-export interface StudentAssignmentAttempt {
-  id: string
-  attemptNumber: number
-  status: AssignmentAttemptStatus
-  responseText: string
-  teacherComment: string | null
-  scorePoints: number | null
-  scorePercent: number | null
-  isPassed: boolean | null
-  submittedAt: string | null
-  reviewedAt: string | null
-  updatedAt: string
-}
-
-export interface StudentLessonAssignment {
-  releaseId: string
-  assignmentId: string
-  revisionId: string
-  type: AssignmentType
-  title: string
-  prompt: string
-  instructions: string | null
-  publicConfig: Record<string, unknown>
-  maxPoints: number
-  passingPercent: number
-  isRequired: boolean
-  dueAt: string | null
-  stateStatus: AssignmentStudentStatus
-  attempt: StudentAssignmentAttempt | null
-}
-
-export interface TeacherAssignmentReview {
-  attemptId: string
-  releaseId: string
-  assignmentId: string
-  type: AssignmentType
-  assignmentTitle: string
-  prompt: string
-  responseText: string
-  attemptNumber: number
-  status: 'AWAITING_REVIEW' | 'GRADED' | 'RETURNED'
-  maxPoints: number
-  passingPercent: number
-  scorePoints: number | null
-  scorePercent: number | null
-  isPassed: boolean | null
-  teacherComment: string | null
-  submittedAt: string | null
-  reviewedAt: string | null
-  updatedAt: string
-  student: {
-    id: string
-    displayName: string
-  }
-  class: {
-    id: string
-    name: string
-  }
-}
-
-export interface ReviewAssignmentAttemptInput {
-  decision: 'APPROVED' | 'RETURNED'
-  scorePoints?: number
-  teacherComment?: string | null
 }

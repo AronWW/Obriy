@@ -9,7 +9,6 @@ import { API_BASE_URL } from '../../../shared/config/env'
 import { server } from '../../../test/server'
 import { TeacherAssignmentEditorPage } from './TeacherAssignmentEditorPage'
 import { TeacherAssignmentsPage } from './TeacherAssignmentsPage'
-import { TeacherLessonAssignments } from '../components/TeacherLessonAssignments'
 
 describe('teacher assignment workspace', () => {
   beforeEach(async () => {
@@ -43,7 +42,7 @@ describe('teacher assignment workspace', () => {
     ).toBeEnabled()
     expect(
       within(dialog).getByRole('button', { name: /Single choice/ }),
-    ).toBeDisabled()
+    ).toBeEnabled()
     expect(within(dialog).queryByText(/soon/i)).not.toBeInTheDocument()
     expect(createCount).toBe(0)
 
@@ -161,47 +160,6 @@ describe('teacher assignment workspace', () => {
     )
   })
 
-  it('links a library assignment to a lesson only after selection', async () => {
-    const user = userEvent.setup()
-    let links: ReturnType<typeof lessonAssignment>[] = []
-    let linkCount = 0
-    server.use(
-      http.get(`${API_BASE_URL}/lessons/lesson-1/assignments`, () =>
-        HttpResponse.json(links),
-      ),
-      http.get(`${API_BASE_URL}/assignments`, () =>
-        HttpResponse.json({
-          items: [assignmentEditor()],
-          nextCursor: null,
-        }),
-      ),
-      http.post(`${API_BASE_URL}/lessons/lesson-1/assignments`, () => {
-        linkCount += 1
-        links = [lessonAssignment()]
-        return HttpResponse.json(links[0], { status: 201 })
-      }),
-    )
-
-    renderLessonAssignments()
-    await user.click(
-      await screen.findByRole('button', { name: 'Add from library' }),
-    )
-    expect(linkCount).toBe(0)
-    const dialog = await screen.findByRole('dialog', {
-      name: 'Add an assignment to the lesson',
-    })
-    await user.click(
-      await within(dialog).findByRole('button', {
-        name: /Industrial Revolution/,
-      }),
-    )
-
-    await waitFor(() => expect(linkCount).toBe(1))
-    expect(
-      await screen.findByRole('heading', { name: 'Industrial Revolution' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('Version 1')).toBeInTheDocument()
-  })
 })
 
 function renderWorkspace(initialEntry: string) {
@@ -225,19 +183,6 @@ function renderWorkspace(initialEntry: string) {
             element={<TeacherAssignmentEditorPage />}
           />
         </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-}
-
-function renderLessonAssignments() {
-  const queryClient = new QueryClient({
-    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
-  })
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <TeacherLessonAssignments lessonId="lesson-1" readOnly={false} />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -292,25 +237,5 @@ function publishedAssignmentEditor() {
       status: 'PUBLISHED',
       publishedAt: '2026-08-08T11:00:00.000Z',
     },
-  }
-}
-
-function lessonAssignment() {
-  return {
-    id: '44444444-4444-4444-8444-444444444444',
-    lessonId: 'lesson-1',
-    assignmentId: '11111111-1111-4111-8111-111111111111',
-    revisionId: '22222222-2222-4222-8222-222222222222',
-    revisionVersion: 1,
-    type: 'WRITTEN' as const,
-    contentLocale: 'EN' as const,
-    title: 'Industrial Revolution',
-    prompt: 'Explain two important causes.',
-    maxPoints: 1,
-    passingPercent: 100,
-    hasUpdate: false,
-    activeReleaseCount: 0,
-    releaseCount: 0,
-    linkedAt: '2026-08-08T10:00:00.000Z',
   }
 }

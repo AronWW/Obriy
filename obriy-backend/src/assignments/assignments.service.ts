@@ -793,22 +793,15 @@ export class AssignmentsService {
         where: { id: assignmentId },
         select: {
           id: true,
-          _count: { select: { lessonLinks: true, releases: true } },
-          revisions: {
-            where: { attempts: { some: {} } },
-            take: 1,
-            select: { id: true },
+          _count: {
+            select: { testItems: true },
           },
         },
       });
       if (!assignment) {
         throw this.assignmentNotFound();
       }
-      if (
-        assignment._count.lessonLinks > 0 ||
-        assignment._count.releases > 0 ||
-        assignment.revisions.length > 0
-      ) {
+      if (assignment._count.testItems > 0) {
         throw new ConflictException({
           code: 'ASSIGNMENT_IN_USE',
           message: 'An assignment in use must be archived instead',
@@ -834,7 +827,9 @@ export class AssignmentsService {
           id: true,
           status: true,
           _count: {
-            select: { lessonLinks: true, releases: true, attempts: true },
+            select: {
+              testItems: true,
+            },
           },
         },
       });
@@ -850,14 +845,10 @@ export class AssignmentsService {
           message: 'The current published revision cannot be deleted',
         });
       }
-      if (
-        revision._count.lessonLinks > 0 ||
-        revision._count.releases > 0 ||
-        revision._count.attempts > 0
-      ) {
+      if (revision._count.testItems > 0) {
         throw new ConflictException({
           code: 'ASSIGNMENT_REVISION_IN_USE',
-          message: 'A revision with links or attempts cannot be deleted',
+          message: 'A revision used by a test cannot be deleted',
         });
       }
 

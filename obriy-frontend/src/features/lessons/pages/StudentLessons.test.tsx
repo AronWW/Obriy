@@ -8,11 +8,12 @@ import i18n from '../../../i18n/config'
 import { API_BASE_URL } from '../../../shared/config/env'
 import { server } from '../../../test/server'
 import { useSessionStore } from '../../auth/model/session.store'
-import type {
-  StudentAssignmentAttempt,
-  StudentLessonAssignment,
-} from '../../assignments/model/assignment.types'
 import { StudentClassesPage } from '../../classes/pages/StudentClassesPage'
+import type {
+  StudentLessonTest,
+  StudentTestAnswer,
+  StudentTestAttempt,
+} from '../../tests/model/test.types'
 import type {
   StudentLessonProgress,
   StudentLessonSummary,
@@ -45,7 +46,7 @@ describe('student lessons', () => {
     })
     server.use(
       http.get(
-        `${API_BASE_URL}/classes/me/lessons/:lessonId/assignments`,
+        `${API_BASE_URL}/classes/me/lessons/:lessonId/tests`,
         () => HttpResponse.json([]),
       ),
     )
@@ -186,15 +187,15 @@ describe('student lessons', () => {
       '/app/student/classes',
     )
     expect(
-      await screen.findByText('There are no assignments for this lesson yet.'),
+      await screen.findByText('No knowledge checks have been added to this lesson yet.'),
     ).toBeInTheDocument()
   })
 
-  it('autosaves a written answer, submits it, and then locks editing', async () => {
+  it('autosaves a written answer and submits the whole test attempt', async () => {
     const user = userEvent.setup()
-    const savedBodies: string[] = []
-    const submittedBodies: string[] = []
-    const assignment = studentAssignment()
+    const savedBodies: unknown[] = []
+    let submitted = false
+    let test = studentTest()
 
     server.use(
       http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
@@ -206,62 +207,89 @@ describe('student lessons', () => {
         }),
       ),
       http.get(
-        `${API_BASE_URL}/classes/me/lessons/lesson-1/assignments`,
-        () => HttpResponse.json([assignment]),
+        `${API_BASE_URL}/classes/me/lessons/lesson-1/tests`,
+        () => HttpResponse.json([test]),
       ),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () =>
+        HttpResponse.json(test),
+      ),
+      http.post(`${API_BASE_URL}/test-releases/release-1/attempts`, () => {
+        const attempt = studentTestAttempt()
+        test = { ...test, stateStatus: 'IN_PROGRESS', attempt }
+        return HttpResponse.json(attempt)
+      }),
       http.put(
-        `${API_BASE_URL}/assignment-releases/release-1/draft`,
+        `${API_BASE_URL}/test-attempts/attempt-1/answers/item-1`,
         async ({ request }) => {
-          const body = (await request.json()) as { text: string }
-          savedBodies.push(body.text)
-          return HttpResponse.json(
-            studentAttempt({ responseText: body.text }),
-          )
+          const body = await request.json()
+          savedBodies.push(body)
+          const responseData = (body as { responseData: Record<string, unknown> }).responseData
+          const attempt = studentTestAttempt({
+            answers: [studentTestAnswer({ responseData })],
+          })
+          test = { ...test, attempt }
+          return HttpResponse.json(attempt)
         },
       ),
-      http.post(
-        `${API_BASE_URL}/assignment-releases/release-1/submit`,
-        async ({ request }) => {
-          const body = (await request.json()) as { text: string }
-          submittedBodies.push(body.text)
-          return HttpResponse.json(
-            studentAttempt({
-              responseText: body.text,
-              status: 'AWAITING_REVIEW',
-              submittedAt: '2026-08-13T12:00:00.000Z',
-            }),
-          )
-        },
-      ),
+      http.post(`${API_BASE_URL}/test-attempts/attempt-1/submit`, () => {
+        submitted = true
+        const attempt = studentTestAttempt({
+          status: 'AWAITING_REVIEW',
+          pendingReviewCount: 1,
+          submittedAt: '2026-08-13T12:00:00.000Z',
+          answers: [studentTestAnswer({ status: 'AWAITING_REVIEW', responseData: { text: 'My reasoned answer', attachmentIds: [] } })],
+        })
+        test = { ...test, stateStatus: 'AWAITING_REVIEW', attempt }
+        return HttpResponse.json(attempt)
+      }),
     )
 
     renderStudentReader('/app/student/lessons/lesson-1')
 
     expect(
-      await screen.findByRole('heading', { name: 'Historical reflection' }),
+      await screen.findByRole('heading', { name: 'History check' }),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Start' }))
-    const answer = await screen.findByRole('textbox', {
-      name: /Your answer/,
-    })
+    const dialog = await screen.findByRole('dialog', { name: 'History check' })
+    await user.click(within(dialog).getByRole('button', { name: 'Start' }))
+    const answer = await within(dialog).findByRole('textbox', { name: /Your answer/ })
     await user.type(answer, 'My reasoned answer')
 
-    await waitFor(() => expect(savedBodies).toEqual(['My reasoned answer']), {
+    await waitFor(() => expect(savedBodies).toEqual([{ responseData: { text: 'My reasoned answer', attachmentIds: [] } }]), {
       timeout: 2_500,
     })
-    expect(screen.getByText('Draft saved')).toBeInTheDocument()
+    expect(within(dialog).getByText('Answer saved')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Submit for review' }))
-    await waitFor(() =>
-      expect(submittedBodies).toEqual(['My reasoned answer']),
-    )
-    expect(answer).toBeDisabled()
-    expect(screen.getByText('Answer submitted')).toBeInTheDocument()
-    expect(screen.getAllByText('Awaiting review').length).toBeGreaterThan(0)
+    await user.click(within(dialog).getByRole('button', { name: 'Finish test' }))
+    const confirm = screen.getByRole('dialog', { name: 'Finish this attempt?' })
+    await user.click(within(confirm).getByRole('button', { name: 'Submit answers' }))
+    await waitFor(() => expect(submitted).toBe(true))
+    expect(await screen.findByText('Awaiting teacher review')).toBeInTheDocument()
   })
 
-  it('shows the reviewed score and teacher feedback to the student', async () => {
+  it('shows the reviewed result for a completed test', async () => {
     const user = userEvent.setup()
+    const completed = studentTest({
+      stateStatus: 'COMPLETED',
+      attempt: studentTestAttempt({
+        status: 'GRADED',
+        scorePoints: 3,
+        scorePercent: 60,
+        isPassed: true,
+        submittedAt: '2026-08-13T12:00:00.000Z',
+        gradedAt: '2026-08-13T13:00:00.000Z',
+        answers: [
+          studentTestAnswer({
+            status: 'GRADED',
+            responseData: { text: 'My reviewed answer', attachmentIds: [] },
+            teacherComment: 'Strong explanation.',
+            scorePoints: 3,
+            scorePercent: 60,
+            isCorrect: false,
+          }),
+        ],
+      }),
+    })
     server.use(
       http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
         HttpResponse.json({
@@ -272,33 +300,18 @@ describe('student lessons', () => {
         }),
       ),
       http.get(
-        `${API_BASE_URL}/classes/me/lessons/lesson-1/assignments`,
-        () =>
-          HttpResponse.json([
-            studentAssignment({
-              stateStatus: 'COMPLETED',
-              attempt: studentAttempt({
-                status: 'GRADED',
-                responseText: 'My reviewed answer',
-                teacherComment: 'Strong explanation.',
-                scorePoints: 3,
-                scorePercent: 60,
-                isPassed: true,
-                submittedAt: '2026-08-13T12:00:00.000Z',
-                reviewedAt: '2026-08-13T13:00:00.000Z',
-              }),
-            }),
-          ]),
+        `${API_BASE_URL}/classes/me/lessons/lesson-1/tests`,
+        () => HttpResponse.json([completed]),
       ),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () => HttpResponse.json(completed)),
     )
 
     renderStudentReader('/app/student/lessons/lesson-1')
 
-    await user.click(await screen.findByRole('button', { name: 'View answer' }))
-    expect(screen.getByText('3 / 5 points')).toBeInTheDocument()
-    expect(screen.getByText(/60%.*passing result/)).toBeInTheDocument()
-    expect(screen.getByText('Strong explanation.')).toBeInTheDocument()
-    expect(screen.getByRole('textbox', { name: /Your answer/ })).toBeDisabled()
+    await user.click(await screen.findByRole('button', { name: 'View' }))
+    expect(screen.getAllByText('3 / 5 points')).toHaveLength(2)
+    expect(screen.getByText(/3 \/ 5 points.*60%/)).toBeInTheDocument()
+    expect(screen.getByText('Test passed')).toBeInTheDocument()
   })
 
   it('shows a stable unavailable state for an inaccessible lesson', async () => {
@@ -392,49 +405,83 @@ function studentProgress(
   }
 }
 
-function studentAssignment(
-  overrides: Partial<StudentLessonAssignment> = {},
-): StudentLessonAssignment {
+function studentTest(
+  overrides: Partial<StudentLessonTest> = {},
+): StudentLessonTest {
   return {
     releaseId: 'release-1',
-    assignmentId: 'assignment-1',
-    revisionId: 'revision-1',
-    type: 'WRITTEN',
-    title: 'Historical reflection',
-    prompt: 'Explain why this event mattered.',
+    testId: 'test-1',
+    testRevisionId: 'test-revision-1',
+    title: 'History check',
+    description: 'A short written check.',
     instructions: null,
-    publicConfig: {
-      responseMode: 'LONG',
-      minLength: 0,
-      maxLength: 5_000,
-      allowAttachments: false,
-      rubric: [],
-    },
     maxPoints: 5,
     passingPercent: 60,
     isRequired: true,
+    maxAttempts: 1,
+    timeLimitSeconds: null,
     dueAt: null,
     stateStatus: 'NOT_STARTED',
+    itemCount: 1,
+    items: [
+      {
+        id: 'item-1',
+        position: 0,
+        maxPoints: 5,
+        assignmentId: 'assignment-1',
+        assignmentRevisionId: 'revision-1',
+        type: 'WRITTEN',
+        title: 'Historical reflection',
+        prompt: 'Explain why this event mattered.',
+        instructions: null,
+        publicConfig: {
+          responseMode: 'LONG',
+          minLength: 0,
+          maxLength: 5_000,
+          allowAttachments: false,
+          rubric: [],
+        },
+      },
+    ],
     attempt: null,
     ...overrides,
   }
 }
 
-function studentAttempt(
-  overrides: Partial<StudentAssignmentAttempt> = {},
-): StudentAssignmentAttempt {
+function studentTestAttempt(
+  overrides: Partial<StudentTestAttempt> = {},
+): StudentTestAttempt {
   return {
     id: 'attempt-1',
     attemptNumber: 1,
     status: 'IN_PROGRESS',
-    responseText: '',
-    teacherComment: null,
+    maxPoints: 5,
     scorePoints: null,
     scorePercent: null,
     isPassed: null,
+    pendingReviewCount: 0,
+    answers: [studentTestAnswer()],
+    startedAt: '2026-08-13T11:00:00.000Z',
+    expiresAt: null,
     submittedAt: null,
-    reviewedAt: null,
-    updatedAt: '2026-08-13T12:00:00.000Z',
+    gradedAt: null,
+    ...overrides,
+  }
+}
+
+function studentTestAnswer(
+  overrides: Partial<StudentTestAnswer> = {},
+): StudentTestAnswer {
+  return {
+    id: 'answer-1',
+    testItemId: 'item-1',
+    status: 'DRAFT',
+    responseData: { text: '', attachmentIds: [] },
+    maxPoints: 5,
+    scorePoints: null,
+    scorePercent: null,
+    isCorrect: null,
+    teacherComment: null,
     ...overrides,
   }
 }

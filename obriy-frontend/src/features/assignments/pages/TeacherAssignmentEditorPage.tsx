@@ -23,12 +23,13 @@ import {
 import { AssignmentConfirmDialog } from '../components/AssignmentConfirmDialog'
 import { WrittenAssignmentPreview } from '../components/WrittenAssignmentPreview'
 import { assignmentQueryKeys } from '../model/assignment-query-keys'
+import { TeacherChoiceAssignmentEditorPage } from './TeacherChoiceAssignmentEditorPage'
 import type {
-  AssignmentDraftInput,
   AssignmentEditor,
   AssignmentEditorRevision,
   AssignmentRubricItem,
   WrittenPublicConfig,
+  WrittenAssignmentDraftInput,
 } from '../model/assignment.types'
 import styles from '../Assignments.module.css'
 
@@ -67,6 +68,22 @@ const emptyValues: EditorValues = {
 }
 
 export function TeacherAssignmentEditorPage() {
+  const { assignmentId, assignmentType } = useParams()
+  const assignmentQuery = useQuery({
+    queryKey: assignmentQueryKeys.detail(assignmentId ?? ''),
+    queryFn: () => getAssignment(assignmentId ?? ''),
+    enabled: Boolean(assignmentId),
+  })
+  const type = assignmentQuery.data?.type ?? assignmentType?.toUpperCase()
+
+  if (type === 'SINGLE_CHOICE' || type === 'MULTIPLE_CHOICE') {
+    return <TeacherChoiceAssignmentEditorPage />
+  }
+
+  return <TeacherWrittenAssignmentEditorPage />
+}
+
+function TeacherWrittenAssignmentEditorPage() {
   const { assignmentId, assignmentType } = useParams()
   const isNew = !assignmentId
   const { t } = useTranslation()
@@ -835,7 +852,7 @@ function isRubricItem(value: unknown): value is AssignmentRubricItem {
   )
 }
 
-function editorValuesToDraft(values: EditorValues): AssignmentDraftInput {
+function editorValuesToDraft(values: EditorValues): WrittenAssignmentDraftInput {
   return {
     title: values.title,
     prompt: values.prompt,

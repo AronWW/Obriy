@@ -266,11 +266,10 @@ describe('AssignmentsService boundaries', () => {
     });
   });
 
-  it('requires an assignment with links, releases, or attempts to be archived', async () => {
+  it('requires an assignment used by a test to be archived', async () => {
     assignmentFindUnique.mockResolvedValue({
       id: 'assignment-1',
-      _count: { lessonLinks: 1, releases: 0 },
-      revisions: [],
+      _count: { testItems: 1 },
     });
 
     await expect(

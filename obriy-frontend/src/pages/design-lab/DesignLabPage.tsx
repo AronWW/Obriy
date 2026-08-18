@@ -1,5 +1,6 @@
 import {
   Award,
+  Beaker,
   ChartBar,
   ClipboardList,
   Compass,
@@ -99,6 +100,11 @@ const teacherNavigationItems: NavigationItem[] = [
     key: 'teacherTasks',
     to: '/app/teacher/tasks',
     icon: ClipboardList,
+  },
+  {
+    key: 'teacherTests',
+    to: '/app/teacher/tests',
+    icon: Beaker,
   },
   {
     key: 'teacherAnalytics',

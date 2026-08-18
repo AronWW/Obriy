@@ -13,10 +13,4 @@ export const assignmentQueryKeys = {
       filters.type ?? 'ALL',
     ] as const,
   lists: ['assignments', 'list'] as const,
-  lesson: (lessonId: string) =>
-    ['assignments', 'lesson', lessonId] as const,
-  lessonReviews: (lessonId: string) =>
-    ['assignments', 'lesson-reviews', lessonId] as const,
-  studentLesson: (lessonId: string) =>
-    ['assignments', 'student-lesson', lessonId] as const,
 }

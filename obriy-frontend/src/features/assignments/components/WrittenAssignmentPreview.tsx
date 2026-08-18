@@ -1,6 +1,6 @@
 import { Paperclip, PenLine } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { AssignmentDraftInput } from '../model/assignment.types'
+import type { WrittenAssignmentDraftInput } from '../model/assignment.types'
 import { AssignmentDialog } from './AssignmentDialog'
 import styles from '../Assignments.module.css'
 
@@ -10,7 +10,7 @@ export function WrittenAssignmentPreview({
   onClose,
 }: {
   defaultMaxPoints: number
-  draft: AssignmentDraftInput
+  draft: WrittenAssignmentDraftInput
   onClose: () => void
 }) {
   const { t } = useTranslation()

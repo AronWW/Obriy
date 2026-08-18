@@ -9,7 +9,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
-import { StudentLessonAssignments } from '../../assignments'
+import { StudentLessonTests } from '../../tests'
 import { getStudentLesson } from '../api/lessons.api'
 import { lessonQueryKeys } from '../model/lesson-query-keys'
 import styles from '../Lessons.module.css'
@@ -120,7 +120,7 @@ export function StudentLessonReaderPage() {
               </div>
             </article>
 
-            <StudentLessonAssignments lessonId={lessonQuery.data.id} />
+            <StudentLessonTests lessonId={lessonQuery.data.id} />
           </>
         )}
       </div>

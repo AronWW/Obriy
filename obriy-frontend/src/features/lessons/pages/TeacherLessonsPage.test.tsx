@@ -36,11 +36,11 @@ describe('teacher lesson workspace', () => {
       user: teacher,
     })
     server.use(
-      http.get(`${API_BASE_URL}/lessons/:lessonId/assignments`, () =>
+      http.get(`${API_BASE_URL}/lessons/:lessonId/tests`, () =>
         HttpResponse.json([]),
       ),
-      http.get(`${API_BASE_URL}/lessons/:lessonId/assignment-attempts`, () =>
-        HttpResponse.json([]),
+      http.get(`${API_BASE_URL}/lessons/:lessonId/test-attempts`, () =>
+        HttpResponse.json({ items: [], nextCursor: null }),
       ),
     )
   })
@@ -277,24 +277,39 @@ describe('teacher lesson workspace', () => {
     const pendingReview = {
       attemptId: 'attempt-1',
       releaseId: 'release-1',
-      assignmentId: 'assignment-1',
-      type: 'WRITTEN',
-      assignmentTitle: 'Historical reflection',
-      prompt: 'Explain why the event mattered.',
-      responseText: 'It changed the political system.',
+      testId: 'test-1',
+      testTitle: 'Revolution quiz',
       attemptNumber: 1,
       status: 'AWAITING_REVIEW',
       maxPoints: 5,
-      passingPercent: 60,
       scorePoints: null,
       scorePercent: null,
       isPassed: null,
-      teacherComment: null,
+      pendingReviewCount: 1,
+      studentId: 'student-1',
+      studentName: 'Maksym Bondar',
+      classId: 'class-1',
+      className: 'Grade 9-A',
+      answers: [
+        {
+          answerId: 'answer-1',
+          testItemId: 'item-1',
+          type: 'WRITTEN',
+          title: 'Historical reflection',
+          prompt: 'Explain why the event mattered.',
+          responseData: {
+            text: 'It changed the political system.',
+            attachmentIds: [],
+          },
+          status: 'AWAITING_REVIEW',
+          maxPoints: 5,
+          scorePoints: null,
+          scorePercent: null,
+          teacherComment: null,
+        },
+      ],
       submittedAt: '2026-08-13T10:00:00.000Z',
-      reviewedAt: null,
-      updatedAt: '2026-08-13T10:00:00.000Z',
-      student: { id: 'student-1', displayName: 'Maksym Bondar' },
-      class: { id: 'class-1', name: 'Grade 9-A' },
+      gradedAt: null,
     }
 
     server.use(
@@ -303,11 +318,11 @@ describe('teacher lesson workspace', () => {
       ),
       http.get(`${API_BASE_URL}/classes`, () => HttpResponse.json([])),
       http.get(
-        `${API_BASE_URL}/lessons/lesson-1/assignment-attempts`,
-        () => HttpResponse.json([pendingReview]),
+        `${API_BASE_URL}/lessons/lesson-1/test-attempts`,
+        () => HttpResponse.json({ items: [pendingReview], nextCursor: null }),
       ),
       http.patch(
-        `${API_BASE_URL}/assignment-attempts/attempt-1/review`,
+        `${API_BASE_URL}/test-answers/answer-1/review`,
         async ({ request }) => {
           reviewBody = await request.json()
           return HttpResponse.json({
@@ -316,8 +331,17 @@ describe('teacher lesson workspace', () => {
             scorePoints: 3.5,
             scorePercent: 70,
             isPassed: true,
-            teacherComment: 'A clear answer.',
-            reviewedAt: '2026-08-13T11:00:00.000Z',
+            pendingReviewCount: 0,
+            answers: [
+              {
+                ...pendingReview.answers[0],
+                status: 'GRADED',
+                scorePoints: 3.5,
+                scorePercent: 70,
+                teacherComment: 'A clear answer.',
+              },
+            ],
+            gradedAt: '2026-08-13T11:00:00.000Z',
           })
         },
       ),
@@ -326,24 +350,24 @@ describe('teacher lesson workspace', () => {
     renderLessonEditor('/app/teacher/lessons/lesson-1/edit')
 
     expect(
-      await screen.findByRole('heading', { name: 'Student answers' }),
+      await screen.findByRole('heading', { name: 'Student attempts' }),
     ).toBeInTheDocument()
     expect(await screen.findByText('Maksym Bondar')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Review' }))
 
     const dialog = screen.getByRole('dialog', {
-      name: 'Historical reflection',
+      name: 'Revolution quiz',
     })
     expect(
       within(dialog).getByText('It changed the political system.'),
     ).toBeInTheDocument()
     const scoreInput = within(dialog).getByRole('spinbutton', {
-      name: 'Points awarded',
+      name: 'Points for this answer',
     })
     await user.clear(scoreInput)
     await user.type(scoreInput, '3.5')
     await user.type(
-      within(dialog).getByRole('textbox', { name: 'Teacher comment' }),
+      within(dialog).getByRole('textbox', { name: 'Student comment' }),
       'A clear answer.',
     )
     await user.click(
@@ -357,9 +381,9 @@ describe('teacher lesson workspace', () => {
         teacherComment: 'A clear answer.',
       }),
     )
-    expect(
-      await screen.findByText('The answer was reviewed and approved.'),
-    ).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getAllByText('3.5 / 5 points').length).toBeGreaterThan(0),
+    )
   })
 
   it('does not allow discarding while the first draft save is in flight', async () => {

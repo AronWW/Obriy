@@ -1,4 +1,4 @@
-# AssignmentsModule data contract (draft)
+# Assignment content and test delivery contract
 
 This document defines the JSON stored by the initial Prisma schema. Runtime
 validation must use a discriminated schema selected by `Assignment.type` and
@@ -16,8 +16,10 @@ validation must use a discriminated schema selected by `Assignment.type` and
   makes the revision immutable.
 - At most one `DRAFT` and one current `PUBLISHED` revision may exist for an
   assignment. Older used revisions become `ARCHIVED`, not deleted.
-- `AssignmentRelease` pins an exact revision. Existing attempts therefore keep
-  the content and grading rules that the student actually received.
+- An `Assignment` is reusable content and is never delivered directly.
+  `TestItem` pins an exact `AssignmentRevision`; `TestRelease` then pins an
+  exact `TestRevision`. Existing attempts therefore keep both the content and
+  grading rules that the student actually received.
 - `responseData`, `gradingData`, and `feedbackData` have explicit size limits in
   the API; arbitrary client JSON is rejected.
 - Scores are stored as a percentage from `0` to `100` and points are calculated
@@ -51,30 +53,31 @@ The teacher grades the rubric and may approve or return the attempt.
 
 `publicConfig` contains `options: [{ id, text }]` and `shuffleOptions`.
 
-`gradingConfig`: `{ "correctOptionId": "uuid" }`.
+`gradingConfig`:
+`{ "correctOptionIds": ["uuid"], "scoringMode": "ALL_OR_NOTHING" }`.
 
-`responseData`: `{ "optionId": "uuid" }`.
+`responseData`: `{ "selectedOptionIds": ["uuid"] }`.
 
 Score: `100%` for the correct option, otherwise `0%`. `TRUE/FALSE` is a
 builder preset with two fixed options, not a separate database type.
 
 ### `MULTIPLE_CHOICE`
 
-`publicConfig` contains `options: [{ id, text }]`, `shuffleOptions`,
-`minSelections`, and `maxSelections`.
+`publicConfig` contains `options: [{ id, text }]` and `shuffleOptions`.
 
-`gradingConfig`: `{ "correctOptionIds": ["uuid"] }`.
+`gradingConfig` contains `correctOptionIds` and teacher-selected `scoringMode`:
+`ALL_OR_NOTHING` or `PARTIAL`.
 
-`responseData`: `{ "optionIds": ["uuid"] }`.
+`responseData`: `{ "selectedOptionIds": ["uuid"] }`.
 
 Proposed score:
 
 ```text
-max(0, (correctSelected - incorrectSelected) / totalCorrect) * 100
+max(0, correctSelected / totalCorrect - incorrectSelected / totalIncorrect) * 100
 ```
 
-This gives `75%` for three correct choices out of four and prevents selecting
-every option from producing a full score.
+At least one distractor is required. Selecting every option therefore scores
+zero instead of exploiting partial credit.
 
 ### `MATCHING`
 
@@ -149,21 +152,22 @@ map preset.
 rule as multiple choice. Polygon versus multipolygon remains an internal map
 detail, not a separate teacher-facing type.
 
-## Release and attempt rules
+## Test, release, and attempt rules
 
-- One bulk teacher action creates one `AssignmentRelease` per selected class.
-- `lessonId` is optional. When present, the service verifies an existing
-  `LessonAssignment`, matching teacher ownership, revision, and content locale.
-- `maxAttempts = null` means unlimited. Written work can be resubmitted only
-  after the teacher returns it.
+- `Test` is a reusable container; `TestRevision` pins ordered assignment
+  revisions and their weights. A `LessonTest` pins the chosen test revision.
+- Publishing a lesson creates one `TestRelease` per linked class and test.
+- Test, assignment, and lesson content locales must match.
+- `maxAttempts = null` means unlimited. A whole returned attempt is a
+  correction cycle and does not consume the scored-attempt limit.
 - `timeLimitSeconds` is enforced from server timestamps; the browser timer is
   informational only.
 - `scorePolicy` selects the best or latest graded attempt for
-  `AssignmentStudentState`.
+  `TestStudentState`.
 - Required lesson progress uses only active releases linked to that lesson.
 - XP is awarded only once when the state first becomes `COMPLETED`; the future
   XP ledger must make this transaction idempotent.
-- Review changes append `AssignmentReviewEvent`; historical events are never
+- Review changes append `TestAnswerReviewEvent`; historical events are never
   updated in place.
 
 ## Invariants enforced by services
@@ -171,14 +175,14 @@ detail, not a separate teacher-facing type.
 The database cannot express every cross-table rule. Backend transactions must
 also verify:
 
-- teacher ownership of the assignment, class, lesson, and custom map preset;
+- teacher ownership of the assignment, test, class, lesson, and custom map preset;
 - assignment/revision type consistency with every JSON payload;
 - assignment and lesson locale equality;
 - student membership in the release class;
-- linked lesson assignment existence for lesson releases;
+- linked lesson test existence for lesson releases;
 - immutable published revisions and immutable submitted attempts;
-- revision changes only for releases without attempts; otherwise the old
-  release is closed and a new release is created;
+- lesson links can move to a new test revision only when no active attempt
+  exists; historical releases and attempts keep their pinned revisions;
 - attachment MIME type, size, ownership, scan status, and parent consistency;
 - idempotent attempt creation and XP/review transitions.
 
@@ -187,12 +191,8 @@ also verify:
 - Map assignments are delivered as a separate design and implementation block;
   the generic authoring API must not expose them before their geography,
   interaction, and grading contracts are approved.
-- The legacy `LessonTask` and `LessonTaskSubmission` module is temporary and
-  will be removed completely rather than migrated into the new model.
-- Legacy reads, writes, lesson progress calculations, frontend calls, and tests
-  stay available until the new release/attempt/review flow replaces them
-  end-to-end. The two systems are never combined when calculating progress.
-- Application code must stop accessing the legacy tables before they are
-  dropped. The destructive drop remains a separate reviewed migration and is
-  applied only after explicit approval; the historical migration that created
-  the legacy tables remains unchanged.
+- The legacy lesson-task and direct assignment-delivery tables have been
+  removed by new forward migrations; historical migration files remain
+  unchanged.
+- Lesson progress uses required active `TestRelease` rows and their
+  `TestStudentState` only. Assignment content is never counted independently.

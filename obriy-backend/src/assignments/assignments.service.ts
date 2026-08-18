@@ -120,12 +120,12 @@ export class AssignmentsService {
     if (!solutionResult.success) {
       throw this.invalidConfig(solutionResult.issues, 'gradingConfig');
     }
-    if (dto.type === AssignmentType.WRITTEN && dto.draft?.mapPresetId) {
+    if (!this.supportsMapPreset(dto.type) && dto.draft?.mapPresetId) {
       throw this.invalidConfig([
         {
           path: ['mapPresetId'],
           code: 'INVALID_CONFIGURATION',
-          message: 'Written assignments cannot use a map preset.',
+          message: 'This assignment type cannot use a map preset.',
         },
       ]);
     }
@@ -312,13 +312,13 @@ export class AssignmentsService {
         throw this.invalidConfig(solutionResult.issues, 'gradingConfig');
       }
 
-      if (assignment.type === AssignmentType.WRITTEN && dto.mapPresetId) {
+      if (!this.supportsMapPreset(assignment.type) && dto.mapPresetId) {
         throw this.invalidConfig(
           [
             {
               path: ['mapPresetId'],
               code: 'INVALID_CONFIGURATION',
-              message: 'Written assignments cannot use a map preset.',
+              message: 'This assignment type cannot use a map preset.',
             },
           ],
           undefined,
@@ -892,11 +892,11 @@ export class AssignmentsService {
         message: 'Prompt is required.',
       });
     }
-    if (type === AssignmentType.WRITTEN && draft.mapPresetId) {
+    if (!this.supportsMapPreset(type) && draft.mapPresetId) {
       issues.push({
         path: ['mapPresetId'],
         code: 'INVALID_CONFIGURATION',
-        message: 'Written assignments cannot use a map preset.',
+        message: 'This assignment type cannot use a map preset.',
       });
     }
 
@@ -1002,6 +1002,14 @@ export class AssignmentsService {
 
   private isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private supportsMapPreset(type: AssignmentType): boolean {
+    return (
+      type === AssignmentType.MAP_POINT ||
+      type === AssignmentType.MAP_REGION ||
+      type === AssignmentType.MAP_MULTI_REGION
+    );
   }
 
   private async assertOwnedAssignment(

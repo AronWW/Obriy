@@ -19,6 +19,7 @@ import {
 import { createHash, randomUUID } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { gradeChoiceResponse } from '../assignments/grading/choice-grading';
+import { gradeMatchingResponse } from '../assignments/grading/matching-grading';
 import { validateAssignmentStudentResponse } from '../assignments/validation';
 import type { AuthUser } from '../common/types/auth-user.type';
 import { SaveTestAnswerDto } from './dto/student-test.dto';
@@ -520,13 +521,22 @@ export class StudentTestsService {
             message: 'A test item has no grading solution',
           });
         }
-        const grade = gradeChoiceResponse({
-          type: assignmentType,
-          publicConfig: revision.publicConfig,
-          gradingConfig: revision.solution.gradingConfig,
-          responseData,
-          maxPoints: Number(answer.maxPoints),
-        });
+        const grade =
+          assignmentType === AssignmentType.MATCHING
+            ? gradeMatchingResponse({
+                type: assignmentType,
+                publicConfig: revision.publicConfig,
+                gradingConfig: revision.solution.gradingConfig,
+                responseData,
+                maxPoints: Number(answer.maxPoints),
+              })
+            : gradeChoiceResponse({
+                type: assignmentType,
+                publicConfig: revision.publicConfig,
+                gradingConfig: revision.solution.gradingConfig,
+                responseData,
+                maxPoints: Number(answer.maxPoints),
+              });
         await transaction.testAnswer.update({
           where: { id: answer.id },
           data: {
@@ -731,7 +741,10 @@ export class StudentTestsService {
     responseData: unknown,
     requireContent: boolean,
   ): Prisma.InputJsonValue {
-    if (requireContent && !this.hasResponseContent(type, responseData)) {
+    if (
+      requireContent &&
+      !this.hasResponseContent(type, responseData, publicConfig)
+    ) {
       throw new BadRequestException({
         code: 'TEST_ANSWER_REQUIRED',
         message: 'Answer every question before submitting the test',
@@ -759,7 +772,11 @@ export class StudentTestsService {
     return result.data as Prisma.InputJsonValue;
   }
 
-  private hasResponseContent(type: AssignmentType, response: unknown): boolean {
+  private hasResponseContent(
+    type: AssignmentType,
+    response: unknown,
+    publicConfig: Prisma.JsonValue,
+  ): boolean {
     if (!this.isRecord(response)) {
       return false;
     }
@@ -777,6 +794,16 @@ export class StudentTestsService {
         response.selectedOptionIds.length > 0
       );
     }
+    if (type === AssignmentType.MATCHING) {
+      if (!Array.isArray(response.matches) || !this.isRecord(publicConfig)) {
+        return false;
+      }
+      return (
+        Array.isArray(publicConfig.leftItems) &&
+        publicConfig.leftItems.length > 0 &&
+        response.matches.length === publicConfig.leftItems.length
+      );
+    }
     return false;
   }
 
@@ -789,6 +816,9 @@ export class StudentTestsService {
       type === AssignmentType.MULTIPLE_CHOICE
     ) {
       return { selectedOptionIds: [] };
+    }
+    if (type === AssignmentType.MATCHING) {
+      return { matches: [] };
     }
     return {};
   }
@@ -944,6 +974,21 @@ export class StudentTestsService {
         ),
       );
       return { ...config, options };
+    }
+    if (
+      type === AssignmentType.MATCHING &&
+      config.shuffleRightItems === true &&
+      Array.isArray(config.rightItems)
+    ) {
+      const rightItems = config.rightItems
+        .filter((item): item is Record<string, unknown> => this.isRecord(item))
+        .map((item) => ({ ...item }));
+      rightItems.sort((left, right) =>
+        this.stableRank(seed, String(left.id)).localeCompare(
+          this.stableRank(seed, String(right.id)),
+        ),
+      );
+      return { ...config, rightItems };
     }
     return config;
   }

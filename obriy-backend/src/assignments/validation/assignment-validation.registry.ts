@@ -16,6 +16,10 @@ import {
   multipleChoiceAssignmentValidationDefinition,
   singleChoiceAssignmentValidationDefinition,
 } from './choice-assignment.schemas';
+import {
+  MATCHING_SCHEMA_VERSION,
+  matchingAssignmentValidationDefinition,
+} from './matching-assignment.schemas';
 
 type UnknownAssignmentValidationDefinition = AssignmentValidationDefinition<
   unknown,
@@ -39,6 +43,9 @@ const assignmentValidationRegistry: Readonly<
   }),
   MULTIPLE_CHOICE: Object.freeze({
     [CHOICE_SCHEMA_VERSION]: multipleChoiceAssignmentValidationDefinition,
+  }),
+  MATCHING: Object.freeze({
+    [MATCHING_SCHEMA_VERSION]: matchingAssignmentValidationDefinition,
   }),
 });
 

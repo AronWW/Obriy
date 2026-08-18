@@ -267,6 +267,77 @@ describe('student lessons', () => {
     expect(await screen.findByText('Awaiting teacher review')).toBeInTheDocument()
   })
 
+  it('keeps matching answers one-to-one and submits every pair', async () => {
+    const user = userEvent.setup()
+    const savedBodies: unknown[] = []
+    let submitted = false
+    const leftA = 'left-a'
+    const leftB = 'left-b'
+    const rightA = 'right-a'
+    const rightB = 'right-b'
+    let test = studentTest({
+      maxPoints: 6,
+      items: [{
+        id: 'item-1', position: 0, maxPoints: 6, assignmentId: 'assignment-1', assignmentRevisionId: 'revision-1', type: 'MATCHING',
+        title: 'Countries and capitals', prompt: 'Match every country to its capital.', instructions: null,
+        publicConfig: {
+          leftItems: [{ id: leftA, text: 'Ukraine' }, { id: leftB, text: 'France' }],
+          rightItems: [{ id: rightA, text: 'Kyiv' }, { id: rightB, text: 'Paris' }, { id: 'distractor', text: 'Warsaw' }],
+          shuffleRightItems: true,
+        },
+      }],
+    })
+
+    server.use(
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () => HttpResponse.json({
+        ...studentLesson(), content: 'Read this lesson before answering.',
+        class: { id: 'class-1', name: 'Grade 9-A' }, teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
+      })),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () => HttpResponse.json([test])),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () => HttpResponse.json(test)),
+      http.post(`${API_BASE_URL}/test-releases/release-1/attempts`, () => {
+        const attempt = studentTestAttempt({
+          maxPoints: 6,
+          answers: [studentTestAnswer({ maxPoints: 6, responseData: { matches: [] } })],
+        })
+        test = { ...test, stateStatus: 'IN_PROGRESS', attempt }
+        return HttpResponse.json(attempt)
+      }),
+      http.put(`${API_BASE_URL}/test-attempts/attempt-1/answers/item-1`, async ({ request }) => {
+        savedBodies.push(await request.json())
+        return HttpResponse.json(test.attempt)
+      }),
+      http.post(`${API_BASE_URL}/test-attempts/attempt-1/submit`, () => {
+        submitted = true
+        return HttpResponse.json(studentTestAttempt({
+          status: 'GRADED', maxPoints: 6, scorePoints: 6, scorePercent: 100, isPassed: true,
+          submittedAt: '2026-08-13T12:00:00.000Z', gradedAt: '2026-08-13T12:00:00.000Z',
+          answers: [studentTestAnswer({
+            status: 'GRADED', maxPoints: 6, scorePoints: 6, scorePercent: 100, isCorrect: true,
+            responseData: { matches: [{ leftItemId: leftA, rightItemId: rightA }, { leftItemId: leftB, rightItemId: rightB }] },
+          })],
+        }))
+      }),
+    )
+
+    renderStudentReader('/app/student/lessons/lesson-1')
+    await user.click(await screen.findByRole('button', { name: 'Start' }))
+    const dialog = await screen.findByRole('dialog', { name: 'History check' })
+    await user.click(within(dialog).getByRole('button', { name: 'Start' }))
+    const selects = await within(dialog).findAllByRole('combobox')
+    await user.selectOptions(selects[0]!, rightA)
+    expect(within(selects[1]!).getByRole('option', { name: 'Kyiv' })).toBeDisabled()
+    await user.selectOptions(selects[1]!, rightB)
+
+    await waitFor(() => expect(savedBodies).toEqual([{ responseData: { matches: [
+      { leftItemId: leftA, rightItemId: rightA },
+      { leftItemId: leftB, rightItemId: rightB },
+    ] } }]), { timeout: 2_500 })
+    await user.click(within(dialog).getByRole('button', { name: 'Finish test' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'Finish this attempt?' })).getByRole('button', { name: 'Submit answers' }))
+    await waitFor(() => expect(submitted).toBe(true))
+  })
+
   it('shows the reviewed result for a completed test', async () => {
     const user = userEvent.setup()
     const completed = studentTest({

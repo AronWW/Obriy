@@ -43,6 +43,9 @@ describe('teacher assignment workspace', () => {
     expect(
       within(dialog).getByRole('button', { name: /Single choice/ }),
     ).toBeEnabled()
+    expect(
+      within(dialog).getByRole('button', { name: /Matching/ }),
+    ).toBeEnabled()
     expect(within(dialog).queryByText(/soon/i)).not.toBeInTheDocument()
     expect(createCount).toBe(0)
 
@@ -65,6 +68,9 @@ describe('teacher assignment workspace', () => {
         receivedBody = await request.json()
         return HttpResponse.json(assignmentEditor(), { status: 201 })
       }),
+      http.get(`${API_BASE_URL}/assignments/:assignmentId`, () =>
+        HttpResponse.json(assignmentEditor()),
+      ),
     )
 
     renderWorkspace('/app/teacher/tasks/new/written')
@@ -102,6 +108,55 @@ describe('teacher assignment workspace', () => {
       },
     })
     expect(await screen.findByText('All changes saved')).toBeInTheDocument()
+  })
+
+  it('creates one-to-one matching pairs with an optional extra choice', async () => {
+    const user = userEvent.setup()
+    let createCount = 0
+    let receivedBody: unknown
+    server.use(
+      http.post(`${API_BASE_URL}/assignments`, async ({ request }) => {
+        createCount += 1
+        receivedBody = await request.json()
+        return HttpResponse.json(matchingAssignmentEditor(), { status: 201 })
+      }),
+      http.get(`${API_BASE_URL}/assignments/:assignmentId`, () =>
+        HttpResponse.json(matchingAssignmentEditor()),
+      ),
+    )
+
+    renderWorkspace('/app/teacher/tasks/new/matching')
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Countries and capitals')
+    await user.type(screen.getByRole('textbox', { name: 'Question or prompt' }), 'Match every country to its capital.')
+    await user.type(screen.getByRole('textbox', { name: 'Item 1' }), 'Ukraine')
+    await user.type(screen.getByRole('textbox', { name: 'Correct match 1' }), 'Kyiv')
+    await user.type(screen.getByRole('textbox', { name: 'Item 2' }), 'France')
+    await user.type(screen.getByRole('textbox', { name: 'Correct match 2' }), 'Paris')
+    await user.click(screen.getByRole('button', { name: 'Add extra choice' }))
+    await user.type(screen.getByRole('textbox', { name: 'Extra choice 1' }), 'Warsaw')
+    await user.click(screen.getByRole('checkbox', { name: /Always shuffle the right column/ }))
+
+    expect(createCount).toBe(0)
+    await user.click(screen.getAllByRole('button', { name: 'Save' })[0])
+
+    await waitFor(() => expect(createCount).toBe(1))
+    const body = receivedBody as {
+      draft: {
+        publicConfig: { leftItems: Array<{ id: string; text: string }>; rightItems: Array<{ id: string; text: string }>; shuffleRightItems: boolean }
+        gradingConfig: { matches: Array<{ leftItemId: string; rightItemId: string }>; scoringMode: string }
+      }
+    }
+    expect(body).toEqual(expect.objectContaining({ type: 'MATCHING', defaultMaxPoints: 1, defaultPassingPercent: 100 }))
+    expect(body.draft.publicConfig.leftItems.map((item) => item.text)).toEqual(['Ukraine', 'France'])
+    expect(body.draft.publicConfig.rightItems.map((item) => item.text)).toEqual(['Kyiv', 'Paris', 'Warsaw'])
+    expect(body.draft.publicConfig.shuffleRightItems).toBe(true)
+    expect(body.draft.gradingConfig).toEqual({
+      matches: body.draft.publicConfig.leftItems.map((leftItem, index) => ({
+        leftItemId: leftItem.id,
+        rightItemId: body.draft.publicConfig.rightItems[index]?.id,
+      })),
+      scoringMode: 'PARTIAL',
+    })
   })
 
   it('starts a transparent new revision before editing a ready assignment', async () => {
@@ -236,6 +291,32 @@ function publishedAssignmentEditor() {
       ...draft.draftRevision,
       status: 'PUBLISHED',
       publishedAt: '2026-08-08T11:00:00.000Z',
+    },
+  }
+}
+
+function matchingAssignmentEditor() {
+  const leftA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const leftB = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const rightA = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+  const rightB = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+  const distractor = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+  return {
+    ...assignmentEditor(),
+    type: 'MATCHING',
+    draftRevision: {
+      ...assignmentEditor().draftRevision,
+      title: 'Countries and capitals',
+      prompt: 'Match every country to its capital.',
+      publicConfig: {
+        leftItems: [{ id: leftA, text: 'Ukraine' }, { id: leftB, text: 'France' }],
+        rightItems: [{ id: rightA, text: 'Kyiv' }, { id: rightB, text: 'Paris' }, { id: distractor, text: 'Warsaw' }],
+        shuffleRightItems: true,
+      },
+      gradingConfig: {
+        matches: [{ leftItemId: leftA, rightItemId: rightA }, { leftItemId: leftB, rightItemId: rightB }],
+        scoringMode: 'PARTIAL',
+      },
     },
   }
 }

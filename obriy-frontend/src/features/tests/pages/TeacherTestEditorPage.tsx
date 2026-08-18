@@ -6,6 +6,7 @@ import {
   Beaker,
   BookOpen,
   CircleDot,
+  Link2,
   ListChecks,
   PenLine,
   Plus,
@@ -653,6 +654,7 @@ function AssignmentPicker({
 function assignmentIcon(type: AssignmentType, size: number) {
   if (type === 'WRITTEN') return <PenLine size={size} />
   if (type === 'SINGLE_CHOICE') return <CircleDot size={size} />
+  if (type === 'MATCHING') return <Link2 size={size} />
   return <ListChecks size={size} />
 }
 

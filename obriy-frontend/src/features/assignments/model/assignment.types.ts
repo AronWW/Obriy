@@ -46,6 +46,27 @@ export interface ChoiceGradingConfig {
   scoringMode: 'ALL_OR_NOTHING' | 'PARTIAL'
 }
 
+export interface MatchingItem {
+  id: string
+  text: string
+}
+
+export interface MatchingPair {
+  leftItemId: string
+  rightItemId: string
+}
+
+export interface MatchingPublicConfig {
+  leftItems: MatchingItem[]
+  rightItems: MatchingItem[]
+  shuffleRightItems: boolean
+}
+
+export interface MatchingGradingConfig {
+  matches: MatchingPair[]
+  scoringMode: 'ALL_OR_NOTHING' | 'PARTIAL'
+}
+
 export interface AssignmentRevisionSummary {
   id: string
   version: number
@@ -119,13 +140,21 @@ export interface AssignmentDraftInput {
   prompt: string
   instructions: string | null
   explanation: string | null
-  publicConfig: WrittenPublicConfig | ChoicePublicConfig
-  gradingConfig: { mode: 'MANUAL' } | ChoiceGradingConfig
+  publicConfig: WrittenPublicConfig | ChoicePublicConfig | MatchingPublicConfig
+  gradingConfig:
+    | { mode: 'MANUAL' }
+    | ChoiceGradingConfig
+    | MatchingGradingConfig
 }
 
 export interface WrittenAssignmentDraftInput extends AssignmentDraftInput {
   publicConfig: WrittenPublicConfig
   gradingConfig: { mode: 'MANUAL' }
+}
+
+export interface MatchingAssignmentDraftInput extends AssignmentDraftInput {
+  publicConfig: MatchingPublicConfig
+  gradingConfig: MatchingGradingConfig
 }
 
 export interface CreateAssignmentInput {

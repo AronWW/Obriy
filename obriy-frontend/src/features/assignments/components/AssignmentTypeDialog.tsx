@@ -58,7 +58,8 @@ export function AssignmentTypeDialog({
           const isAvailable =
             type === 'WRITTEN' ||
             type === 'SINGLE_CHOICE' ||
-            type === 'MULTIPLE_CHOICE'
+            type === 'MULTIPLE_CHOICE' ||
+            type === 'MATCHING'
 
           return (
             <button

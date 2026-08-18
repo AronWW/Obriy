@@ -82,12 +82,18 @@ zero instead of exploiting partial credit.
 ### `MATCHING`
 
 `publicConfig` contains `leftItems: [{ id, text }]`,
-`rightItems: [{ id, text }]`, and shuffle settings.
+`rightItems: [{ id, text }]`, and `shuffleRightItems`. The right column may
+contain unused distractors. Its authored order is preserved unless shuffling
+is enabled.
 
-`gradingConfig`: `{ "pairs": [{ "leftId": "uuid", "rightId": "uuid" }] }`.
+`gradingConfig` contains `matches: [{ leftItemId, rightItemId }]` and
+`scoringMode: "PARTIAL | ALL_OR_NOTHING"`. Every left item has exactly one
+match and every right item can be used by at most one match.
 
-`responseData` uses the same pair shape. Score is the percentage of correctly
-matched left items.
+`responseData` uses the same `matches` shape and may be incomplete while being
+saved as a draft. Submission requires every left item to be matched. Partial
+score is the percentage of correctly matched left items; distractors do not
+add extra penalties beyond making that left-side match incorrect.
 
 ### `ORDERING`
 

@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   Clock3,
+  Link2,
   ListChecks,
   PenLine,
   Play,
@@ -16,7 +17,7 @@ import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../../shared/api/api-client'
 import { AssignmentConfirmDialog } from '../../assignments/components/AssignmentConfirmDialog'
 import { AssignmentDialog } from '../../assignments/components/AssignmentDialog'
-import type { ChoiceOption, ChoicePublicConfig, WrittenPublicConfig } from '../../assignments/model/assignment.types'
+import type { ChoiceOption, ChoicePublicConfig, MatchingPair, MatchingPublicConfig, WrittenPublicConfig } from '../../assignments/model/assignment.types'
 import {
   getStudentTestRelease,
   listStudentLessonTests,
@@ -337,6 +338,43 @@ function AnswerField({ item, onChange, response }: { item: StudentTestItem; onCh
       </label>
     )
   }
+  if (item.type === 'MATCHING') {
+    const config = item.publicConfig as unknown as MatchingPublicConfig
+    const matches = Array.isArray(response.matches) ? response.matches.filter(isMatchingPair) : []
+    const selectedByLeftId = new Map(matches.map((pair) => [pair.leftItemId, pair.rightItemId]))
+    const usedRightIds = new Set(matches.map((pair) => pair.rightItemId))
+    return (
+      <fieldset className={styles.matchingAnswers}>
+        <legend>{t('tests.student.matchItems')}</legend>
+        {config.leftItems.map((leftItem, index) => {
+          const selectedRightId = selectedByLeftId.get(leftItem.id) ?? ''
+          return (
+            <label key={leftItem.id}>
+              <span className={styles.matchingAnswerNumber}>{index + 1}</span>
+              <strong>{leftItem.text}</strong>
+              <select
+                aria-label={t('tests.student.matchLeftItem', { item: leftItem.text })}
+                onChange={(event) => {
+                  const rightItemId = event.target.value
+                  const next = matches.filter((pair) => pair.leftItemId !== leftItem.id && pair.rightItemId !== rightItemId)
+                  if (rightItemId) next.push({ leftItemId: leftItem.id, rightItemId })
+                  onChange({ matches: next })
+                }}
+                value={selectedRightId}
+              >
+                <option value="">{t('tests.student.matchPlaceholder')}</option>
+                {config.rightItems.map((rightItem) => (
+                  <option disabled={usedRightIds.has(rightItem.id) && rightItem.id !== selectedRightId} key={rightItem.id} value={rightItem.id}>
+                    {rightItem.text}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )
+        })}
+      </fieldset>
+    )
+  }
   const config = item.publicConfig as unknown as ChoicePublicConfig
   const selected = Array.isArray(response.selectedOptionIds) ? response.selectedOptionIds.filter((value): value is string => typeof value === 'string') : []
   return (
@@ -410,11 +448,17 @@ function TestResult({ attempt, compact = false, release }: { attempt: StudentTes
 }
 
 function emptyResponse(item: StudentTestItem): ResponseData {
-  return item.type === 'WRITTEN' ? { text: '', attachmentIds: [] } : { selectedOptionIds: [] }
+  if (item.type === 'WRITTEN') return { text: '', attachmentIds: [] }
+  if (item.type === 'MATCHING') return { matches: [] }
+  return { selectedOptionIds: [] }
 }
 
 function hasAnswer(item: StudentTestItem, response: ResponseData): boolean {
   if (item.type === 'WRITTEN') return typeof response.text === 'string' && response.text.trim().length > 0
+  if (item.type === 'MATCHING') {
+    const config = item.publicConfig as unknown as MatchingPublicConfig
+    return Array.isArray(response.matches) && response.matches.filter(isMatchingPair).length === config.leftItems.length
+  }
   return Array.isArray(response.selectedOptionIds) && response.selectedOptionIds.length > 0
 }
 
@@ -434,7 +478,12 @@ function testActionKey(test: StudentLessonTest): string {
 
 function assignmentIcon(item: StudentTestItem) {
   if (item.type === 'WRITTEN') return <PenLine size={15} />
+  if (item.type === 'MATCHING') return <Link2 size={15} />
   return <ListChecks size={15} />
+}
+
+function isMatchingPair(value: unknown): value is MatchingPair {
+  return typeof value === 'object' && value !== null && 'leftItemId' in value && typeof value.leftItemId === 'string' && 'rightItemId' in value && typeof value.rightItemId === 'string'
 }
 
 function studentError(error: Error | null, t: (key: string) => string): string {

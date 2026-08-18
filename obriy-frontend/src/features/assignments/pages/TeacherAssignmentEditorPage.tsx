@@ -24,6 +24,7 @@ import { AssignmentConfirmDialog } from '../components/AssignmentConfirmDialog'
 import { WrittenAssignmentPreview } from '../components/WrittenAssignmentPreview'
 import { assignmentQueryKeys } from '../model/assignment-query-keys'
 import { TeacherChoiceAssignmentEditorPage } from './TeacherChoiceAssignmentEditorPage'
+import { TeacherMatchingAssignmentEditorPage } from './TeacherMatchingAssignmentEditorPage'
 import type {
   AssignmentEditor,
   AssignmentEditorRevision,
@@ -78,6 +79,9 @@ export function TeacherAssignmentEditorPage() {
 
   if (type === 'SINGLE_CHOICE' || type === 'MULTIPLE_CHOICE') {
     return <TeacherChoiceAssignmentEditorPage />
+  }
+  if (type === 'MATCHING') {
+    return <TeacherMatchingAssignmentEditorPage />
   }
 
   return <TeacherWrittenAssignmentEditorPage />

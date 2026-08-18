@@ -862,6 +862,14 @@
 .choiceAnswers input { width: 18px; height: 18px; accent-color: var(--gold); }
 .choiceAnswers span { line-height: 1.45; }
 
+.matchingAnswers { display: grid; gap: 10px; margin: 25px 0 0; padding: 0; border: 0; }
+.matchingAnswers legend { margin-bottom: 10px; font-size: 0.75rem; font-weight: 800; }
+.matchingAnswers label { display: grid; grid-template-columns: 30px minmax(0, 1fr) minmax(190px, 0.9fr); align-items: center; gap: 12px; min-height: 58px; padding: 12px 14px; background: var(--panel-solid); border: 1px solid var(--line-soft); border-radius: 10px; }
+.matchingAnswers strong { min-width: 0; color: var(--ink); line-height: 1.45; }
+.matchingAnswerNumber { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; color: var(--gold); font-size: 0.72rem; font-weight: 850; background: rgb(196 147 52 / 8%); border: 1px solid rgb(196 147 52 / 22%); border-radius: 999px; }
+.matchingAnswers select { min-width: 0; padding: 11px 34px 11px 12px; color: var(--ink); font: inherit; background: color-mix(in srgb, var(--panel-solid), var(--panel-deep) 7%); border: 1px solid var(--line); border-radius: 9px; outline: 0; }
+.matchingAnswers select:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgb(196 147 52 / 12%); }
+
 .runnerActions { display: flex; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 32px; }
 .testResult,
 .resultCompact { display: flex; align-items: flex-start; gap: 13px; color: #34745b; }
@@ -962,6 +970,8 @@
   .studentTestCard { grid-template-columns: auto minmax(0, 1fr); }
   .studentTestCard > .primaryButton { grid-column: 1 / -1; width: 100%; }
   .runnerQuestion { padding: 25px 18px; }
+  .matchingAnswers label { grid-template-columns: 30px minmax(0, 1fr); }
+  .matchingAnswers select { grid-column: 1 / -1; }
   .runnerActions .primaryButton,
   .runnerActions .secondaryButton { min-width: 0; flex: 1; padding: 0 9px; }
   .reviewAttemptRow { grid-template-columns: auto minmax(0, 1fr); }

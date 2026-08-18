@@ -1,4 +1,5 @@
 import { JwtService } from '@nestjs/jwt';
+import { createHash } from 'node:crypto';
 import {
   AssignmentType,
   LessonStatus,
@@ -601,6 +602,142 @@ describe('Tests module (e2e)', () => {
       .expect(404);
   });
 
+  it('grades one-to-one matching with an optional right distractor', async () => {
+    const leftA = '823e4567-e89b-42d3-a456-426614174000';
+    const leftB = '923e4567-e89b-42d3-a456-426614174000';
+    const leftC = 'a23e4567-e89b-42d3-a456-426614174000';
+    const rightA = 'b23e4567-e89b-42d3-a456-426614174000';
+    const rightB = 'c23e4567-e89b-42d3-a456-426614174000';
+    const rightC = 'd23e4567-e89b-42d3-a456-426614174000';
+    const distractor = 'e23e4567-e89b-42d3-a456-426614174000';
+    const correctMatches = [
+      { leftItemId: leftA, rightItemId: rightA },
+      { leftItemId: leftB, rightItemId: rightB },
+      { leftItemId: leftC, rightItemId: rightC },
+    ];
+    const matchingAssignmentId = await createAssignment({
+      type: AssignmentType.MATCHING,
+      maxPoints: 6,
+      title: 'Match countries and capitals',
+      publicConfig: {
+        leftItems: [
+          { id: leftA, text: 'Ukraine' },
+          { id: leftB, text: 'France' },
+          { id: leftC, text: 'Italy' },
+        ],
+        rightItems: [
+          { id: rightA, text: 'Kyiv' },
+          { id: rightB, text: 'Paris' },
+          { id: rightC, text: 'Rome' },
+          { id: distractor, text: 'Warsaw' },
+        ],
+        shuffleRightItems: true,
+      },
+      gradingConfig: { matches: correctMatches, scoringMode: 'PARTIAL' },
+    });
+    const testResponse = await request(context.app.getHttpServer())
+      .post('/tests')
+      .set('Authorization', bearer('teacher'))
+      .send({
+        contentLocale: Locale.UK,
+        title: 'Matching check',
+        passingPercent: 60,
+        maxAttempts: 1,
+      })
+      .expect(201);
+    const testId = getStringField(testResponse, 'id');
+    let draft = getRecordField(getResponseBody(testResponse), 'draftRevision');
+    const addResponse = await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/draft/items`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        assignmentId: matchingAssignmentId,
+        expectedRevisionId: getStringValue(draft, 'id'),
+        expectedEditVersion: getNumberValue(draft, 'editVersion'),
+      })
+      .expect(201);
+    draft = getRecordField(getResponseBody(addResponse), 'draftRevision');
+    await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/publish`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(draft, 'id'),
+        expectedEditVersion: getNumberValue(draft, 'editVersion'),
+      })
+      .expect(200);
+    await request(context.app.getHttpServer())
+      .post(`/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('teacher'))
+      .send({ testId })
+      .expect(201);
+
+    const studentListResponse = await request(context.app.getHttpServer())
+      .get(`/classes/me/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const studentTest = getResponseArray(studentListResponse).find(
+      (candidate) => getStringValue(candidate, 'testId') === testId,
+    );
+    if (!studentTest) throw new Error('Expected matching test release');
+    expect(studentTest).toEqual(
+      expect.objectContaining({ itemCount: 1, items: [] }),
+    );
+    const releaseId = getStringValue(studentTest, 'releaseId');
+    const attemptResponse = await request(context.app.getHttpServer())
+      .post(`/test-releases/${releaseId}/attempts`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const attemptId = getStringField(attemptResponse, 'id');
+    const activeResponse = await request(context.app.getHttpServer())
+      .get(`/test-releases/${releaseId}`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const matchingItem = getRecordArray(
+      getResponseBody(activeResponse),
+      'items',
+    )[0];
+    if (!matchingItem) throw new Error('Expected matching test item');
+    expect(getStringValue(matchingItem, 'type')).toBe(AssignmentType.MATCHING);
+    expect(JSON.stringify(activeResponse.body)).not.toContain('gradingConfig');
+    const deliveredConfig = getRecordField(matchingItem, 'publicConfig');
+    const deliveredRightIds = getRecordArray(deliveredConfig, 'rightItems').map(
+      (item) => getStringValue(item, 'id'),
+    );
+    const expectedRightIds = [rightA, rightB, rightC, distractor].sort(
+      (left, right) =>
+        stableRank(
+          `${releaseId}:${studentId}:${getStringValue(matchingItem, 'id')}`,
+          left,
+        ).localeCompare(
+          stableRank(
+            `${releaseId}:${studentId}:${getStringValue(matchingItem, 'id')}`,
+            right,
+          ),
+        ),
+    );
+    expect(deliveredRightIds).toEqual(expectedRightIds);
+
+    await saveAnswer(attemptId, getStringValue(matchingItem, 'id'), {
+      matches: [
+        correctMatches[0],
+        { leftItemId: leftB, rightItemId: distractor },
+        correctMatches[2],
+      ],
+    });
+    const submitResponse = await request(context.app.getHttpServer())
+      .post(`/test-attempts/${attemptId}/submit`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    expect(getResponseBody(submitResponse)).toEqual(
+      expect.objectContaining({
+        status: TestAttemptStatus.GRADED,
+        scorePoints: 4,
+        scorePercent: 66.67,
+        isPassed: true,
+      }),
+    );
+  });
+
   async function createUser(
     actor: keyof typeof tokens,
     role: UserRole,
@@ -739,6 +876,10 @@ function getNumberValue(
     throw new Error(`Expected ${field} to be a number`);
   }
   return value;
+}
+
+function stableRank(seed: string, value: string): string {
+  return createHash('sha256').update(`${seed}:${value}`).digest('hex');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

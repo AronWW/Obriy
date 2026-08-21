@@ -59,7 +59,8 @@ export function AssignmentTypeDialog({
             type === 'WRITTEN' ||
             type === 'SINGLE_CHOICE' ||
             type === 'MULTIPLE_CHOICE' ||
-            type === 'MATCHING'
+            type === 'MATCHING' ||
+            type === 'ORDERING'
 
           return (
             <button

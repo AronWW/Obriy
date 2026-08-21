@@ -738,6 +738,117 @@ describe('Tests module (e2e)', () => {
     );
   });
 
+  it('always shuffles ordering items and awards pairwise partial credit', async () => {
+    const itemA = 'f23e4567-e89b-42d3-a456-426614174000';
+    const itemB = '123e4567-e89b-42d3-b456-426614174000';
+    const itemC = '223e4567-e89b-42d3-b456-426614174000';
+    const itemD = '323e4567-e89b-42d3-b456-426614174000';
+    const correctOrderIds = [itemA, itemB, itemC, itemD];
+    const orderingAssignmentId = await createAssignment({
+      type: AssignmentType.ORDERING,
+      maxPoints: 6,
+      title: 'Order historical events',
+      publicConfig: {
+        items: [
+          { id: itemA, text: 'First event' },
+          { id: itemB, text: 'Second event' },
+          { id: itemC, text: 'Third event' },
+          { id: itemD, text: 'Fourth event' },
+        ],
+      },
+      gradingConfig: { correctOrderIds, scoringMode: 'PARTIAL' },
+    });
+    const testResponse = await request(context.app.getHttpServer())
+      .post('/tests')
+      .set('Authorization', bearer('teacher'))
+      .send({
+        contentLocale: Locale.UK,
+        title: 'Ordering check',
+        passingPercent: 60,
+        maxAttempts: 1,
+      })
+      .expect(201);
+    const testId = getStringField(testResponse, 'id');
+    let draft = getRecordField(getResponseBody(testResponse), 'draftRevision');
+    const addResponse = await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/draft/items`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        assignmentId: orderingAssignmentId,
+        expectedRevisionId: getStringValue(draft, 'id'),
+        expectedEditVersion: getNumberValue(draft, 'editVersion'),
+      })
+      .expect(201);
+    draft = getRecordField(getResponseBody(addResponse), 'draftRevision');
+    await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/publish`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(draft, 'id'),
+        expectedEditVersion: getNumberValue(draft, 'editVersion'),
+      })
+      .expect(200);
+    await request(context.app.getHttpServer())
+      .post(`/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('teacher'))
+      .send({ testId })
+      .expect(201);
+
+    const studentListResponse = await request(context.app.getHttpServer())
+      .get(`/classes/me/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const studentTest = getResponseArray(studentListResponse).find(
+      (candidate) => getStringValue(candidate, 'testId') === testId,
+    );
+    if (!studentTest) throw new Error('Expected ordering test release');
+    const releaseId = getStringValue(studentTest, 'releaseId');
+    const attemptResponse = await request(context.app.getHttpServer())
+      .post(`/test-releases/${releaseId}/attempts`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const attemptId = getStringField(attemptResponse, 'id');
+    const activeResponse = await request(context.app.getHttpServer())
+      .get(`/test-releases/${releaseId}`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const orderingItem = getRecordArray(
+      getResponseBody(activeResponse),
+      'items',
+    )[0];
+    if (!orderingItem) throw new Error('Expected ordering test item');
+    expect(getStringValue(orderingItem, 'type')).toBe(AssignmentType.ORDERING);
+    const deliveredItems = getRecordArray(
+      getRecordField(orderingItem, 'publicConfig'),
+      'items',
+    );
+    expect(
+      deliveredItems.map((item) => getStringValue(item, 'id')),
+    ).not.toEqual(correctOrderIds);
+    expect(
+      new Set(deliveredItems.map((item) => getStringValue(item, 'id'))),
+    ).toEqual(new Set(correctOrderIds));
+    expect(JSON.stringify(activeResponse.body)).not.toContain(
+      'correctOrderIds',
+    );
+
+    await saveAnswer(attemptId, getStringValue(orderingItem, 'id'), {
+      orderedItemIds: [itemA, itemC, itemB, itemD],
+    });
+    const submitResponse = await request(context.app.getHttpServer())
+      .post(`/test-attempts/${attemptId}/submit`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    expect(getResponseBody(submitResponse)).toEqual(
+      expect.objectContaining({
+        status: TestAttemptStatus.GRADED,
+        scorePoints: 5,
+        scorePercent: 83.33,
+        isPassed: true,
+      }),
+    );
+  });
+
   async function createUser(
     actor: keyof typeof tokens,
     role: UserRole,

@@ -338,6 +338,74 @@ describe('student lessons', () => {
     await waitFor(() => expect(submitted).toBe(true))
   })
 
+  it('lets the student reorder every delivered item and saves the full sequence', async () => {
+    const user = userEvent.setup()
+    const savedBodies: unknown[] = []
+    let submitted = false
+    const evaporation = 'evaporation'
+    const condensation = 'condensation'
+    const precipitation = 'precipitation'
+    let test = studentTest({
+      maxPoints: 6,
+      items: [{
+        id: 'item-1', position: 0, maxPoints: 6, assignmentId: 'assignment-1', assignmentRevisionId: 'revision-1', type: 'ORDERING',
+        title: 'Water cycle', prompt: 'Put the stages in order.', instructions: null,
+        publicConfig: {
+          items: [
+            { id: precipitation, text: 'Precipitation' },
+            { id: evaporation, text: 'Evaporation' },
+            { id: condensation, text: 'Condensation' },
+          ],
+        },
+      }],
+    })
+
+    server.use(
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () => HttpResponse.json({
+        ...studentLesson(), content: 'Read this lesson before answering.',
+        class: { id: 'class-1', name: 'Grade 9-A' }, teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
+      })),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () => HttpResponse.json([test])),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () => HttpResponse.json(test)),
+      http.post(`${API_BASE_URL}/test-releases/release-1/attempts`, () => {
+        const attempt = studentTestAttempt({
+          maxPoints: 6,
+          answers: [studentTestAnswer({ maxPoints: 6, responseData: { orderedItemIds: [] } })],
+        })
+        test = { ...test, stateStatus: 'IN_PROGRESS', attempt }
+        return HttpResponse.json(attempt)
+      }),
+      http.put(`${API_BASE_URL}/test-attempts/attempt-1/answers/item-1`, async ({ request }) => {
+        savedBodies.push(await request.json())
+        return HttpResponse.json(test.attempt)
+      }),
+      http.post(`${API_BASE_URL}/test-attempts/attempt-1/submit`, () => {
+        submitted = true
+        return HttpResponse.json(studentTestAttempt({
+          status: 'GRADED', maxPoints: 6, scorePoints: 6, scorePercent: 100, isPassed: true,
+          submittedAt: '2026-08-13T12:00:00.000Z', gradedAt: '2026-08-13T12:00:00.000Z',
+          answers: [studentTestAnswer({
+            status: 'GRADED', maxPoints: 6, scorePoints: 6, scorePercent: 100, isCorrect: true,
+            responseData: { orderedItemIds: [evaporation, condensation, precipitation] },
+          })],
+        }))
+      }),
+    )
+
+    renderStudentReader('/app/student/lessons/lesson-1')
+    await user.click(await screen.findByRole('button', { name: 'Start' }))
+    const dialog = await screen.findByRole('dialog', { name: 'History check' })
+    await user.click(within(dialog).getByRole('button', { name: 'Start' }))
+    await user.click(await within(dialog).findByRole('button', { name: 'Move “Precipitation” down' }))
+
+    await waitFor(() => expect(savedBodies.at(-1)).toEqual({
+      responseData: { orderedItemIds: [evaporation, precipitation, condensation] },
+    }), { timeout: 2_500 })
+    await user.click(within(dialog).getByRole('button', { name: 'Finish test' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'Finish this attempt?' })).getByRole('button', { name: 'Submit answers' }))
+    await waitFor(() => expect(submitted).toBe(true))
+  })
+
   it('shows the reviewed result for a completed test', async () => {
     const user = userEvent.setup()
     const completed = studentTest({

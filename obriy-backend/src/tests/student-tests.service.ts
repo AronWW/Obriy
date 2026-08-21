@@ -20,6 +20,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { gradeChoiceResponse } from '../assignments/grading/choice-grading';
 import { gradeMatchingResponse } from '../assignments/grading/matching-grading';
+import { gradeOrderingResponse } from '../assignments/grading/ordering-grading';
 import { validateAssignmentStudentResponse } from '../assignments/validation';
 import type { AuthUser } from '../common/types/auth-user.type';
 import { SaveTestAnswerDto } from './dto/student-test.dto';
@@ -521,22 +522,19 @@ export class StudentTestsService {
             message: 'A test item has no grading solution',
           });
         }
+        const gradingInput = {
+          type: assignmentType,
+          publicConfig: revision.publicConfig,
+          gradingConfig: revision.solution.gradingConfig,
+          responseData,
+          maxPoints: Number(answer.maxPoints),
+        };
         const grade =
           assignmentType === AssignmentType.MATCHING
-            ? gradeMatchingResponse({
-                type: assignmentType,
-                publicConfig: revision.publicConfig,
-                gradingConfig: revision.solution.gradingConfig,
-                responseData,
-                maxPoints: Number(answer.maxPoints),
-              })
-            : gradeChoiceResponse({
-                type: assignmentType,
-                publicConfig: revision.publicConfig,
-                gradingConfig: revision.solution.gradingConfig,
-                responseData,
-                maxPoints: Number(answer.maxPoints),
-              });
+            ? gradeMatchingResponse(gradingInput)
+            : assignmentType === AssignmentType.ORDERING
+              ? gradeOrderingResponse(gradingInput)
+              : gradeChoiceResponse(gradingInput);
         await transaction.testAnswer.update({
           where: { id: answer.id },
           data: {
@@ -804,6 +802,19 @@ export class StudentTestsService {
         response.matches.length === publicConfig.leftItems.length
       );
     }
+    if (type === AssignmentType.ORDERING) {
+      if (
+        !Array.isArray(response.orderedItemIds) ||
+        !this.isRecord(publicConfig)
+      ) {
+        return false;
+      }
+      return (
+        Array.isArray(publicConfig.items) &&
+        publicConfig.items.length > 0 &&
+        response.orderedItemIds.length === publicConfig.items.length
+      );
+    }
     return false;
   }
 
@@ -819,6 +830,9 @@ export class StudentTestsService {
     }
     if (type === AssignmentType.MATCHING) {
       return { matches: [] };
+    }
+    if (type === AssignmentType.ORDERING) {
+      return { orderedItemIds: [] };
     }
     return {};
   }
@@ -989,6 +1003,24 @@ export class StudentTestsService {
         ),
       );
       return { ...config, rightItems };
+    }
+    if (type === AssignmentType.ORDERING && Array.isArray(config.items)) {
+      const sourceItems = config.items.filter(
+        (item): item is Record<string, unknown> => this.isRecord(item),
+      );
+      const items = sourceItems.map((item) => ({ ...item }));
+      items.sort((left, right) =>
+        this.stableRank(seed, String(left.id)).localeCompare(
+          this.stableRank(seed, String(right.id)),
+        ),
+      );
+      if (
+        items.length > 1 &&
+        items.every((item, index) => item.id === sourceItems[index]?.id)
+      ) {
+        items.push(items.shift()!);
+      }
+      return { ...config, items };
     }
     return config;
   }

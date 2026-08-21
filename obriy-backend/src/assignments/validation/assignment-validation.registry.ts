@@ -20,6 +20,10 @@ import {
   MATCHING_SCHEMA_VERSION,
   matchingAssignmentValidationDefinition,
 } from './matching-assignment.schemas';
+import {
+  ORDERING_SCHEMA_VERSION,
+  orderingAssignmentValidationDefinition,
+} from './ordering-assignment.schemas';
 
 type UnknownAssignmentValidationDefinition = AssignmentValidationDefinition<
   unknown,
@@ -46,6 +50,9 @@ const assignmentValidationRegistry: Readonly<
   }),
   MATCHING: Object.freeze({
     [MATCHING_SCHEMA_VERSION]: matchingAssignmentValidationDefinition,
+  }),
+  ORDERING: Object.freeze({
+    [ORDERING_SCHEMA_VERSION]: orderingAssignmentValidationDefinition,
   }),
 });
 

@@ -25,6 +25,7 @@ import { WrittenAssignmentPreview } from '../components/WrittenAssignmentPreview
 import { assignmentQueryKeys } from '../model/assignment-query-keys'
 import { TeacherChoiceAssignmentEditorPage } from './TeacherChoiceAssignmentEditorPage'
 import { TeacherMatchingAssignmentEditorPage } from './TeacherMatchingAssignmentEditorPage'
+import { TeacherOrderingAssignmentEditorPage } from './TeacherOrderingAssignmentEditorPage'
 import type {
   AssignmentEditor,
   AssignmentEditorRevision,
@@ -82,6 +83,9 @@ export function TeacherAssignmentEditorPage() {
   }
   if (type === 'MATCHING') {
     return <TeacherMatchingAssignmentEditorPage />
+  }
+  if (type === 'ORDERING') {
+    return <TeacherOrderingAssignmentEditorPage />
   }
 
   return <TeacherWrittenAssignmentEditorPage />

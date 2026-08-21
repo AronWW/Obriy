@@ -7,6 +7,7 @@ import {
   BookOpen,
   CircleDot,
   Link2,
+  ListOrdered,
   ListChecks,
   PenLine,
   Plus,
@@ -655,6 +656,7 @@ function assignmentIcon(type: AssignmentType, size: number) {
   if (type === 'WRITTEN') return <PenLine size={size} />
   if (type === 'SINGLE_CHOICE') return <CircleDot size={size} />
   if (type === 'MATCHING') return <Link2 size={size} />
+  if (type === 'ORDERING') return <ListOrdered size={size} />
   return <ListChecks size={size} />
 }
 

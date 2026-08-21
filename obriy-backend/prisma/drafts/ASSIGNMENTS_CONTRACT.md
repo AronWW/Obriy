@@ -97,9 +97,12 @@ add extra penalties beyond making that left-side match incorrect.
 
 ### `ORDERING`
 
-`publicConfig` contains `items: [{ id, text }]` and shuffle settings.
+`publicConfig` contains `items: [{ id, text }]` in the teacher-authored order.
+Student delivery always applies a deterministic shuffle and guarantees that
+the initial order differs from the correct order.
 
-`gradingConfig`: `{ "orderedItemIds": ["uuid"] }`.
+`gradingConfig` contains `correctOrderIds` and
+`scoringMode: "PARTIAL | ALL_OR_NOTHING"`.
 
 `responseData`: `{ "orderedItemIds": ["uuid"] }`.
 

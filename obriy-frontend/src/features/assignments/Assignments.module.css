@@ -2183,6 +2183,35 @@
   border-radius: 8px;
 }
 
+.orderingList { display: grid; gap: 10px; }
+.orderingRow {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 13px;
+  background: color-mix(in srgb, var(--panel-deep), transparent 48%);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  transition: opacity 140ms ease, border-color 140ms ease;
+}
+.orderingRow[draggable='true'] { cursor: grab; }
+.orderingRow[data-dragging='true'] { opacity: 0.48; border-color: var(--gold); }
+.orderingGrip { display: inline-flex; color: var(--ink-soft); }
+.orderingNumber { display: grid; width: 30px; height: 30px; place-items: center; color: var(--gold); font-size: 0.72rem; font-weight: 850; background: rgb(196 147 52 / 8%); border: 1px solid rgb(196 147 52 / 22%); border-radius: 8px; }
+.orderingRow .field textarea { min-height: 54px; resize: vertical; }
+.orderingActions { display: flex; align-items: center; gap: 6px; }
+.orderingActions .iconButton { width: 34px; min-height: 34px; }
+.orderingShuffleNotice { display: flex; align-items: flex-start; gap: 11px; padding: 13px 14px; color: var(--copy); background: color-mix(in srgb, var(--panel-solid), var(--gold) 5%); border: 1px solid rgb(196 147 52 / 22%); border-radius: 10px; }
+.orderingShuffleNotice > svg { flex: 0 0 auto; margin-top: 1px; color: var(--gold); }
+.orderingShuffleNotice strong { color: var(--ink); font-size: 0.78rem; }
+.orderingShuffleNotice p { margin: 3px 0 0; color: var(--ink-soft); font-size: 0.72rem; line-height: 1.5; }
+.orderingPreview { display: grid; gap: 9px; margin-top: 24px; }
+.orderingPreview > div { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 11px; padding: 13px 14px; color: var(--copy); background: color-mix(in srgb, var(--panel-deep), transparent 46%); border: 1px solid var(--line-soft); border-radius: 10px; }
+.orderingPreview svg { color: var(--ink-soft); }
+.orderingPreview span { display: grid; width: 27px; height: 27px; place-items: center; color: var(--gold); font-size: 0.69rem; font-weight: 850; border: 1px solid var(--line-soft); border-radius: 7px; }
+.orderingPreview strong { color: var(--ink); line-height: 1.45; }
+
 @media (max-width: 980px) {
   .content {
     padding: 28px 24px 50px;
@@ -2348,6 +2377,8 @@
   .matchingPairRow > .dangerIconButton { grid-column: 2; grid-row: 1 / span 2; }
   .matchingConnector { display: none; }
   .matchingDistractorList { grid-template-columns: 1fr; }
+  .orderingRow { grid-template-columns: auto auto minmax(0, 1fr); }
+  .orderingActions { grid-column: 2 / -1; justify-content: flex-end; padding-top: 8px; border-top: 1px solid var(--line-soft); }
 
   .criteriaFields {
     grid-column: 2 / -1;
@@ -2484,4 +2515,6 @@
   .matchingDistractorHeader { flex-direction: column; }
   .matchingDistractorHeader .secondaryButton { width: 100%; }
   .matchingPreview label { grid-template-columns: 1fr; }
+  .orderingGrip { display: none; }
+  .orderingRow { grid-template-columns: auto minmax(0, 1fr); }
 }

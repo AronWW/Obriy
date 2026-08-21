@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   Beaker,
   Check,
   CheckCircle2,
   Clock3,
+  GripVertical,
   Link2,
   ListChecks,
+  ListOrdered,
   PenLine,
   Play,
   RotateCcw,
@@ -17,7 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../../shared/api/api-client'
 import { AssignmentConfirmDialog } from '../../assignments/components/AssignmentConfirmDialog'
 import { AssignmentDialog } from '../../assignments/components/AssignmentDialog'
-import type { ChoiceOption, ChoicePublicConfig, MatchingPair, MatchingPublicConfig, WrittenPublicConfig } from '../../assignments/model/assignment.types'
+import type { ChoiceOption, ChoicePublicConfig, MatchingPair, MatchingPublicConfig, OrderingItem, OrderingPublicConfig, WrittenPublicConfig } from '../../assignments/model/assignment.types'
 import {
   getStudentTestRelease,
   listStudentLessonTests,
@@ -127,15 +131,18 @@ function StudentTestRunner({ lessonId, onClose, releaseId }: { lessonId: string;
   const attempt = release?.attempt ?? null
   useEffect(() => {
     if (!attempt || hydratedAttempt.current === attempt.id) return
-    const next = Object.fromEntries(attempt.answers.map((answer) => [answer.testItemId, answer.responseData]))
-    const hashes = Object.fromEntries(Object.entries(next).map(([key, value]) => [key, JSON.stringify(value)]))
+    const next = Object.fromEntries(attempt.answers.map((answer) => {
+      const item = release?.items.find((candidate) => candidate.id === answer.testItemId)
+      return [answer.testItemId, normalizeResponse(item, answer.responseData)]
+    }))
+    const hashes = Object.fromEntries(attempt.answers.map((answer) => [answer.testItemId, JSON.stringify(answer.responseData)]))
     hydratedAttempt.current = attempt.id
     // Server state initializes a new whole-test attempt exactly once.
     setDrafts(next)
     setSaved(hashes)
     setAttemptId(attempt.id)
     setActiveIndex(0)
-  }, [attempt])
+  }, [attempt, release?.items])
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: testQueryKeys.release(releaseId) })
@@ -289,9 +296,12 @@ function StudentTestRunner({ lessonId, onClose, releaseId }: { lessonId: string;
   )
 
   function seedAttempt(next: StudentTestAttempt) {
-    const nextDrafts = Object.fromEntries(next.answers.map((answer) => [answer.testItemId, answer.responseData]))
+    const nextDrafts = Object.fromEntries(next.answers.map((answer) => {
+      const item = release?.items.find((candidate) => candidate.id === answer.testItemId)
+      return [answer.testItemId, normalizeResponse(item, answer.responseData)]
+    }))
     setDrafts(nextDrafts)
-    setSaved(Object.fromEntries(Object.entries(nextDrafts).map(([key, value]) => [key, JSON.stringify(value)])))
+    setSaved(Object.fromEntries(next.answers.map((answer) => [answer.testItemId, JSON.stringify(answer.responseData)])))
     hydratedAttempt.current = next.id
     setAttemptId(next.id)
     setActiveIndex(0)
@@ -375,6 +385,9 @@ function AnswerField({ item, onChange, response }: { item: StudentTestItem; onCh
       </fieldset>
     )
   }
+  if (item.type === 'ORDERING') {
+    return <OrderingAnswerField item={item} onChange={onChange} response={response} />
+  }
   const config = item.publicConfig as unknown as ChoicePublicConfig
   const selected = Array.isArray(response.selectedOptionIds) ? response.selectedOptionIds.filter((value): value is string => typeof value === 'string') : []
   return (
@@ -450,6 +463,10 @@ function TestResult({ attempt, compact = false, release }: { attempt: StudentTes
 function emptyResponse(item: StudentTestItem): ResponseData {
   if (item.type === 'WRITTEN') return { text: '', attachmentIds: [] }
   if (item.type === 'MATCHING') return { matches: [] }
+  if (item.type === 'ORDERING') {
+    const config = item.publicConfig as unknown as OrderingPublicConfig
+    return { orderedItemIds: config.items.map((orderingItem) => orderingItem.id) }
+  }
   return { selectedOptionIds: [] }
 }
 
@@ -458,6 +475,10 @@ function hasAnswer(item: StudentTestItem, response: ResponseData): boolean {
   if (item.type === 'MATCHING') {
     const config = item.publicConfig as unknown as MatchingPublicConfig
     return Array.isArray(response.matches) && response.matches.filter(isMatchingPair).length === config.leftItems.length
+  }
+  if (item.type === 'ORDERING') {
+    const config = item.publicConfig as unknown as OrderingPublicConfig
+    return Array.isArray(response.orderedItemIds) && response.orderedItemIds.length === config.items.length
   }
   return Array.isArray(response.selectedOptionIds) && response.selectedOptionIds.length > 0
 }
@@ -479,11 +500,81 @@ function testActionKey(test: StudentLessonTest): string {
 function assignmentIcon(item: StudentTestItem) {
   if (item.type === 'WRITTEN') return <PenLine size={15} />
   if (item.type === 'MATCHING') return <Link2 size={15} />
+  if (item.type === 'ORDERING') return <ListOrdered size={15} />
   return <ListChecks size={15} />
 }
 
 function isMatchingPair(value: unknown): value is MatchingPair {
   return typeof value === 'object' && value !== null && 'leftItemId' in value && typeof value.leftItemId === 'string' && 'rightItemId' in value && typeof value.rightItemId === 'string'
+}
+
+function OrderingAnswerField({ item, onChange, response }: { item: StudentTestItem; onChange: (response: ResponseData) => void; response: ResponseData }) {
+  const { t } = useTranslation()
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null)
+  const config = item.publicConfig as unknown as OrderingPublicConfig
+  const itemById = new Map(config.items.map((orderingItem) => [orderingItem.id, orderingItem]))
+  const responseIds = Array.isArray(response.orderedItemIds)
+    ? response.orderedItemIds.filter((id): id is string => typeof id === 'string' && itemById.has(id))
+    : []
+  const responseIdSet = new Set(responseIds)
+  const orderedIds = [
+    ...responseIds,
+    ...config.items.map((orderingItem) => orderingItem.id).filter((id) => !responseIdSet.has(id)),
+  ]
+  const orderedItems = orderedIds
+    .map((id) => itemById.get(id))
+    .filter((orderingItem): orderingItem is OrderingItem => Boolean(orderingItem))
+
+  const move = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= orderedItems.length) return
+    onChange({ orderedItemIds: moveArrayItem(orderedItems, fromIndex, toIndex).map((orderingItem) => orderingItem.id) })
+  }
+  const dropOn = (targetId: string) => {
+    if (!draggedItemId || draggedItemId === targetId) return
+    const fromIndex = orderedItems.findIndex((orderingItem) => orderingItem.id === draggedItemId)
+    const toIndex = orderedItems.findIndex((orderingItem) => orderingItem.id === targetId)
+    if (fromIndex >= 0 && toIndex >= 0) move(fromIndex, toIndex)
+    setDraggedItemId(null)
+  }
+
+  return (
+    <fieldset className={styles.orderingAnswers}>
+      <legend>{t('tests.student.orderItems')}</legend>
+      {orderedItems.map((orderingItem, index) => (
+        <div
+          data-dragging={draggedItemId === orderingItem.id || undefined}
+          draggable
+          key={orderingItem.id}
+          onDragEnd={() => setDraggedItemId(null)}
+          onDragOver={(event) => event.preventDefault()}
+          onDragStart={() => setDraggedItemId(orderingItem.id)}
+          onDrop={() => dropOn(orderingItem.id)}
+        >
+          <GripVertical size={17} aria-hidden="true" />
+          <span>{index + 1}</span>
+          <strong>{orderingItem.text}</strong>
+          <div>
+            <button aria-label={t('tests.student.orderMoveUp', { item: orderingItem.text })} disabled={index === 0} onClick={() => move(index, index - 1)} type="button"><ArrowUp size={15} /></button>
+            <button aria-label={t('tests.student.orderMoveDown', { item: orderingItem.text })} disabled={index === orderedItems.length - 1} onClick={() => move(index, index + 1)} type="button"><ArrowDown size={15} /></button>
+          </div>
+        </div>
+      ))}
+    </fieldset>
+  )
+}
+
+function normalizeResponse(item: StudentTestItem | undefined, response: ResponseData): ResponseData {
+  if (item?.type !== 'ORDERING') return response
+  if (Array.isArray(response.orderedItemIds) && response.orderedItemIds.length > 0) return response
+  return emptyResponse(item)
+}
+
+function moveArrayItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
+  const next = [...items]
+  const [moved] = next.splice(fromIndex, 1)
+  if (moved === undefined) return items
+  next.splice(toIndex, 0, moved)
+  return next
 }
 
 function studentError(error: Error | null, t: (key: string) => string): string {

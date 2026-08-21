@@ -46,6 +46,9 @@ describe('teacher assignment workspace', () => {
     expect(
       within(dialog).getByRole('button', { name: /Matching/ }),
     ).toBeEnabled()
+    expect(
+      within(dialog).getByRole('button', { name: /Ordering/ }),
+    ).toBeEnabled()
     expect(within(dialog).queryByText(/soon/i)).not.toBeInTheDocument()
     expect(createCount).toBe(0)
 
@@ -155,6 +158,56 @@ describe('teacher assignment workspace', () => {
         leftItemId: leftItem.id,
         rightItemId: body.draft.publicConfig.rightItems[index]?.id,
       })),
+      scoringMode: 'PARTIAL',
+    })
+  })
+
+  it('creates an ordering assignment in the sequence chosen by the teacher', async () => {
+    const user = userEvent.setup()
+    let createCount = 0
+    let receivedBody: unknown
+    server.use(
+      http.post(`${API_BASE_URL}/assignments`, async ({ request }) => {
+        createCount += 1
+        receivedBody = await request.json()
+        return HttpResponse.json(orderingAssignmentEditor(), { status: 201 })
+      }),
+      http.get(`${API_BASE_URL}/assignments/:assignmentId`, () =>
+        HttpResponse.json(orderingAssignmentEditor()),
+      ),
+    )
+
+    renderWorkspace('/app/teacher/tasks/new/ordering')
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Water cycle')
+    await user.type(screen.getByRole('textbox', { name: 'Question or prompt' }), 'Put the stages in order.')
+    await user.type(screen.getByRole('textbox', { name: 'Item 1' }), 'Evaporation')
+    await user.type(screen.getByRole('textbox', { name: 'Item 2' }), 'Condensation')
+    await user.click(screen.getByRole('button', { name: 'Add item' }))
+    await user.type(screen.getByRole('textbox', { name: 'Item 3' }), 'Precipitation')
+    await user.click(screen.getByRole('button', { name: 'Move item 3 up' }))
+
+    expect(createCount).toBe(0)
+    await user.click(screen.getAllByRole('button', { name: 'Save' })[0])
+
+    await waitFor(() => expect(createCount).toBe(1))
+    const body = receivedBody as {
+      draft: {
+        publicConfig: { items: Array<{ id: string; text: string }> }
+        gradingConfig: { correctOrderIds: string[]; scoringMode: string }
+      }
+    }
+    expect(body).toEqual(expect.objectContaining({
+      type: 'ORDERING',
+      defaultMaxPoints: 1,
+      defaultPassingPercent: 100,
+    }))
+    expect(body.draft.publicConfig.items.map((item) => item.text)).toEqual([
+      'Evaporation',
+      'Precipitation',
+      'Condensation',
+    ])
+    expect(body.draft.gradingConfig).toEqual({
+      correctOrderIds: body.draft.publicConfig.items.map((item) => item.id),
       scoringMode: 'PARTIAL',
     })
   })
@@ -315,6 +368,32 @@ function matchingAssignmentEditor() {
       },
       gradingConfig: {
         matches: [{ leftItemId: leftA, rightItemId: rightA }, { leftItemId: leftB, rightItemId: rightB }],
+        scoringMode: 'PARTIAL',
+      },
+    },
+  }
+}
+
+function orderingAssignmentEditor() {
+  const evaporation = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const precipitation = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const condensation = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+  return {
+    ...assignmentEditor(),
+    type: 'ORDERING',
+    draftRevision: {
+      ...assignmentEditor().draftRevision,
+      title: 'Water cycle',
+      prompt: 'Put the stages in order.',
+      publicConfig: {
+        items: [
+          { id: evaporation, text: 'Evaporation' },
+          { id: precipitation, text: 'Precipitation' },
+          { id: condensation, text: 'Condensation' },
+        ],
+      },
+      gradingConfig: {
+        correctOrderIds: [evaporation, precipitation, condensation],
         scoringMode: 'PARTIAL',
       },
     },

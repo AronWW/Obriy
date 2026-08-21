@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -404,6 +404,77 @@ describe('student lessons', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Finish test' }))
     await user.click(within(screen.getByRole('dialog', { name: 'Finish this attempt?' })).getByRole('button', { name: 'Submit answers' }))
     await waitFor(() => expect(submitted).toBe(true))
+  })
+
+  it('runs categorization, fill-blanks, and image-hotspot items in one test', async () => {
+    const user = userEvent.setup()
+    const saved = new Map<string, unknown>()
+    let submitted = false
+    const categoryA = 'category-a'
+    const categoryB = 'category-b'
+    const blankA = 'blank-a'
+    let test = studentTest({
+      itemCount: 3,
+      maxPoints: 9,
+      items: [
+        {
+          id: 'item-category', position: 0, maxPoints: 3, assignmentId: 'assignment-category', assignmentRevisionId: 'revision-category', type: 'CATEGORIZATION', title: 'Sort examples', prompt: 'Choose a category.', instructions: null,
+          publicConfig: { categories: [{ id: categoryA, title: 'Plants' }, { id: categoryB, title: 'Animals' }], items: [{ id: 'oak', text: 'Oak' }, { id: 'wolf', text: 'Wolf' }] },
+        },
+        {
+          id: 'item-blanks', position: 1, maxPoints: 3, assignmentId: 'assignment-blanks', assignmentRevisionId: 'revision-blanks', type: 'FILL_BLANKS', title: 'Complete the sentence', prompt: 'Fill every blank.', instructions: null,
+          publicConfig: { segments: [{ id: 'text-a', type: 'TEXT', text: 'The capital is ' }, { id: blankA, type: 'BLANK' }], wordBankEnabled: true, wordBank: [{ id: 'word-a', text: 'Kyiv' }, { id: 'word-b', text: 'Lviv' }] },
+        },
+        {
+          id: 'item-hotspot', position: 2, maxPoints: 3, assignmentId: 'assignment-hotspot', assignmentRevisionId: 'revision-hotspot', type: 'IMAGE_HOTSPOT', title: 'Find the location', prompt: 'Mark the correct point.', instructions: null,
+          publicConfig: { promptImage: { attachmentId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', width: 800, height: 600 } },
+        },
+      ],
+    })
+
+    server.use(
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () => HttpResponse.json({ ...studentLesson(), content: 'Read this lesson first.', class: { id: 'class-1', name: 'Grade 9-A' }, teacher: { id: 'teacher-1', displayName: 'Olena Koval' } })),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () => HttpResponse.json([test])),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () => HttpResponse.json(test)),
+      http.post(`${API_BASE_URL}/test-releases/release-1/attempts`, () => {
+        const attempt = studentTestAttempt({ maxPoints: 9, answers: [
+          studentTestAnswer({ id: 'answer-category', testItemId: 'item-category', maxPoints: 3, responseData: { assignments: [] } }),
+          studentTestAnswer({ id: 'answer-blanks', testItemId: 'item-blanks', maxPoints: 3, responseData: { answers: [] } }),
+          studentTestAnswer({ id: 'answer-hotspot', testItemId: 'item-hotspot', maxPoints: 3, responseData: {} }),
+        ] })
+        test = { ...test, stateStatus: 'IN_PROGRESS', attempt }
+        return HttpResponse.json(attempt)
+      }),
+      http.put(`${API_BASE_URL}/test-attempts/attempt-1/answers/:itemId`, async ({ params, request }) => {
+        saved.set(String(params.itemId), await request.json())
+        return HttpResponse.json(test.attempt)
+      }),
+      http.post(`${API_BASE_URL}/test-attempts/attempt-1/submit`, () => {
+        submitted = true
+        return HttpResponse.json(studentTestAttempt({ status: 'GRADED', maxPoints: 9, scorePoints: 9, scorePercent: 100, isPassed: true, answers: [] }))
+      }),
+    )
+
+    renderStudentReader('/app/student/lessons/lesson-1')
+    await user.click(await screen.findByRole('button', { name: 'Start' }))
+    const dialog = await screen.findByRole('dialog', { name: 'History check' })
+    await user.click(within(dialog).getByRole('button', { name: 'Start' }))
+    const categorySelects = await within(dialog).findAllByRole('combobox')
+    await user.selectOptions(categorySelects[0]!, categoryA)
+    await user.selectOptions(categorySelects[1]!, categoryB)
+    await user.click(within(dialog).getByRole('button', { name: 'Next' }))
+    await user.type(within(dialog).getByRole('textbox', { name: /Blank/ }), 'Kyiv')
+    await user.click(within(dialog).getByRole('button', { name: 'Next' }))
+    const sliders = within(dialog).getAllByRole('slider')
+    fireEvent.change(sliders[0]!, { target: { value: '0.6' } })
+    fireEvent.change(sliders[1]!, { target: { value: '0.4' } })
+    await user.click(within(dialog).getByRole('button', { name: 'Finish test' }))
+    await user.click(within(screen.getByRole('dialog', { name: 'Finish this attempt?' })).getByRole('button', { name: 'Submit answers' }))
+
+    await waitFor(() => expect(submitted).toBe(true))
+    expect(saved.get('item-category')).toEqual({ responseData: { assignments: [{ itemId: 'oak', categoryId: categoryA }, { itemId: 'wolf', categoryId: categoryB }] } })
+    expect(saved.get('item-blanks')).toEqual({ responseData: { answers: [{ blankId: blankA, text: 'Kyiv' }] } })
+    expect(saved.get('item-hotspot')).toEqual({ responseData: { x: 0.6, y: 0.4 } })
   })
 
   it('shows the reviewed result for a completed test', async () => {

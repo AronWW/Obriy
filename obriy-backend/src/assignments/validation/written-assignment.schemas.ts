@@ -4,6 +4,7 @@ import type {
   AssignmentValidationDefinition,
   AssignmentValidationIssue,
 } from './assignment-validation.types';
+import { assignmentPromptImageSchema } from './assignment-image.schemas';
 
 export const WRITTEN_SCHEMA_VERSION = 1;
 export const WRITTEN_ABSOLUTE_MAX_TEXT_LENGTH = 20_000;
@@ -54,6 +55,7 @@ export const writtenDraftPublicConfigSchema = z
   .object({
     ...writtenSharedPublicConfigShape,
     rubric: writtenDraftRubricSchema,
+    promptImage: assignmentPromptImageSchema.nullable().optional(),
   })
   .partial()
   .strict()
@@ -63,6 +65,7 @@ export const writtenPublishPublicConfigSchema = z
   .object({
     ...writtenSharedPublicConfigShape,
     rubric: writtenPublishRubricSchema,
+    promptImage: assignmentPromptImageSchema.nullable().optional(),
   })
   .strict()
   .superRefine(validateLengthRange);

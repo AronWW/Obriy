@@ -49,6 +49,15 @@ describe('teacher assignment workspace', () => {
     expect(
       within(dialog).getByRole('button', { name: /Ordering/ }),
     ).toBeEnabled()
+    expect(
+      within(dialog).getByRole('button', { name: /Categorization/ }),
+    ).toBeEnabled()
+    expect(
+      within(dialog).getByRole('button', { name: /Fill in the blanks/ }),
+    ).toBeEnabled()
+    expect(
+      within(dialog).getByRole('button', { name: /Image hotspot/ }),
+    ).toBeEnabled()
     expect(within(dialog).queryByText(/soon/i)).not.toBeInTheDocument()
     expect(createCount).toBe(0)
 
@@ -210,6 +219,45 @@ describe('teacher assignment workspace', () => {
       correctOrderIds: body.draft.publicConfig.items.map((item) => item.id),
       scoringMode: 'PARTIAL',
     })
+  })
+
+  it('creates a categorization assignment with one category per item', async () => {
+    const user = userEvent.setup()
+    let receivedBody: unknown
+    server.use(
+      http.post(`${API_BASE_URL}/assignments`, async ({ request }) => {
+        receivedBody = await request.json()
+        return HttpResponse.json(categorizationAssignmentEditor(), { status: 201 })
+      }),
+      http.get(`${API_BASE_URL}/assignments/:assignmentId`, () =>
+        HttpResponse.json(categorizationAssignmentEditor()),
+      ),
+    )
+
+    renderWorkspace('/app/teacher/tasks/new/categorization')
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Living things')
+    await user.type(screen.getByRole('textbox', { name: 'Question or prompt' }), 'Sort every example.')
+    await user.type(screen.getByRole('textbox', { name: 'Category 1' }), 'Plants')
+    await user.type(screen.getByRole('textbox', { name: 'Category 2' }), 'Animals')
+    await user.type(screen.getByRole('textbox', { name: 'Item 1' }), 'Oak')
+    await user.type(screen.getByRole('textbox', { name: 'Item 2' }), 'Wolf')
+    const categories = screen.getAllByRole('combobox', { name: 'Correct category' })
+    await user.selectOptions(categories[0]!, within(categories[0]!).getByRole('option', { name: 'Plants' }))
+    await user.selectOptions(categories[1]!, within(categories[1]!).getByRole('option', { name: 'Animals' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(receivedBody).toBeDefined())
+    const body = receivedBody as {
+      type: string
+      draft: {
+        publicConfig: { categories: Array<{ id: string; title: string }>; items: Array<{ id: string; text: string }> }
+        gradingConfig: { assignments: Array<{ itemId: string; categoryId: string }> }
+      }
+    }
+    expect(body.type).toBe('CATEGORIZATION')
+    expect(body.draft.publicConfig.categories.map((value) => value.title)).toEqual(['Plants', 'Animals'])
+    expect(body.draft.publicConfig.items.map((value) => value.text)).toEqual(['Oak', 'Wolf'])
+    expect(body.draft.gradingConfig.assignments).toHaveLength(2)
   })
 
   it('starts a transparent new revision before editing a ready assignment', async () => {
@@ -394,6 +442,31 @@ function orderingAssignmentEditor() {
       },
       gradingConfig: {
         correctOrderIds: [evaporation, precipitation, condensation],
+        scoringMode: 'PARTIAL',
+      },
+    },
+  }
+}
+
+function categorizationAssignmentEditor() {
+  const plant = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const animal = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const oak = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+  const wolf = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+  return {
+    ...assignmentEditor(),
+    type: 'CATEGORIZATION',
+    draftRevision: {
+      ...assignmentEditor().draftRevision,
+      title: 'Living things',
+      prompt: 'Sort every example.',
+      publicConfig: {
+        categories: [{ id: plant, title: 'Plants' }, { id: animal, title: 'Animals' }],
+        items: [{ id: oak, text: 'Oak' }, { id: wolf, text: 'Wolf' }],
+        promptImage: null,
+      },
+      gradingConfig: {
+        assignments: [{ itemId: oak, categoryId: plant }, { itemId: wolf, categoryId: animal }],
         scoringMode: 'PARTIAL',
       },
     },

@@ -112,6 +112,15 @@ export class AssignmentsService {
     if (!publicConfigResult.success) {
       throw this.invalidConfig(publicConfigResult.issues);
     }
+    if (this.getPromptImageAttachmentId(publicConfigResult.data)) {
+      throw this.invalidConfig([
+        {
+          path: ['publicConfig', 'promptImage'],
+          code: 'INVALID_CONFIGURATION',
+          message: 'Save the assignment before uploading an image.',
+        },
+      ]);
+    }
     const solutionResult = validateAssignmentSolution(
       dto.type,
       CURRENT_ASSIGNMENT_SCHEMA_VERSION,
@@ -301,6 +310,11 @@ export class AssignmentsService {
       if (!publicConfigResult.success) {
         throw this.invalidConfig(publicConfigResult.issues);
       }
+      await this.assertPromptImageAvailable(
+        transaction,
+        user.id,
+        publicConfigResult.data,
+      );
 
       const gradingConfig = dto.gradingConfig ?? draft.solution?.gradingConfig;
       const solutionResult = validateAssignmentSolution(
@@ -520,6 +534,11 @@ export class AssignmentsService {
         draft.editVersion,
         dto.expectedRevisionId,
         dto.expectedEditVersion,
+      );
+      await this.assertPromptImageAvailable(
+        transaction,
+        user.id,
+        draft.publicConfig,
       );
       const issues = this.getPublishIssues(assignment.type, draft);
       if (issues.length > 0) {
@@ -807,6 +826,7 @@ export class AssignmentsService {
           message: 'An assignment in use must be archived instead',
         });
       }
+      await this.assertImagesNotReferencedElsewhere(transaction, assignmentId);
 
       await transaction.assignment.delete({ where: { id: assignmentId } });
     });
@@ -861,6 +881,11 @@ export class AssignmentsService {
           message: 'Delete the assignment instead of its only revision',
         });
       }
+      await this.assertImagesNotReferencedElsewhere(
+        transaction,
+        assignmentId,
+        revision.id,
+      );
 
       await transaction.assignmentRevision.delete({
         where: { id: revision.id },
@@ -1010,6 +1035,78 @@ export class AssignmentsService {
       type === AssignmentType.MAP_REGION ||
       type === AssignmentType.MAP_MULTI_REGION
     );
+  }
+
+  private async assertPromptImageAvailable(
+    transaction: Prisma.TransactionClient,
+    teacherId: string,
+    publicConfig: unknown,
+  ): Promise<void> {
+    const attachmentId = this.getPromptImageAttachmentId(publicConfig);
+    if (!attachmentId) return;
+    const attachment = await transaction.assignmentAttachment.findFirst({
+      where: {
+        id: attachmentId,
+        kind: 'PROMPT',
+        status: 'READY',
+        revision: { assignment: { teacherId } },
+      },
+      select: { id: true },
+    });
+    if (!attachment) {
+      throw this.invalidConfig([
+        {
+          path: ['publicConfig', 'promptImage', 'attachmentId'],
+          code: 'INVALID_CONFIGURATION',
+          message: 'The prompt image does not belong to this assignment.',
+        },
+      ]);
+    }
+  }
+
+  private async assertImagesNotReferencedElsewhere(
+    transaction: Prisma.TransactionClient,
+    assignmentId: string,
+    revisionId?: string,
+  ): Promise<void> {
+    const attachments = await transaction.assignmentAttachment.findMany({
+      where: revisionId
+        ? { revisionId, kind: 'PROMPT' }
+        : { revision: { assignmentId }, kind: 'PROMPT' },
+      select: { id: true },
+    });
+    for (const attachment of attachments) {
+      const reference = await transaction.assignmentRevision.findFirst({
+        where: {
+          ...(revisionId
+            ? { id: { not: revisionId } }
+            : { assignmentId: { not: assignmentId } }),
+          publicConfig: {
+            path: ['promptImage', 'attachmentId'],
+            equals: attachment.id,
+          },
+        },
+        select: { id: true },
+      });
+      if (reference) {
+        throw new ConflictException({
+          code: 'ASSIGNMENT_IMAGE_IN_USE',
+          message: 'An image is reused by another assignment',
+        });
+      }
+    }
+  }
+
+  private getPromptImageAttachmentId(publicConfig: unknown): string | null {
+    if (
+      !this.isRecord(publicConfig) ||
+      !this.isRecord(publicConfig.promptImage)
+    ) {
+      return null;
+    }
+    return typeof publicConfig.promptImage.attachmentId === 'string'
+      ? publicConfig.promptImage.attachmentId
+      : null;
   }
 
   private async assertOwnedAssignment(

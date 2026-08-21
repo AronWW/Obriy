@@ -1,4 +1,5 @@
 import { authorizedRequest } from '../../auth/model/session.service'
+import { API_BASE_URL } from '../../../shared/config/env'
 import type {
   AssignmentEditor,
   AssignmentFilters,
@@ -101,4 +102,38 @@ export function deleteAssignment(assignmentId: string): Promise<void> {
   return authorizedRequest<void>(`/assignments/${assignmentId}`, {
     method: 'DELETE',
   })
+}
+
+export function uploadAssignmentImage(
+  assignmentId: string,
+  revisionId: string,
+  editVersion: number,
+  image: File,
+): Promise<AssignmentEditor> {
+  const body = new FormData()
+  body.set('expectedRevisionId', revisionId)
+  body.set('expectedEditVersion', String(editVersion))
+  body.set('image', image)
+  return authorizedRequest<AssignmentEditor>(
+    `/assignments/${assignmentId}/draft/image`,
+    { method: 'POST', body },
+  )
+}
+
+export function assignmentImageUrl(attachmentId: string): string {
+  return `${API_BASE_URL}/assignment-images/${attachmentId}`
+}
+
+export function removeAssignmentImage(
+  assignmentId: string,
+  revisionId: string,
+  editVersion: number,
+): Promise<AssignmentEditor> {
+  return authorizedRequest<AssignmentEditor>(
+    `/assignments/${assignmentId}/draft/image/remove`,
+    {
+      method: 'POST',
+      body: { expectedRevisionId: revisionId, expectedEditVersion: editVersion },
+    },
+  )
 }

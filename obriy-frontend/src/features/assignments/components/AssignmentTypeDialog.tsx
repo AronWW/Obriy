@@ -60,7 +60,10 @@ export function AssignmentTypeDialog({
             type === 'SINGLE_CHOICE' ||
             type === 'MULTIPLE_CHOICE' ||
             type === 'MATCHING' ||
-            type === 'ORDERING'
+            type === 'ORDERING' ||
+            type === 'CATEGORIZATION' ||
+            type === 'FILL_BLANKS' ||
+            type === 'IMAGE_HOTSPOT'
 
           return (
             <button

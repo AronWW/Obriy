@@ -22,9 +22,11 @@ import {
 } from '../api/assignments.api'
 import { AssignmentConfirmDialog } from '../components/AssignmentConfirmDialog'
 import { AssignmentDialog } from '../components/AssignmentDialog'
+import { TeacherPromptImageField } from '../components/TeacherPromptImageField'
 import { assignmentQueryKeys } from '../model/assignment-query-keys'
 import type {
   AssignmentEditor,
+  AssignmentPromptImage,
   MatchingGradingConfig,
   MatchingItem,
   MatchingPair,
@@ -44,6 +46,7 @@ interface MatchingEditorValues {
   explanation: string
   instructions: string
   pairs: EditablePair[]
+  promptImage: AssignmentPromptImage | null
   prompt: string
   scoringMode: MatchingGradingConfig['scoringMode']
   shuffleRightItems: boolean
@@ -357,6 +360,12 @@ export function TeacherMatchingAssignmentEditorPage() {
                   value={values.instructions}
                 />
               </label>
+              <TeacherPromptImageField
+                assignmentId={assignmentId}
+                onChange={(promptImage) => setValues((current) => ({ ...current, promptImage }))}
+                promptImage={values.promptImage}
+                revision={assignmentQuery.data?.draftRevision}
+              />
             </section>
 
             <section className={styles.editorSection}>
@@ -796,6 +805,7 @@ function createInitialValues(): MatchingEditorValues {
     explanation: '',
     instructions: '',
     pairs: [createPair(), createPair()],
+    promptImage: null,
     prompt: '',
     scoringMode: 'PARTIAL',
     shuffleRightItems: false,
@@ -841,6 +851,7 @@ function assignmentToValues(
     explanation: revision?.explanation ?? '',
     instructions: revision?.instructions ?? '',
     pairs,
+    promptImage: publicConfig.promptImage ?? null,
     prompt: revision?.prompt ?? '',
     scoringMode: gradingConfig.scoringMode,
     shuffleRightItems: publicConfig.shuffleRightItems,
@@ -859,6 +870,7 @@ function toMatchingPublicConfig(
       ? value.rightItems.filter(isMatchingItem).map((item) => ({ ...item }))
       : [],
     shuffleRightItems: value?.shuffleRightItems === true,
+    promptImage: toPromptImage(value?.promptImage),
   }
 }
 
@@ -909,6 +921,7 @@ function valuesToDraft(values: MatchingEditorValues) {
         ...values.distractors,
       ],
       shuffleRightItems: values.shuffleRightItems,
+      promptImage: values.promptImage,
     },
     gradingConfig: {
       matches: values.pairs.map((pair) => ({
@@ -918,6 +931,13 @@ function valuesToDraft(values: MatchingEditorValues) {
       scoringMode: values.scoringMode,
     },
   }
+}
+
+function toPromptImage(value: unknown): AssignmentPromptImage | null {
+  if (typeof value !== 'object' || value === null || !('attachmentId' in value) || !('width' in value) || !('height' in value)) return null
+  return typeof value.attachmentId === 'string' && typeof value.width === 'number' && typeof value.height === 'number'
+    ? { attachmentId: value.attachmentId, width: value.width, height: value.height }
+    : null
 }
 
 function updatePair(

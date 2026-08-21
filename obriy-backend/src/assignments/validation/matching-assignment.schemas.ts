@@ -4,6 +4,7 @@ import type {
   AssignmentValidationDefinition,
   AssignmentValidationIssue,
 } from './assignment-validation.types';
+import { assignmentPromptImageSchema } from './assignment-image.schemas';
 
 export const MATCHING_SCHEMA_VERSION = 1;
 export const MATCHING_MAX_ITEMS_PER_COLUMN = 50;
@@ -39,6 +40,7 @@ export const matchingDraftPublicConfigSchema = z
     leftItems: matchingDraftItemsSchema,
     rightItems: matchingDraftItemsSchema,
     shuffleRightItems: z.boolean(),
+    promptImage: assignmentPromptImageSchema.nullable().optional(),
   })
   .partial()
   .strict()
@@ -49,6 +51,7 @@ export const matchingPublishPublicConfigSchema = z
     leftItems: matchingPublishItemsSchema,
     rightItems: matchingPublishItemsSchema,
     shuffleRightItems: z.boolean(),
+    promptImage: assignmentPromptImageSchema.nullable().optional(),
   })
   .strict()
   .superRefine(validateUniqueIdsAcrossColumns);

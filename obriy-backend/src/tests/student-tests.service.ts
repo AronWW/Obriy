@@ -19,6 +19,9 @@ import {
 import { createHash, randomUUID } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { gradeChoiceResponse } from '../assignments/grading/choice-grading';
+import { gradeCategorizationResponse } from '../assignments/grading/categorization-grading';
+import { gradeFillBlanksResponse } from '../assignments/grading/fill-blanks-grading';
+import { gradeImageHotspotResponse } from '../assignments/grading/image-hotspot-grading';
 import { gradeMatchingResponse } from '../assignments/grading/matching-grading';
 import { gradeOrderingResponse } from '../assignments/grading/ordering-grading';
 import { validateAssignmentStudentResponse } from '../assignments/validation';
@@ -534,7 +537,13 @@ export class StudentTestsService {
             ? gradeMatchingResponse(gradingInput)
             : assignmentType === AssignmentType.ORDERING
               ? gradeOrderingResponse(gradingInput)
-              : gradeChoiceResponse(gradingInput);
+              : assignmentType === AssignmentType.CATEGORIZATION
+                ? gradeCategorizationResponse(gradingInput)
+                : assignmentType === AssignmentType.FILL_BLANKS
+                  ? gradeFillBlanksResponse(gradingInput)
+                  : assignmentType === AssignmentType.IMAGE_HOTSPOT
+                    ? gradeImageHotspotResponse(gradingInput)
+                    : gradeChoiceResponse(gradingInput);
         await transaction.testAnswer.update({
           where: { id: answer.id },
           data: {
@@ -815,6 +824,39 @@ export class StudentTestsService {
         response.orderedItemIds.length === publicConfig.items.length
       );
     }
+    if (type === AssignmentType.CATEGORIZATION) {
+      return (
+        Array.isArray(response.assignments) &&
+        this.isRecord(publicConfig) &&
+        Array.isArray(publicConfig.items) &&
+        publicConfig.items.length > 0 &&
+        response.assignments.length === publicConfig.items.length
+      );
+    }
+    if (type === AssignmentType.FILL_BLANKS) {
+      if (
+        !Array.isArray(response.answers) ||
+        !this.isRecord(publicConfig) ||
+        !Array.isArray(publicConfig.segments)
+      )
+        return false;
+      const blankCount = publicConfig.segments.filter(
+        (segment) => this.isRecord(segment) && segment.type === 'BLANK',
+      ).length;
+      return (
+        blankCount > 0 &&
+        response.answers.length === blankCount &&
+        response.answers.every(
+          (answer) =>
+            this.isRecord(answer) &&
+            typeof answer.text === 'string' &&
+            answer.text.trim().length > 0,
+        )
+      );
+    }
+    if (type === AssignmentType.IMAGE_HOTSPOT) {
+      return typeof response.x === 'number' && typeof response.y === 'number';
+    }
     return false;
   }
 
@@ -834,6 +876,9 @@ export class StudentTestsService {
     if (type === AssignmentType.ORDERING) {
       return { orderedItemIds: [] };
     }
+    if (type === AssignmentType.CATEGORIZATION) return { assignments: [] };
+    if (type === AssignmentType.FILL_BLANKS) return { answers: [] };
+    if (type === AssignmentType.IMAGE_HOTSPOT) return {};
     return {};
   }
 
@@ -1022,7 +1067,43 @@ export class StudentTestsService {
       }
       return { ...config, items };
     }
+    if (type === AssignmentType.CATEGORIZATION && Array.isArray(config.items)) {
+      const sourceItems = config.items.filter(
+        (item): item is Record<string, unknown> => this.isRecord(item),
+      );
+      const items = this.shuffleRecords(sourceItems, seed);
+      return { ...config, items };
+    }
+    if (
+      type === AssignmentType.FILL_BLANKS &&
+      config.wordBankEnabled === true &&
+      Array.isArray(config.wordBank)
+    ) {
+      const words = config.wordBank.filter(
+        (item): item is Record<string, unknown> => this.isRecord(item),
+      );
+      return { ...config, wordBank: this.shuffleRecords(words, seed) };
+    }
     return config;
+  }
+
+  private shuffleRecords(
+    source: Record<string, unknown>[],
+    seed: string,
+  ): Record<string, unknown>[] {
+    const values = source.map((value) => ({ ...value }));
+    values.sort((left, right) =>
+      this.stableRank(seed, String(left.id)).localeCompare(
+        this.stableRank(seed, String(right.id)),
+      ),
+    );
+    if (
+      values.length > 1 &&
+      values.every((value, index) => value.id === source[index]?.id)
+    ) {
+      values.push(values.shift()!);
+    }
+    return values;
   }
 
   private stableRank(seed: string, value: string): string {

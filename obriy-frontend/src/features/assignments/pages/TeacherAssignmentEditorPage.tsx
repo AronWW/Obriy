@@ -22,10 +22,12 @@ import {
 } from '../api/assignments.api'
 import { AssignmentConfirmDialog } from '../components/AssignmentConfirmDialog'
 import { WrittenAssignmentPreview } from '../components/WrittenAssignmentPreview'
+import { TeacherPromptImageField } from '../components/TeacherPromptImageField'
 import { assignmentQueryKeys } from '../model/assignment-query-keys'
 import { TeacherChoiceAssignmentEditorPage } from './TeacherChoiceAssignmentEditorPage'
 import { TeacherMatchingAssignmentEditorPage } from './TeacherMatchingAssignmentEditorPage'
 import { TeacherOrderingAssignmentEditorPage } from './TeacherOrderingAssignmentEditorPage'
+import { TeacherInteractiveAssignmentEditorPage } from './TeacherInteractiveAssignmentEditorPage'
 import type {
   AssignmentEditor,
   AssignmentEditorRevision,
@@ -86,6 +88,13 @@ export function TeacherAssignmentEditorPage() {
   }
   if (type === 'ORDERING') {
     return <TeacherOrderingAssignmentEditorPage />
+  }
+  if (
+    type === 'CATEGORIZATION' ||
+    type === 'FILL_BLANKS' ||
+    type === 'IMAGE_HOTSPOT'
+  ) {
+    return <TeacherInteractiveAssignmentEditorPage type={type} />
   }
 
   return <TeacherWrittenAssignmentEditorPage />
@@ -453,6 +462,17 @@ function TeacherWrittenAssignmentEditorPage() {
                 />
                 <small>{t('assignments.editor.optional')}</small>
               </label>
+              <TeacherPromptImageField
+                assignmentId={assignmentId}
+                onChange={(promptImage) =>
+                  setValues((current) => ({
+                    ...current,
+                    publicConfig: { ...current.publicConfig, promptImage },
+                  }))
+                }
+                promptImage={values.publicConfig.promptImage ?? null}
+                revision={assignmentQuery.data?.draftRevision}
+              />
             </section>
 
             <section className={styles.editorSection}>

@@ -3,6 +3,7 @@ import type {
   AssignmentValidationDefinition,
   AssignmentValidationIssue,
 } from './assignment-validation.types';
+import { assignmentPromptImageSchema } from './assignment-image.schemas';
 
 export const CHOICE_SCHEMA_VERSION = 1;
 export const CHOICE_MAX_OPTIONS = 50;
@@ -37,6 +38,7 @@ export const choiceDraftPublicConfigSchema = z
   .object({
     options: choiceDraftOptionsSchema,
     shuffleOptions: z.boolean(),
+    promptImage: assignmentPromptImageSchema.nullable().optional(),
   })
   .partial()
   .strict();
@@ -45,6 +47,7 @@ export const choicePublishPublicConfigSchema = z
   .object({
     options: choicePublishOptionsSchema,
     shuffleOptions: z.boolean(),
+    promptImage: assignmentPromptImageSchema.nullable().optional(),
   })
   .strict();
 

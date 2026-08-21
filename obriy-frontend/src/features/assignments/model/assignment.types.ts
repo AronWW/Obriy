@@ -23,12 +23,19 @@ export interface AssignmentRubricItem {
   weight: number
 }
 
+export interface AssignmentPromptImage {
+  attachmentId: string
+  width: number
+  height: number
+}
+
 export interface WrittenPublicConfig {
   responseMode: 'SHORT' | 'LONG'
   minLength: number
   maxLength: number
   allowAttachments: boolean
   rubric: AssignmentRubricItem[]
+  promptImage?: AssignmentPromptImage | null
 }
 
 export interface ChoiceOption {
@@ -39,6 +46,7 @@ export interface ChoiceOption {
 export interface ChoicePublicConfig {
   options: ChoiceOption[]
   shuffleOptions: boolean
+  promptImage?: AssignmentPromptImage | null
 }
 
 export interface ChoiceGradingConfig {
@@ -60,6 +68,7 @@ export interface MatchingPublicConfig {
   leftItems: MatchingItem[]
   rightItems: MatchingItem[]
   shuffleRightItems: boolean
+  promptImage?: AssignmentPromptImage | null
 }
 
 export interface MatchingGradingConfig {
@@ -74,11 +83,47 @@ export interface OrderingItem {
 
 export interface OrderingPublicConfig {
   items: OrderingItem[]
+  promptImage?: AssignmentPromptImage | null
 }
 
 export interface OrderingGradingConfig {
   correctOrderIds: string[]
   scoringMode: 'ALL_OR_NOTHING' | 'PARTIAL'
+}
+
+export interface CategorizationPublicConfig {
+  categories: Array<{ id: string; title: string }>
+  items: Array<{ id: string; text: string }>
+  promptImage?: AssignmentPromptImage | null
+}
+
+export interface CategorizationGradingConfig {
+  assignments: Array<{ itemId: string; categoryId: string }>
+  scoringMode: 'ALL_OR_NOTHING' | 'PARTIAL'
+}
+
+export type FillBlanksSegment =
+  | { id: string; type: 'TEXT'; text: string }
+  | { id: string; type: 'BLANK' }
+
+export interface FillBlanksPublicConfig {
+  segments: FillBlanksSegment[]
+  wordBankEnabled: boolean
+  wordBank: Array<{ id: string; text: string }>
+  promptImage?: AssignmentPromptImage | null
+}
+
+export interface FillBlanksGradingConfig {
+  blanks: Array<{ blankId: string; acceptedAnswers: string[] }>
+  scoringMode: 'ALL_OR_NOTHING' | 'PARTIAL'
+}
+
+export interface ImageHotspotPublicConfig {
+  promptImage: AssignmentPromptImage | null
+}
+
+export interface ImageHotspotGradingConfig {
+  target: { x: number; y: number; radius: number }
 }
 
 export interface AssignmentRevisionSummary {
@@ -159,11 +204,17 @@ export interface AssignmentDraftInput {
     | ChoicePublicConfig
     | MatchingPublicConfig
     | OrderingPublicConfig
+    | CategorizationPublicConfig
+    | FillBlanksPublicConfig
+    | ImageHotspotPublicConfig
   gradingConfig:
     | { mode: 'MANUAL' }
     | ChoiceGradingConfig
     | MatchingGradingConfig
     | OrderingGradingConfig
+    | CategorizationGradingConfig
+    | FillBlanksGradingConfig
+    | ImageHotspotGradingConfig
 }
 
 export interface WrittenAssignmentDraftInput extends AssignmentDraftInput {
@@ -179,6 +230,21 @@ export interface MatchingAssignmentDraftInput extends AssignmentDraftInput {
 export interface OrderingAssignmentDraftInput extends AssignmentDraftInput {
   publicConfig: OrderingPublicConfig
   gradingConfig: OrderingGradingConfig
+}
+
+export interface CategorizationAssignmentDraftInput extends AssignmentDraftInput {
+  publicConfig: CategorizationPublicConfig
+  gradingConfig: CategorizationGradingConfig
+}
+
+export interface FillBlanksAssignmentDraftInput extends AssignmentDraftInput {
+  publicConfig: FillBlanksPublicConfig
+  gradingConfig: FillBlanksGradingConfig
+}
+
+export interface ImageHotspotAssignmentDraftInput extends AssignmentDraftInput {
+  publicConfig: ImageHotspotPublicConfig
+  gradingConfig: ImageHotspotGradingConfig
 }
 
 export interface CreateAssignmentInput {

@@ -24,9 +24,11 @@ import {
 } from '../api/assignments.api'
 import { AssignmentConfirmDialog } from '../components/AssignmentConfirmDialog'
 import { AssignmentDialog } from '../components/AssignmentDialog'
+import { TeacherPromptImageField } from '../components/TeacherPromptImageField'
 import { assignmentQueryKeys } from '../model/assignment-query-keys'
 import type {
   AssignmentEditor,
+  AssignmentPromptImage,
   OrderingGradingConfig,
   OrderingItem,
   OrderingPublicConfig,
@@ -39,6 +41,7 @@ interface OrderingEditorValues {
   explanation: string
   instructions: string
   items: OrderingItem[]
+  promptImage: AssignmentPromptImage | null
   prompt: string
   scoringMode: OrderingGradingConfig['scoringMode']
   title: string
@@ -371,6 +374,12 @@ export function TeacherOrderingAssignmentEditorPage() {
                   value={values.instructions}
                 />
               </label>
+              <TeacherPromptImageField
+                assignmentId={assignmentId}
+                onChange={(promptImage) => setValues((current) => ({ ...current, promptImage }))}
+                promptImage={values.promptImage}
+                revision={assignmentQuery.data?.draftRevision}
+              />
             </section>
 
             <section className={styles.editorSection}>
@@ -712,6 +721,7 @@ function createInitialValues(): OrderingEditorValues {
     explanation: '',
     instructions: '',
     items: [createItem(), createItem()],
+    promptImage: null,
     prompt: '',
     scoringMode: 'PARTIAL',
     title: '',
@@ -744,6 +754,7 @@ function assignmentToValues(
     explanation: revision?.explanation ?? '',
     instructions: revision?.instructions ?? '',
     items: orderedItems,
+    promptImage: publicConfig.promptImage ?? null,
     prompt: revision?.prompt ?? '',
     scoringMode: gradingConfig.scoringMode,
     title: revision?.title ?? '',
@@ -757,6 +768,7 @@ function toOrderingPublicConfig(
     items: Array.isArray(value?.items)
       ? value.items.filter(isOrderingItem).map((item) => ({ ...item }))
       : [],
+    promptImage: toPromptImage(value?.promptImage),
   }
 }
 
@@ -791,12 +803,19 @@ function valuesToDraft(values: OrderingEditorValues) {
     prompt: values.prompt,
     instructions: values.instructions.trim() ? values.instructions : null,
     explanation: values.explanation.trim() ? values.explanation : null,
-    publicConfig: { items: values.items },
+    publicConfig: { items: values.items, promptImage: values.promptImage },
     gradingConfig: {
       correctOrderIds: values.items.map((item) => item.id),
       scoringMode: values.scoringMode,
     },
   }
+}
+
+function toPromptImage(value: unknown): AssignmentPromptImage | null {
+  if (typeof value !== 'object' || value === null || !('attachmentId' in value) || !('width' in value) || !('height' in value)) return null
+  return typeof value.attachmentId === 'string' && typeof value.width === 'number' && typeof value.height === 'number'
+    ? { attachmentId: value.attachmentId, width: value.width, height: value.height }
+    : null
 }
 
 function updateItem(

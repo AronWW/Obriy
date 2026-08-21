@@ -28,6 +28,25 @@ describe('validateEnvironment', () => {
     ).toThrow('GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET');
   });
 
+  it('requires the complete Cloudinary credential group', () => {
+    expect(() =>
+      validateEnvironment({
+        ...validEnvironment,
+        CLOUDINARY_CLOUD_NAME: 'obriy',
+      }),
+    ).toThrow(
+      'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET',
+    );
+    expect(() =>
+      validateEnvironment({
+        ...validEnvironment,
+        CLOUDINARY_CLOUD_NAME: 'obriy',
+        CLOUDINARY_API_KEY: 'key',
+        CLOUDINARY_API_SECRET: 'secret',
+      }),
+    ).not.toThrow();
+  });
+
   it('requires callback and independent state secrets for Google OAuth', () => {
     expect(() =>
       validateEnvironment({

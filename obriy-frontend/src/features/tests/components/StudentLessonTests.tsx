@@ -21,7 +21,8 @@ import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../../shared/api/api-client'
 import { AssignmentConfirmDialog } from '../../assignments/components/AssignmentConfirmDialog'
 import { AssignmentDialog } from '../../assignments/components/AssignmentDialog'
-import type { ChoiceOption, ChoicePublicConfig, MatchingPair, MatchingPublicConfig, OrderingItem, OrderingPublicConfig, WrittenPublicConfig } from '../../assignments/model/assignment.types'
+import { assignmentImageUrl } from '../../assignments/api/assignments.api'
+import type { CategorizationPublicConfig, ChoiceOption, ChoicePublicConfig, FillBlanksPublicConfig, MatchingPair, MatchingPublicConfig, OrderingItem, OrderingPublicConfig, ImageHotspotPublicConfig, WrittenPublicConfig } from '../../assignments/model/assignment.types'
 import {
   getStudentTestRelease,
   listStudentLessonTests,
@@ -276,6 +277,7 @@ function StudentTestRunner({ lessonId, onClose, releaseId }: { lessonId: string;
             <h3>{activeItem.title}</h3>
             <p className={styles.questionPrompt}>{activeItem.prompt}</p>
             {activeItem.instructions && <p className={styles.questionInstructions}>{activeItem.instructions}</p>}
+            {activeItem.type !== 'IMAGE_HOTSPOT' && <PromptImage item={activeItem} />}
             <AnswerField item={activeItem} onChange={(response) => setDrafts((current) => ({ ...current, [activeItem.id]: response }))} response={activeDraft} />
             {error && <p className={styles.inlineError} role="alert">{studentError(error, t)}</p>}
             <footer className={styles.runnerActions}>
@@ -388,6 +390,15 @@ function AnswerField({ item, onChange, response }: { item: StudentTestItem; onCh
   if (item.type === 'ORDERING') {
     return <OrderingAnswerField item={item} onChange={onChange} response={response} />
   }
+  if (item.type === 'CATEGORIZATION') {
+    return <CategorizationAnswerField item={item} onChange={onChange} response={response} />
+  }
+  if (item.type === 'FILL_BLANKS') {
+    return <FillBlanksAnswerField item={item} onChange={onChange} response={response} />
+  }
+  if (item.type === 'IMAGE_HOTSPOT') {
+    return <ImageHotspotAnswerField item={item} onChange={onChange} response={response} />
+  }
   const config = item.publicConfig as unknown as ChoicePublicConfig
   const selected = Array.isArray(response.selectedOptionIds) ? response.selectedOptionIds.filter((value): value is string => typeof value === 'string') : []
   return (
@@ -467,6 +478,9 @@ function emptyResponse(item: StudentTestItem): ResponseData {
     const config = item.publicConfig as unknown as OrderingPublicConfig
     return { orderedItemIds: config.items.map((orderingItem) => orderingItem.id) }
   }
+  if (item.type === 'CATEGORIZATION') return { assignments: [] }
+  if (item.type === 'FILL_BLANKS') return { answers: [] }
+  if (item.type === 'IMAGE_HOTSPOT') return {}
   return { selectedOptionIds: [] }
 }
 
@@ -480,6 +494,16 @@ function hasAnswer(item: StudentTestItem, response: ResponseData): boolean {
     const config = item.publicConfig as unknown as OrderingPublicConfig
     return Array.isArray(response.orderedItemIds) && response.orderedItemIds.length === config.items.length
   }
+  if (item.type === 'CATEGORIZATION') {
+    const config = item.publicConfig as unknown as CategorizationPublicConfig
+    return Array.isArray(response.assignments) && response.assignments.length === config.items.length
+  }
+  if (item.type === 'FILL_BLANKS') {
+    const config = item.publicConfig as unknown as FillBlanksPublicConfig
+    const blankCount = config.segments.filter((segment) => segment.type === 'BLANK').length
+    return Array.isArray(response.answers) && response.answers.length === blankCount && response.answers.every((answer) => isRecord(answer) && typeof answer.text === 'string' && answer.text.trim() !== '')
+  }
+  if (item.type === 'IMAGE_HOTSPOT') return typeof response.x === 'number' && typeof response.y === 'number'
   return Array.isArray(response.selectedOptionIds) && response.selectedOptionIds.length > 0
 }
 
@@ -563,6 +587,103 @@ function OrderingAnswerField({ item, onChange, response }: { item: StudentTestIt
   )
 }
 
+function CategorizationAnswerField({ item, onChange, response }: { item: StudentTestItem; onChange: (response: ResponseData) => void; response: ResponseData }) {
+  const { t } = useTranslation()
+  const config = item.publicConfig as unknown as CategorizationPublicConfig
+  const assignments = Array.isArray(response.assignments)
+    ? response.assignments.filter((value): value is { itemId: string; categoryId: string } => isRecord(value) && typeof value.itemId === 'string' && typeof value.categoryId === 'string')
+    : []
+  const selected = new Map(assignments.map((value) => [value.itemId, value.categoryId]))
+  return (
+    <fieldset className={styles.categorizationAnswers}>
+      <legend>{t('tests.student.categorizeItems')}</legend>
+      {config.items.map((categoryItem, index) => (
+        <label key={categoryItem.id}>
+          <span>{index + 1}</span>
+          <strong>{categoryItem.text}</strong>
+          <select
+            aria-label={t('tests.student.categoryFor', { item: categoryItem.text })}
+            onChange={(event) => {
+              const next = assignments.filter((value) => value.itemId !== categoryItem.id)
+              if (event.target.value) next.push({ itemId: categoryItem.id, categoryId: event.target.value })
+              onChange({ assignments: next })
+            }}
+            value={selected.get(categoryItem.id) ?? ''}
+          >
+            <option value="">{t('tests.student.categoryPlaceholder')}</option>
+            {config.categories.map((category) => <option key={category.id} value={category.id}>{category.title}</option>)}
+          </select>
+        </label>
+      ))}
+    </fieldset>
+  )
+}
+
+function FillBlanksAnswerField({ item, onChange, response }: { item: StudentTestItem; onChange: (response: ResponseData) => void; response: ResponseData }) {
+  const { t } = useTranslation()
+  const config = item.publicConfig as unknown as FillBlanksPublicConfig
+  const answers = Array.isArray(response.answers)
+    ? response.answers.filter((value): value is { blankId: string; text: string } => isRecord(value) && typeof value.blankId === 'string' && typeof value.text === 'string')
+    : []
+  const answerById = new Map(answers.map((answer) => [answer.blankId, answer.text]))
+  const setAnswer = (blankId: string, text: string) => {
+    const next = answers.filter((answer) => answer.blankId !== blankId)
+    next.push({ blankId, text })
+    onChange({ answers: next })
+  }
+  const firstEmptyBlank = () => config.segments.find((segment) => segment.type === 'BLANK' && !(answerById.get(segment.id) ?? '').trim())
+  return (
+    <div className={styles.fillBlanksAnswer}>
+      <div className={styles.fillBlanksText}>
+        {config.segments.map((segment, index) => segment.type === 'TEXT'
+          ? <span key={segment.id}>{segment.text}</span>
+          : <input aria-label={t('tests.student.blankNumber', { count: index + 1 })} key={segment.id} maxLength={500} onChange={(event) => setAnswer(segment.id, event.target.value)} value={answerById.get(segment.id) ?? ''} />)}
+      </div>
+      {config.wordBankEnabled && config.wordBank.length > 0 && (
+        <div className={styles.wordBank}>
+          <strong>{t('tests.student.wordBank')}</strong>
+          <div>{config.wordBank.map((word) => <button key={word.id} onClick={() => { const blank = firstEmptyBlank(); if (blank) setAnswer(blank.id, word.text) }} type="button">{word.text}</button>)}</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ImageHotspotAnswerField({ item, onChange, response }: { item: StudentTestItem; onChange: (response: ResponseData) => void; response: ResponseData }) {
+  const { t } = useTranslation()
+  const config = item.publicConfig as unknown as ImageHotspotPublicConfig
+  const x = typeof response.x === 'number' ? response.x : 0.5
+  const y = typeof response.y === 'number' ? response.y : 0.5
+  const selected = typeof response.x === 'number' && typeof response.y === 'number'
+  if (!config.promptImage) return null
+  return (
+    <div className={styles.hotspotAnswer}>
+      <p>{t('tests.student.hotspotInstruction')}</p>
+      <button
+        aria-label={t('tests.student.hotspotImage')}
+        onClick={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect()
+          onChange({ x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height })
+        }}
+        type="button"
+      >
+        <img alt="" src={assignmentImageUrl(config.promptImage.attachmentId)} />
+        {selected && <span style={{ left: `${x * 100}%`, top: `${y * 100}%` }} />}
+      </button>
+      <div className={styles.hotspotCoordinates}>
+        <label>{t('tests.student.hotspotHorizontal')}<input max="1" min="0" onChange={(event) => onChange({ x: Number(event.target.value), y })} step="0.01" type="range" value={x} /></label>
+        <label>{t('tests.student.hotspotVertical')}<input max="1" min="0" onChange={(event) => onChange({ x, y: Number(event.target.value) })} step="0.01" type="range" value={y} /></label>
+      </div>
+    </div>
+  )
+}
+
+function PromptImage({ item }: { item: StudentTestItem }) {
+  const config = item.publicConfig as { promptImage?: { attachmentId?: string } | null }
+  if (!config.promptImage?.attachmentId) return null
+  return <img className={styles.questionImage} src={assignmentImageUrl(config.promptImage.attachmentId)} alt="" />
+}
+
 function normalizeResponse(item: StudentTestItem | undefined, response: ResponseData): ResponseData {
   if (item?.type !== 'ORDERING') return response
   if (Array.isArray(response.orderedItemIds) && response.orderedItemIds.length > 0) return response
@@ -575,6 +696,10 @@ function moveArrayItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
   if (moved === undefined) return items
   next.splice(toIndex, 0, moved)
   return next
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function studentError(error: Error | null, t: (key: string) => string): string {

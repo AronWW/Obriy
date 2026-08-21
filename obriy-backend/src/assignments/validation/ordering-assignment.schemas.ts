@@ -4,6 +4,7 @@ import type {
   AssignmentValidationDefinition,
   AssignmentValidationIssue,
 } from './assignment-validation.types';
+import { assignmentPromptImageSchema } from './assignment-image.schemas';
 
 export const ORDERING_SCHEMA_VERSION = 1;
 export const ORDERING_MAX_ITEMS = 50;
@@ -35,12 +36,18 @@ const orderingPublishItemsSchema = z
   .superRefine(validateUniqueIds);
 
 export const orderingDraftPublicConfigSchema = z
-  .object({ items: orderingDraftItemsSchema })
+  .object({
+    items: orderingDraftItemsSchema,
+    promptImage: assignmentPromptImageSchema.nullable().optional(),
+  })
   .partial()
   .strict();
 
 export const orderingPublishPublicConfigSchema = z
-  .object({ items: orderingPublishItemsSchema })
+  .object({
+    items: orderingPublishItemsSchema,
+    promptImage: assignmentPromptImageSchema.nullable().optional(),
+  })
   .strict();
 
 const orderedIdsSchema = z

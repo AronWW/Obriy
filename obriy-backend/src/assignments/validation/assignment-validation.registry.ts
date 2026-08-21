@@ -24,6 +24,18 @@ import {
   ORDERING_SCHEMA_VERSION,
   orderingAssignmentValidationDefinition,
 } from './ordering-assignment.schemas';
+import {
+  CATEGORIZATION_SCHEMA_VERSION,
+  categorizationAssignmentValidationDefinition,
+} from './categorization-assignment.schemas';
+import {
+  FILL_BLANKS_SCHEMA_VERSION,
+  fillBlanksAssignmentValidationDefinition,
+} from './fill-blanks-assignment.schemas';
+import {
+  IMAGE_HOTSPOT_SCHEMA_VERSION,
+  imageHotspotAssignmentValidationDefinition,
+} from './image-hotspot-assignment.schemas';
 
 type UnknownAssignmentValidationDefinition = AssignmentValidationDefinition<
   unknown,
@@ -53,6 +65,16 @@ const assignmentValidationRegistry: Readonly<
   }),
   ORDERING: Object.freeze({
     [ORDERING_SCHEMA_VERSION]: orderingAssignmentValidationDefinition,
+  }),
+  CATEGORIZATION: Object.freeze({
+    [CATEGORIZATION_SCHEMA_VERSION]:
+      categorizationAssignmentValidationDefinition,
+  }),
+  FILL_BLANKS: Object.freeze({
+    [FILL_BLANKS_SCHEMA_VERSION]: fillBlanksAssignmentValidationDefinition,
+  }),
+  IMAGE_HOTSPOT: Object.freeze({
+    [IMAGE_HOTSPOT_SCHEMA_VERSION]: imageHotspotAssignmentValidationDefinition,
   }),
 });
 

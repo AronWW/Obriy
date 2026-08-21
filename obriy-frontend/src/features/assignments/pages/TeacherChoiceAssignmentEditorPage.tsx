@@ -23,9 +23,11 @@ import {
 } from '../api/assignments.api'
 import { AssignmentConfirmDialog } from '../components/AssignmentConfirmDialog'
 import { AssignmentDialog } from '../components/AssignmentDialog'
+import { TeacherPromptImageField } from '../components/TeacherPromptImageField'
 import { assignmentQueryKeys } from '../model/assignment-query-keys'
 import type {
   AssignmentEditor,
+  AssignmentPromptImage,
   AssignmentType,
   ChoiceGradingConfig,
   ChoiceOption,
@@ -39,6 +41,7 @@ interface ChoiceEditorValues {
   explanation: string
   instructions: string
   options: ChoiceOption[]
+  promptImage: AssignmentPromptImage | null
   prompt: string
   scoringMode: ChoiceGradingConfig['scoringMode']
   selectedCorrectIds: string[]
@@ -352,6 +355,12 @@ export function TeacherChoiceAssignmentEditorPage() {
                   value={values.instructions}
                 />
               </label>
+              <TeacherPromptImageField
+                assignmentId={assignmentId}
+                onChange={(promptImage) => setValues((current) => ({ ...current, promptImage }))}
+                promptImage={values.promptImage}
+                revision={assignmentQuery.data?.draftRevision}
+              />
             </section>
 
             <section className={styles.editorSection}>
@@ -679,6 +688,7 @@ function createInitialValues(): ChoiceEditorValues {
     explanation: '',
     instructions: '',
     options: [createOption(), createOption()],
+    promptImage: null,
     prompt: '',
     scoringMode: 'ALL_OR_NOTHING',
     selectedCorrectIds: [],
@@ -712,6 +722,7 @@ function assignmentToValues(assignment: AssignmentEditor): ChoiceEditorValues {
       publicConfig.options.length >= 2
         ? publicConfig.options
         : [...publicConfig.options, ...Array.from({ length: 2 - publicConfig.options.length }, createOption)],
+    promptImage: publicConfig.promptImage ?? null,
     prompt: revision?.prompt ?? '',
     scoringMode: gradingConfig.scoringMode,
     selectedCorrectIds: gradingConfig.correctOptionIds,
@@ -726,6 +737,7 @@ function toChoicePublicConfig(value: Record<string, unknown> | undefined): Choic
     : []
   return {
     options,
+    promptImage: toPromptImage(value?.promptImage),
     shuffleOptions: value?.shuffleOptions === true,
   }
 }
@@ -764,6 +776,7 @@ function valuesToDraft(
     publicConfig: {
       options: values.options,
       shuffleOptions: values.shuffleOptions,
+      promptImage: values.promptImage,
     },
     gradingConfig: {
       correctOptionIds: values.selectedCorrectIds,
@@ -771,6 +784,13 @@ function valuesToDraft(
         type === 'SINGLE_CHOICE' ? 'ALL_OR_NOTHING' : values.scoringMode,
     } as ChoiceGradingConfig,
   }
+}
+
+function toPromptImage(value: unknown): AssignmentPromptImage | null {
+  if (typeof value !== 'object' || value === null || !('attachmentId' in value) || !('width' in value) || !('height' in value)) return null
+  return typeof value.attachmentId === 'string' && typeof value.width === 'number' && typeof value.height === 'number'
+    ? { attachmentId: value.attachmentId, width: value.width, height: value.height }
+    : null
 }
 
 function updateOption(

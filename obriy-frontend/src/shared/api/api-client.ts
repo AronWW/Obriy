@@ -45,7 +45,8 @@ export async function apiRequest<T>(
   headers.set('Accept', 'application/json')
   headers.set('Accept-Language', getRequestLanguage())
 
-  if (body !== undefined) {
+  const isFormData = body instanceof FormData
+  if (body !== undefined && !isFormData) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -58,7 +59,12 @@ export async function apiRequest<T>(
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...requestInit,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body:
+        body === undefined
+          ? undefined
+          : isFormData
+            ? body
+            : JSON.stringify(body),
       credentials: 'include',
       headers,
     })

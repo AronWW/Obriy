@@ -112,32 +112,39 @@ This rewards an almost-correct chronology more fairly than exact positions.
 ### `CATEGORIZATION`
 
 `publicConfig` contains `categories: [{ id, title }]`,
-`items: [{ id, text }]`, and shuffle settings.
+`items: [{ id, text }]`. Student delivery always shuffles the items.
 
-`gradingConfig` maps every `itemId` to one `categoryId`.
+`gradingConfig` maps every `itemId` to exactly one `categoryId` and contains
+`scoringMode: "PARTIAL | ALL_OR_NOTHING"`.
 
 `responseData` contains the student's item-to-category mappings. Score is the
 percentage of correctly categorized items.
 
 ### `FILL_BLANKS`
 
-`publicConfig` contains ordered text segments, opaque blank IDs, an optional
-word bank, and case/whitespace display settings.
+`publicConfig` contains ordered text/blank segments, opaque blank IDs, and an
+optional word bank with distractors.
 
-`gradingConfig` contains accepted answers per blank and explicit normalization
-rules. `responseData` maps blank IDs to submitted text or word-bank item IDs.
+`gradingConfig` contains one or more accepted answers per blank and a scoring
+mode. `responseData` maps blank IDs to submitted text. Comparison trims text,
+collapses repeated whitespace, and ignores case.
 
 Score is the percentage of correctly completed blanks. No fuzzy or AI grading
 is used unless it is introduced as a separately approved feature.
 
 ### `IMAGE_HOTSPOT`
 
-`publicConfig` references a prompt attachment, its intrinsic dimensions, and
-the allowed number of selections.
+`publicConfig` references one Cloudinary-backed prompt attachment and its
+intrinsic dimensions.
 
-`gradingConfig` contains normalized hotspot shapes or points and their scoring
-tolerances. `responseData` contains normalized student coordinates so resizing
-the image does not alter the answer.
+`gradingConfig` contains one normalized target point and a teacher-controlled
+radius relative to the image's shorter side. The editor renders this radius
+over the image; students never receive it. `responseData` contains one pair of
+normalized coordinates so resizing the image does not alter the answer.
+
+Every non-map assignment may optionally reference one prompt image. Uploads
+are signed server-side Cloudinary uploads; only the attachment ID and intrinsic
+dimensions enter `publicConfig`, never Cloudinary credentials.
 
 ### `MAP_POINT`
 

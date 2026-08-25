@@ -18,7 +18,7 @@ const validPublicConfig = {
   responseMode: 'LONG',
   minLength: 10,
   maxLength: 2_000,
-  allowAttachments: true,
+  allowAttachments: false,
   rubric: [
     {
       id: rubricId,
@@ -41,7 +41,7 @@ describe('WRITTEN assignment validation', () => {
           responseMode: 'LONG',
           minLength: 0,
           maxLength: WRITTEN_DEFAULT_MAX_TEXT_LENGTH,
-          allowAttachments: true,
+          allowAttachments: false,
           rubric: [],
         },
         gradingConfig: { mode: 'MANUAL' },
@@ -110,6 +110,40 @@ describe('WRITTEN assignment validation', () => {
         gradingConfig: { mode: 'AUTO', correctText: 'secret answer' },
       }),
     ).toMatchObject({ success: false });
+  });
+
+  it('keeps response attachments unavailable until their upload flow exists', () => {
+    expect(
+      validateAssignmentPublishPayload('WRITTEN', 1, {
+        publicConfig: { ...validPublicConfig, allowAttachments: true },
+        gradingConfig: { mode: 'MANUAL' },
+      }),
+    ).toMatchObject({
+      success: false,
+      issues: [
+        {
+          path: ['publicConfig', 'allowAttachments'],
+          code: 'FEATURE_UNAVAILABLE',
+        },
+      ],
+    });
+
+    expect(
+      validateAssignmentStudentResponse(
+        'WRITTEN',
+        1,
+        { text: 'A complete response.', attachmentIds: [attachmentId] },
+        { ...validPublicConfig, minLength: 0, allowAttachments: true },
+      ),
+    ).toMatchObject({
+      success: false,
+      issues: [
+        {
+          path: ['attachmentIds'],
+          code: 'FEATURE_UNAVAILABLE',
+        },
+      ],
+    });
   });
 
   it.each([

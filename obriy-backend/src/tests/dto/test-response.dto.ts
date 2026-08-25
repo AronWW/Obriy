@@ -29,6 +29,12 @@ export class TestItemDto {
   @ApiProperty()
   title: string;
 
+  @ApiProperty({
+    description:
+      'Whether the assignment has a newer draft or published revision',
+  })
+  hasUpdate: boolean;
+
   constructor(data: TestItemDto) {
     Object.assign(this, data);
   }

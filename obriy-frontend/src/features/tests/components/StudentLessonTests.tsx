@@ -18,7 +18,9 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
+import { registerWorkspaceNavigationGuard } from '../../../shared/navigation/workspace-navigation-guard'
 import { AssignmentConfirmDialog } from '../../assignments/components/AssignmentConfirmDialog'
 import { AssignmentDialog } from '../../assignments/components/AssignmentDialog'
 import { assignmentImageUrl } from '../../assignments/api/assignments.api'
@@ -113,6 +115,7 @@ function StudentTestCard({ number, onOpen, test }: { number: number; onOpen: () 
 
 function StudentTestRunner({ lessonId, onClose, releaseId }: { lessonId: string; onClose: () => void; releaseId: string }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [activeIndex, setActiveIndex] = useState(0)
   const [drafts, setDrafts] = useState<Record<string, ResponseData>>({})
@@ -174,6 +177,15 @@ function StudentTestRunner({ lessonId, onClose, releaseId }: { lessonId: string;
       setSaved((current) => ({ ...current, [variables.itemId]: JSON.stringify(variables.response) }))
     },
   })
+  const persistDirtyAnswers = useCallback(async () => {
+    for (const item of release?.items ?? []) {
+      const response = drafts[item.id] ?? emptyResponse(item)
+      const hash = JSON.stringify(response)
+      if (hash === saved[item.id]) continue
+      await enqueueAnswerSave(item.id, response)
+      setSaved((current) => ({ ...current, [item.id]: hash }))
+    }
+  }, [drafts, enqueueAnswerSave, release?.items, saved])
   const submit = useMutation({
     mutationFn: async () => {
       if (!attemptId) throw new Error('Attempt is unavailable')
@@ -225,7 +237,42 @@ function StudentTestRunner({ lessonId, onClose, releaseId }: { lessonId: string;
     () => release?.items.every((item) => hasAnswer(item, drafts[item.id] ?? emptyResponse(item))) ?? false,
     [drafts, release?.items],
   )
+  const hasDirtyAnswers = useMemo(
+    () => release?.items.some((item) => JSON.stringify(drafts[item.id] ?? emptyResponse(item)) !== saved[item.id]) ?? false,
+    [drafts, release?.items, saved],
+  )
   const error = start.error ?? save.error ?? submit.error ?? closeError
+  const saveAndNavigate = useCallback(
+    async (target: string) => {
+      if (closing) return
+      setClosing(true)
+      setCloseError(null)
+      try {
+        await persistDirtyAnswers()
+        navigate(target)
+      } catch (error) {
+        setCloseError(error instanceof Error ? error : new Error('Save failed'))
+        setClosing(false)
+      }
+    },
+    [closing, navigate, persistDirtyAnswers],
+  )
+
+  useEffect(() => {
+    if (!editable || (!hasDirtyAnswers && !save.isPending)) return
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [editable, hasDirtyAnswers, save.isPending])
+  useEffect(() => {
+    if (!editable || (!hasDirtyAnswers && !save.isPending)) return
+    return registerWorkspaceNavigationGuard((target) => {
+      void saveAndNavigate(target)
+    })
+  }, [editable, hasDirtyAnswers, save.isPending, saveAndNavigate])
 
   return (
     <AssignmentDialog closeLabel={closing ? t('tests.student.saving') : t('tests.common.close')} fullScreen onClose={() => void closeRunner()} title={release?.title ?? t('tests.student.loading')}>
@@ -309,16 +356,6 @@ function StudentTestRunner({ lessonId, onClose, releaseId }: { lessonId: string;
     setActiveIndex(0)
   }
 
-  async function persistDirtyAnswers() {
-    for (const item of release?.items ?? []) {
-      const response = drafts[item.id] ?? emptyResponse(item)
-      const hash = JSON.stringify(response)
-      if (hash === saved[item.id]) continue
-      await enqueueAnswerSave(item.id, response)
-      setSaved((current) => ({ ...current, [item.id]: hash }))
-    }
-  }
-
   async function closeRunner() {
     if (closing) return
     if (!editable || !attemptId) {
@@ -335,6 +372,7 @@ function StudentTestRunner({ lessonId, onClose, releaseId }: { lessonId: string;
       setClosing(false)
     }
   }
+
 }
 
 function AnswerField({ item, onChange, response }: { item: StudentTestItem; onChange: (response: ResponseData) => void; response: ResponseData }) {
@@ -399,6 +437,9 @@ function AnswerField({ item, onChange, response }: { item: StudentTestItem; onCh
   if (item.type === 'IMAGE_HOTSPOT') {
     return <ImageHotspotAnswerField item={item} onChange={onChange} response={response} />
   }
+  if (item.type !== 'SINGLE_CHOICE' && item.type !== 'MULTIPLE_CHOICE') {
+    return <p className={styles.inlineError}>{t('tests.student.unsupportedAssignment')}</p>
+  }
   const config = item.publicConfig as unknown as ChoicePublicConfig
   const selected = Array.isArray(response.selectedOptionIds) ? response.selectedOptionIds.filter((value): value is string => typeof value === 'string') : []
   return (
@@ -440,7 +481,7 @@ function TestResult({ attempt, compact = false, release }: { attempt: StudentTes
         {attempt.status === 'RETURNED' && <p>{t('tests.student.returnedHint')}</p>}
         {attempt.isPassed !== null && <small>{attempt.isPassed ? t('tests.student.passed') : t('tests.student.notPassed', { count: release.passingPercent })}</small>}
       </div>
-      {!compact && (
+      {(!compact || attempt.status === 'RETURNED') && (
         <div className={styles.studentResultAnswers}>
           {release.items.map((item, index) => {
             const answer = attempt.answers.find(
@@ -481,7 +522,10 @@ function emptyResponse(item: StudentTestItem): ResponseData {
   if (item.type === 'CATEGORIZATION') return { assignments: [] }
   if (item.type === 'FILL_BLANKS') return { answers: [] }
   if (item.type === 'IMAGE_HOTSPOT') return {}
-  return { selectedOptionIds: [] }
+  if (item.type === 'SINGLE_CHOICE' || item.type === 'MULTIPLE_CHOICE') {
+    return { selectedOptionIds: [] }
+  }
+  return {}
 }
 
 function hasAnswer(item: StudentTestItem, response: ResponseData): boolean {
@@ -504,7 +548,10 @@ function hasAnswer(item: StudentTestItem, response: ResponseData): boolean {
     return Array.isArray(response.answers) && response.answers.length === blankCount && response.answers.every((answer) => isRecord(answer) && typeof answer.text === 'string' && answer.text.trim() !== '')
   }
   if (item.type === 'IMAGE_HOTSPOT') return typeof response.x === 'number' && typeof response.y === 'number'
-  return Array.isArray(response.selectedOptionIds) && response.selectedOptionIds.length > 0
+  if (item.type === 'SINGLE_CHOICE' || item.type === 'MULTIPLE_CHOICE') {
+    return Array.isArray(response.selectedOptionIds) && response.selectedOptionIds.length > 0
+  }
+  return false
 }
 
 function canStart(release: StudentLessonTest): boolean {
@@ -667,7 +714,7 @@ function ImageHotspotAnswerField({ item, onChange, response }: { item: StudentTe
         }}
         type="button"
       >
-        <img alt="" src={assignmentImageUrl(config.promptImage.attachmentId)} />
+        <img alt={item.title} src={assignmentImageUrl(config.promptImage.attachmentId)} />
         {selected && <span style={{ left: `${x * 100}%`, top: `${y * 100}%` }} />}
       </button>
       <div className={styles.hotspotCoordinates}>
@@ -681,7 +728,7 @@ function ImageHotspotAnswerField({ item, onChange, response }: { item: StudentTe
 function PromptImage({ item }: { item: StudentTestItem }) {
   const config = item.publicConfig as { promptImage?: { attachmentId?: string } | null }
   if (!config.promptImage?.attachmentId) return null
-  return <img className={styles.questionImage} src={assignmentImageUrl(config.promptImage.attachmentId)} alt="" />
+  return <img className={styles.questionImage} src={assignmentImageUrl(config.promptImage.attachmentId)} alt={item.title} />
 }
 
 function normalizeResponse(item: StudentTestItem | undefined, response: ResponseData): ResponseData {

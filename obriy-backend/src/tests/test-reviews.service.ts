@@ -79,6 +79,8 @@ const teacherAttemptSelect = {
       maxPoints: true,
       scorePoints: true,
       scorePercent: true,
+      isCorrect: true,
+      gradingData: true,
       teacherComment: true,
       testItem: {
         select: {
@@ -446,7 +448,16 @@ export class TestReviewsService {
               answer.scorePoints === null ? null : Number(answer.scorePoints),
             scorePercent:
               answer.scorePercent === null ? null : Number(answer.scorePercent),
+            isCorrect: answer.isCorrect,
             teacherComment: answer.teacherComment,
+            publicConfig: this.toJsonObject(
+              answer.testItem.assignmentRevision.publicConfig,
+            ),
+            gradingConfig: this.toJsonObject(
+              answer.testItem.assignmentRevision.solution?.gradingConfig ??
+                null,
+            ),
+            gradingData: this.toJsonObject(answer.gradingData),
             choiceOptions: this.toChoiceReviewOptions(
               answer.testItem.assignment.type,
               answer.responseData,

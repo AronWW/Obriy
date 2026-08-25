@@ -43,6 +43,7 @@ import {
   validateAssignmentPublishPayload,
   validateAssignmentSolution,
 } from './validation';
+import { CloudinaryMediaService } from './cloudinary-media.service';
 
 const CURRENT_ASSIGNMENT_SCHEMA_VERSION = 1;
 const DEFAULT_ASSIGNMENT_PAGE_SIZE = 20;
@@ -66,6 +67,7 @@ const editableRevisionSelect = {
   createdAt: true,
   updatedAt: true,
   solution: { select: { gradingConfig: true } },
+  promptImage: { select: { attachmentId: true } },
 } satisfies Prisma.AssignmentRevisionSelect;
 
 const revisionHistorySelect = {
@@ -84,7 +86,10 @@ type EditableRevisionRecord = Prisma.AssignmentRevisionGetPayload<{
 
 @Injectable()
 export class AssignmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryMediaService,
+  ) {}
 
   async createAssignment(
     user: AuthUser,
@@ -313,6 +318,7 @@ export class AssignmentsService {
       await this.assertPromptImageAvailable(
         transaction,
         user.id,
+        draft.id,
         publicConfigResult.data,
       );
 
@@ -461,6 +467,15 @@ export class AssignmentsService {
                 ),
               },
             },
+            ...(published.promptImage
+              ? {
+                  promptImage: {
+                    create: {
+                      attachmentId: published.promptImage.attachmentId,
+                    },
+                  },
+                }
+              : {}),
           },
         });
         await transaction.assignment.update({
@@ -538,6 +553,7 @@ export class AssignmentsService {
       await this.assertPromptImageAvailable(
         transaction,
         user.id,
+        draft.id,
         draft.publicConfig,
       );
       const issues = this.getPublishIssues(assignment.type, draft);
@@ -710,6 +726,15 @@ export class AssignmentsService {
                   ),
                 },
               },
+              ...(source.promptImage
+                ? {
+                    promptImage: {
+                      create: {
+                        attachmentId: source.promptImage.attachmentId,
+                      },
+                    },
+                  }
+                : {}),
             },
           },
         },
@@ -806,7 +831,7 @@ export class AssignmentsService {
   async deleteAssignment(user: AuthUser, assignmentId: string): Promise<void> {
     this.assertTeacher(user);
 
-    await this.prisma.$transaction(async (transaction) => {
+    const storageKeys = await this.prisma.$transaction(async (transaction) => {
       await this.lockOwnedAssignment(transaction, user.id, assignmentId);
       const assignment = await transaction.assignment.findUnique({
         where: { id: assignmentId },
@@ -826,10 +851,25 @@ export class AssignmentsService {
           message: 'An assignment in use must be archived instead',
         });
       }
-      await this.assertImagesNotReferencedElsewhere(transaction, assignmentId);
+      const promptAttachments = await transaction.assignmentAttachment.findMany(
+        {
+          where: {
+            kind: 'PROMPT',
+            revisionLinks: {
+              some: { revision: { assignmentId } },
+            },
+          },
+          select: { id: true },
+        },
+      );
 
       await transaction.assignment.delete({ where: { id: assignmentId } });
+      return this.deleteUnreferencedPromptAttachments(
+        transaction,
+        promptAttachments.map((attachment) => attachment.id),
+      );
     });
+    await this.destroyImages(storageKeys);
   }
 
   async deleteRevision(
@@ -839,7 +879,7 @@ export class AssignmentsService {
   ): Promise<void> {
     this.assertTeacher(user);
 
-    await this.prisma.$transaction(async (transaction) => {
+    const storageKeys = await this.prisma.$transaction(async (transaction) => {
       await this.lockOwnedAssignment(transaction, user.id, assignmentId);
       const revision = await transaction.assignmentRevision.findFirst({
         where: { id: revisionId, assignmentId },
@@ -881,10 +921,14 @@ export class AssignmentsService {
           message: 'Delete the assignment instead of its only revision',
         });
       }
-      await this.assertImagesNotReferencedElsewhere(
-        transaction,
-        assignmentId,
-        revision.id,
+      const promptAttachments = await transaction.assignmentAttachment.findMany(
+        {
+          where: {
+            kind: 'PROMPT',
+            revisionLinks: { some: { revisionId: revision.id } },
+          },
+          select: { id: true },
+        },
       );
 
       await transaction.assignmentRevision.delete({
@@ -894,7 +938,12 @@ export class AssignmentsService {
         where: { id: assignmentId },
         data: { updatedAt: new Date() },
       });
+      return this.deleteUnreferencedPromptAttachments(
+        transaction,
+        promptAttachments.map((attachment) => attachment.id),
+      );
     });
+    await this.destroyImages(storageKeys);
   }
 
   private getPublishIssues(
@@ -1040,20 +1089,28 @@ export class AssignmentsService {
   private async assertPromptImageAvailable(
     transaction: Prisma.TransactionClient,
     teacherId: string,
+    revisionId: string,
     publicConfig: unknown,
   ): Promise<void> {
     const attachmentId = this.getPromptImageAttachmentId(publicConfig);
-    if (!attachmentId) return;
-    const attachment = await transaction.assignmentAttachment.findFirst({
-      where: {
-        id: attachmentId,
-        kind: 'PROMPT',
-        status: 'READY',
-        revision: { assignment: { teacherId } },
+    const link = await transaction.assignmentRevisionPromptImage.findUnique({
+      where: { revisionId },
+      select: {
+        attachmentId: true,
+        attachment: { select: { kind: true, status: true } },
+        revision: {
+          select: { assignment: { select: { teacherId: true } } },
+        },
       },
-      select: { id: true },
     });
-    if (!attachment) {
+    const isValid = attachmentId
+      ? link !== null &&
+        link.attachmentId === attachmentId &&
+        link.attachment.kind === 'PROMPT' &&
+        link.attachment.status === 'READY' &&
+        link.revision.assignment.teacherId === teacherId
+      : link === null;
+    if (!isValid) {
       throw this.invalidConfig([
         {
           path: ['publicConfig', 'promptImage', 'attachmentId'],
@@ -1064,37 +1121,34 @@ export class AssignmentsService {
     }
   }
 
-  private async assertImagesNotReferencedElsewhere(
+  private async deleteUnreferencedPromptAttachments(
     transaction: Prisma.TransactionClient,
-    assignmentId: string,
-    revisionId?: string,
-  ): Promise<void> {
-    const attachments = await transaction.assignmentAttachment.findMany({
-      where: revisionId
-        ? { revisionId, kind: 'PROMPT' }
-        : { revision: { assignmentId }, kind: 'PROMPT' },
-      select: { id: true },
-    });
-    for (const attachment of attachments) {
-      const reference = await transaction.assignmentRevision.findFirst({
-        where: {
-          ...(revisionId
-            ? { id: { not: revisionId } }
-            : { assignmentId: { not: assignmentId } }),
-          publicConfig: {
-            path: ['promptImage', 'attachmentId'],
-            equals: attachment.id,
-          },
-        },
-        select: { id: true },
-      });
-      if (reference) {
-        throw new ConflictException({
-          code: 'ASSIGNMENT_IMAGE_IN_USE',
-          message: 'An image is reused by another assignment',
-        });
-      }
-    }
+    attachmentIds: string[],
+  ): Promise<string[]> {
+    if (attachmentIds.length === 0) return [];
+    const deleted = await transaction.$queryRaw<{ storageKey: string }[]>(
+      Prisma.sql`
+        DELETE FROM "AssignmentAttachment" AS attachment
+        WHERE attachment."id" IN (${Prisma.join(attachmentIds)})
+          AND attachment."kind" = 'PROMPT'
+          AND attachment."testAnswerId" IS NULL
+          AND NOT EXISTS (
+            SELECT 1
+            FROM "AssignmentRevisionPromptImage" AS link
+            WHERE link."attachmentId" = attachment."id"
+          )
+        RETURNING attachment."storageKey"
+      `,
+    );
+    return deleted.map((attachment) => attachment.storageKey);
+  }
+
+  private async destroyImages(storageKeys: string[]): Promise<void> {
+    await Promise.all(
+      storageKeys.map((storageKey) =>
+        this.cloudinary.destroyImage(storageKey).catch(() => undefined),
+      ),
+    );
   }
 
   private getPromptImageAttachmentId(publicConfig: unknown): string | null {

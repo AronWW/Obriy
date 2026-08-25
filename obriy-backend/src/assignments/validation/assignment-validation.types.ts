@@ -17,6 +17,7 @@ export type AssignmentValidationIssueCode =
   | 'TEXT_TOO_LONG'
   | 'ATTACHMENTS_NOT_ALLOWED'
   | 'TOO_MANY_ATTACHMENTS'
+  | 'FEATURE_UNAVAILABLE'
   | 'INVALID_CONFIGURATION';
 
 export interface AssignmentValidationIssue {

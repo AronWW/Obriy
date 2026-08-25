@@ -1,4 +1,8 @@
-import { Prisma, TestRevisionStatus } from '@prisma/client';
+import {
+  AssignmentRevisionStatus,
+  Prisma,
+  TestRevisionStatus,
+} from '@prisma/client';
 import {
   TestEditorDto,
   TestItemDto,
@@ -13,7 +17,22 @@ const testItemSelect = {
   maxPoints: true,
   assignmentId: true,
   assignmentRevisionId: true,
-  assignment: { select: { type: true } },
+  assignment: {
+    select: {
+      type: true,
+      revisions: {
+        where: {
+          status: {
+            in: [
+              AssignmentRevisionStatus.DRAFT,
+              AssignmentRevisionStatus.PUBLISHED,
+            ],
+          },
+        },
+        select: { id: true, status: true },
+      },
+    },
+  },
   assignmentRevision: { select: { title: true } },
 } satisfies Prisma.TestItemSelect;
 
@@ -111,6 +130,11 @@ function toItemDto(item: TestItemRecord): TestItemDto {
     assignmentRevisionId: item.assignmentRevisionId,
     assignmentType: item.assignment.type,
     title: item.assignmentRevision.title,
+    hasUpdate: item.assignment.revisions.some(
+      (revision) =>
+        revision.status === AssignmentRevisionStatus.DRAFT ||
+        revision.id !== item.assignmentRevisionId,
+    ),
   });
 }
 

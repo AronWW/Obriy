@@ -29,6 +29,7 @@ import {
   RemoveTestItemDto,
   ReorderTestItemsDto,
   UpdateTestItemDto,
+  UpdateTestItemRevisionDto,
 } from './dto/test-items.dto';
 import { TestEditorDto, TestListResponseDto } from './dto/test-response.dto';
 import { UpdateTestDraftDto } from './dto/update-test-draft.dto';
@@ -97,6 +98,18 @@ export class TestsController {
     @Body() dto: UpdateTestItemDto,
   ): Promise<TestEditorDto> {
     return this.testsService.updateItem(user, testId, itemId, dto);
+  }
+
+  @ApiOkResponse({ type: TestEditorDto })
+  @HttpCode(200)
+  @Post(':testId/draft/items/:itemId/update-revision')
+  updateItemRevision(
+    @CurrentUser() user: AuthUser,
+    @Param('testId') testId: string,
+    @Param('itemId') itemId: string,
+    @Body() dto: UpdateTestItemRevisionDto,
+  ): Promise<TestEditorDto> {
+    return this.testsService.updateItemRevision(user, testId, itemId, dto);
   }
 
   @ApiOkResponse({ type: TestEditorDto })

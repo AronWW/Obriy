@@ -32,6 +32,7 @@ import {
   startTestEdit,
   updateTestDraft,
   updateTestItem,
+  updateTestItemRevision,
 } from '../api/tests.api'
 import { testQueryKeys } from '../model/test-query-keys'
 import type { TestEditor, TestItem, TestRevision } from '../model/test.types'
@@ -157,6 +158,9 @@ export function TeacherTestEditorPage() {
       if (action.type === 'remove') return removeTestItem(testId, action.itemId, version)
       if (action.type === 'points') {
         return updateTestItem(testId, action.itemId, action.maxPoints, version)
+      }
+      if (action.type === 'updateRevision') {
+        return updateTestItemRevision(testId, action.itemId, version)
       }
       return reorderTestItems(testId, action.itemIds, version)
     },
@@ -288,6 +292,12 @@ export function TeacherTestEditorPage() {
                     }
                     onRemove={() =>
                       itemMutation.mutate({ type: 'remove', itemId: item.id })
+                    }
+                    onUpdateRevision={() =>
+                      itemMutation.mutate({
+                        type: 'updateRevision',
+                        itemId: item.id,
+                      })
                     }
                   />
                 ))}
@@ -525,6 +535,7 @@ type ItemAction =
   | { type: 'add'; assignmentId: string }
   | { type: 'remove'; itemId: string }
   | { type: 'points'; itemId: string; maxPoints: number }
+  | { type: 'updateRevision'; itemId: string }
   | { type: 'reorder'; itemIds: string[] }
 
 function TestItemRow({
@@ -534,6 +545,7 @@ function TestItemRow({
   onMove,
   onPoints,
   onRemove,
+  onUpdateRevision,
 }: {
   disabled: boolean
   index: number
@@ -541,6 +553,7 @@ function TestItemRow({
   onMove: (direction: -1 | 1) => void
   onPoints: (points: number) => void
   onRemove: () => void
+  onUpdateRevision: () => void
 }) {
   const { t } = useTranslation()
   const [points, setPoints] = useState(String(item.maxPoints))
@@ -568,6 +581,16 @@ function TestItemRow({
             {t('tests.editor.applyPoints')}
           </button>
         </label>
+        {item.hasUpdate && (
+          <button
+            className={styles.itemUpdateButton}
+            disabled={disabled}
+            onClick={onUpdateRevision}
+            type="button"
+          >
+            {t('tests.editor.updateAssignmentRevision')}
+          </button>
+        )}
       </div>
       <div className={styles.itemActions}>
         <button disabled={disabled || index === 0} onClick={() => onMove(-1)} type="button">

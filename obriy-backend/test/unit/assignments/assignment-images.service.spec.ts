@@ -43,6 +43,7 @@ describe('AssignmentImagesService', () => {
 
   it('uploads a valid image and atomically pins it to the current draft', async () => {
     const attachmentCreate = jest.fn();
+    const promptImageUpsert = jest.fn();
     const revisionUpdate = jest.fn().mockResolvedValue({ count: 1 });
     const assignmentUpdate = jest.fn();
     const editorRecord = assignmentEditorRecord();
@@ -60,6 +61,7 @@ describe('AssignmentImagesService', () => {
         create: attachmentCreate,
         findFirst: jest.fn().mockResolvedValue(null),
       },
+      assignmentRevisionPromptImage: { upsert: promptImageUpsert },
       assignment: {
         update: assignmentUpdate,
         findFirst: jest.fn().mockResolvedValue(editorRecord),
@@ -121,7 +123,146 @@ describe('AssignmentImagesService', () => {
         }),
       }),
     );
+    expect(promptImageUpsert).toHaveBeenCalledWith({
+      where: { revisionId: versionDto().expectedRevisionId },
+      create: {
+        revisionId: versionDto().expectedRevisionId,
+        attachmentId: expect.any(String),
+      },
+      update: { attachmentId: expect.any(String) },
+    });
     expect(cloudinary.destroyImage).not.toHaveBeenCalled();
+  });
+
+  it('keeps a removed image when another revision still references it', async () => {
+    const attachmentDeleteMany = jest.fn();
+    const cloudinary = { destroyImage: jest.fn() };
+    const transaction = {
+      assignment: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValueOnce({
+            id: 'assignment-1',
+            type: AssignmentType.WRITTEN,
+            status: AssignmentStatus.DRAFT,
+            revisions: [
+              {
+                id: versionDto().expectedRevisionId,
+                publicConfig: {
+                  ...writtenConfig(),
+                  promptImage: {
+                    attachmentId: 'shared-image',
+                    width: 1200,
+                    height: 800,
+                  },
+                },
+                promptImage: { attachmentId: 'shared-image' },
+                schemaVersion: 1,
+                editVersion: 1,
+              },
+            ],
+          })
+          .mockResolvedValueOnce(assignmentEditorRecord()),
+        update: jest.fn(),
+      },
+      assignmentRevision: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      assignmentRevisionPromptImage: { deleteMany: jest.fn() },
+      assignmentAttachment: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        deleteMany: attachmentDeleteMany,
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn(
+        (callback: (client: typeof transaction) => unknown) =>
+          callback(transaction),
+      ),
+    };
+    const service = new AssignmentImagesService(
+      prisma as never,
+      cloudinary as never,
+    );
+
+    await service.remove(teacher, 'assignment-1', versionDto());
+
+    expect(attachmentDeleteMany).not.toHaveBeenCalled();
+    expect(cloudinary.destroyImage).not.toHaveBeenCalled();
+  });
+
+  it('deletes an unreferenced removed image from the database and Cloudinary', async () => {
+    const promptImageDeleteMany = jest.fn();
+    const attachmentDeleteMany = jest.fn().mockResolvedValue({ count: 1 });
+    const cloudinary = {
+      destroyImage: jest.fn().mockResolvedValue(undefined),
+    };
+    const transaction = {
+      assignment: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValueOnce({
+            id: 'assignment-1',
+            type: AssignmentType.WRITTEN,
+            status: AssignmentStatus.DRAFT,
+            revisions: [
+              {
+                id: versionDto().expectedRevisionId,
+                publicConfig: {
+                  ...writtenConfig(),
+                  promptImage: {
+                    attachmentId: 'obsolete-image',
+                    width: 1200,
+                    height: 800,
+                  },
+                },
+                promptImage: { attachmentId: 'obsolete-image' },
+                schemaVersion: 1,
+                editVersion: 1,
+              },
+            ],
+          })
+          .mockResolvedValueOnce(assignmentEditorRecord()),
+        update: jest.fn(),
+      },
+      assignmentRevision: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      assignmentRevisionPromptImage: { deleteMany: promptImageDeleteMany },
+      assignmentAttachment: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'obsolete-image',
+          storageKey: 'obriy/obsolete-image',
+        }),
+        deleteMany: attachmentDeleteMany,
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn(
+        (callback: (client: typeof transaction) => unknown) =>
+          callback(transaction),
+      ),
+    };
+    const service = new AssignmentImagesService(
+      prisma as never,
+      cloudinary as never,
+    );
+
+    await service.remove(teacher, 'assignment-1', versionDto());
+
+    expect(promptImageDeleteMany).toHaveBeenCalledWith({
+      where: { revisionId: versionDto().expectedRevisionId },
+    });
+    expect(attachmentDeleteMany).toHaveBeenCalledWith({
+      where: {
+        id: 'obsolete-image',
+        revisionLinks: { none: {} },
+        testAnswerId: null,
+      },
+    });
+    expect(cloudinary.destroyImage).toHaveBeenCalledWith(
+      'obriy/obsolete-image',
+    );
   });
 });
 

@@ -507,27 +507,6 @@ function TeacherWrittenAssignmentEditorPage() {
                   ))}
                 </div>
               </fieldset>
-              <label className={styles.toggleField}>
-                <input
-                  aria-label={t('assignments.editor.answer.attachments')}
-                  checked={values.publicConfig.allowAttachments}
-                  disabled={isArchived}
-                  onChange={(event) =>
-                    setValues((current) => ({
-                      ...current,
-                      publicConfig: {
-                        ...current.publicConfig,
-                        allowAttachments: event.target.checked,
-                      },
-                    }))
-                  }
-                  type="checkbox"
-                />
-                <span>
-                  <strong>{t('assignments.editor.answer.attachments')}</strong>
-                  <small>{t('assignments.editor.answer.attachmentsHint')}</small>
-                </span>
-              </label>
               <p className={styles.inlineHint}>
                 {t('assignments.editor.answer.fixedLimit', {
                   count: WRITTEN_MAX_LENGTH,
@@ -860,7 +839,7 @@ function toWrittenConfig(
     responseMode: config?.responseMode === 'SHORT' ? 'SHORT' : 'LONG',
     minLength: 0,
     maxLength: WRITTEN_MAX_LENGTH,
-    allowAttachments: config?.allowAttachments === true,
+    allowAttachments: false,
     rubric,
   }
 }
@@ -890,6 +869,7 @@ function editorValuesToDraft(values: EditorValues): WrittenAssignmentDraftInput 
       ...values.publicConfig,
       minLength: 0,
       maxLength: WRITTEN_MAX_LENGTH,
+      allowAttachments: false,
     },
     gradingConfig: { mode: 'MANUAL' },
   }

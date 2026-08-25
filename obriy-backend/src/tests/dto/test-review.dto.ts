@@ -92,7 +92,19 @@ export class TeacherTestAnswerReviewDto {
   scorePercent: number | null;
 
   @ApiPropertyOptional({ nullable: true })
+  isCorrect: boolean | null;
+
+  @ApiPropertyOptional({ nullable: true })
   teacherComment: string | null;
+
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  publicConfig: Record<string, unknown>;
+
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  gradingConfig: Record<string, unknown>;
+
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  gradingData: Record<string, unknown>;
 
   @ApiPropertyOptional({
     type: () => TeacherChoiceReviewOptionDto,

@@ -103,7 +103,7 @@ export const WRITTEN_DEFAULT_PUBLIC_CONFIG = Object.freeze({
   responseMode: 'LONG' as const,
   minLength: 0,
   maxLength: WRITTEN_DEFAULT_MAX_TEXT_LENGTH,
-  allowAttachments: true,
+  allowAttachments: false,
   rubric: Object.freeze([]),
 });
 
@@ -130,6 +130,16 @@ export const writtenAssignmentValidationDefinition: AssignmentValidationDefiniti
     rubric: [],
   }),
   createDefaultSolution: () => ({ ...WRITTEN_DEFAULT_SOLUTION }),
+  validatePublishPayload: (publicConfig) =>
+    publicConfig.allowAttachments
+      ? [
+          {
+            path: ['publicConfig', 'allowAttachments'],
+            code: 'FEATURE_UNAVAILABLE',
+            message: 'Student response attachments are not available yet.',
+          },
+        ]
+      : [],
   validateStudentResponseAgainstConfig: (response, publicConfig) => {
     const issues: AssignmentValidationIssue[] = [];
 
@@ -149,11 +159,15 @@ export const writtenAssignmentValidationDefinition: AssignmentValidationDefiniti
       });
     }
 
-    if (!publicConfig.allowAttachments && response.attachmentIds.length > 0) {
+    if (response.attachmentIds.length > 0) {
       issues.push({
         path: ['attachmentIds'],
-        code: 'ATTACHMENTS_NOT_ALLOWED',
-        message: 'Attachments are not allowed for this assignment.',
+        code: publicConfig.allowAttachments
+          ? 'FEATURE_UNAVAILABLE'
+          : 'ATTACHMENTS_NOT_ALLOWED',
+        message: publicConfig.allowAttachments
+          ? 'Student response attachments are not available yet.'
+          : 'Attachments are not allowed for this assignment.',
       });
     }
 

@@ -109,7 +109,7 @@ describe('Tests module (e2e)', () => {
         responseMode: 'LONG',
         minLength: 0,
         maxLength: 5_000,
-        allowAttachments: true,
+        allowAttachments: false,
         rubric: [],
       },
       gradingConfig: { mode: 'MANUAL' },
@@ -123,7 +123,7 @@ describe('Tests module (e2e)', () => {
         responseMode: 'LONG',
         minLength: 0,
         maxLength: 5_000,
-        allowAttachments: true,
+        allowAttachments: false,
         rubric: [],
       },
       gradingConfig: { mode: 'MANUAL' },
@@ -846,6 +846,116 @@ describe('Tests module (e2e)', () => {
         scorePercent: 83.33,
         isPassed: true,
       }),
+    );
+  });
+
+  it('updates a test item to the latest assignment revision in place', async () => {
+    const assignmentId = await createAssignment({
+      type: AssignmentType.SINGLE_CHOICE,
+      maxPoints: 3,
+      title: 'Original assignment title',
+      publicConfig: choiceConfig(),
+      gradingConfig: {
+        correctOptionIds: [optionA],
+        scoringMode: 'ALL_OR_NOTHING',
+      },
+    });
+    const testResponse = await request(context.app.getHttpServer())
+      .post('/tests')
+      .set('Authorization', bearer('teacher'))
+      .send({ contentLocale: Locale.UK, title: 'Revision update check' })
+      .expect(201);
+    const testId = getStringField(testResponse, 'id');
+    let testDraft = getRecordField(
+      getResponseBody(testResponse),
+      'draftRevision',
+    );
+    const addResponse = await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/draft/items`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        assignmentId,
+        maxPoints: 7,
+        expectedRevisionId: getStringValue(testDraft, 'id'),
+        expectedEditVersion: getNumberValue(testDraft, 'editVersion'),
+      })
+      .expect(201);
+    testDraft = getRecordField(getResponseBody(addResponse), 'draftRevision');
+    const originalItem = getRecordArray(testDraft, 'items')[0];
+    if (!originalItem) throw new Error('Expected the original test item');
+    expect(originalItem).toEqual(
+      expect.objectContaining({
+        position: 0,
+        maxPoints: 7,
+        hasUpdate: false,
+        title: 'Original assignment title',
+      }),
+    );
+
+    const startEditResponse = await request(context.app.getHttpServer())
+      .post(`/assignments/${assignmentId}/start-edit`)
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    let assignmentDraft = getRecordField(
+      getResponseBody(startEditResponse),
+      'draftRevision',
+    );
+    const updateAssignmentResponse = await request(context.app.getHttpServer())
+      .patch(`/assignments/${assignmentId}/draft`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(assignmentDraft, 'id'),
+        expectedEditVersion: getNumberValue(assignmentDraft, 'editVersion'),
+        title: 'Updated assignment title',
+      })
+      .expect(200);
+    assignmentDraft = getRecordField(
+      getResponseBody(updateAssignmentResponse),
+      'draftRevision',
+    );
+
+    const staleTestResponse = await request(context.app.getHttpServer())
+      .get(`/tests/${testId}`)
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    const staleDraft = getRecordField(
+      getResponseBody(staleTestResponse),
+      'draftRevision',
+    );
+    const staleItem = getRecordArray(staleDraft, 'items')[0];
+    if (!staleItem) throw new Error('Expected a stale test item');
+    expect(staleItem).toEqual(expect.objectContaining({ hasUpdate: true }));
+
+    const updateItemResponse = await request(context.app.getHttpServer())
+      .post(
+        `/tests/${testId}/draft/items/${getStringValue(staleItem, 'id')}/update-revision`,
+      )
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(staleDraft, 'id'),
+        expectedEditVersion: getNumberValue(staleDraft, 'editVersion'),
+      })
+      .expect(200);
+    const updatedDraft = getRecordField(
+      getResponseBody(updateItemResponse),
+      'draftRevision',
+    );
+    const updatedItem = getRecordArray(updatedDraft, 'items')[0];
+    if (!updatedItem) throw new Error('Expected the updated test item');
+    expect(updatedItem).toEqual(
+      expect.objectContaining({
+        id: getStringValue(originalItem, 'id'),
+        position: 0,
+        maxPoints: 7,
+        hasUpdate: false,
+        title: 'Updated assignment title',
+      }),
+    );
+    expect(getStringValue(updatedItem, 'assignmentRevisionId')).toBe(
+      getStringValue(assignmentDraft, 'id'),
+    );
+    expect(getStringValue(updatedItem, 'assignmentRevisionId')).not.toBe(
+      getStringValue(originalItem, 'assignmentRevisionId'),
     );
   });
 

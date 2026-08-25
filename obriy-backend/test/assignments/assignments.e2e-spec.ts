@@ -810,7 +810,7 @@ function validWrittenConfig(): Record<string, unknown> {
     responseMode: 'LONG',
     minLength: 0,
     maxLength: 20_000,
-    allowAttachments: true,
+    allowAttachments: false,
     rubric: [],
   };
 }
@@ -820,7 +820,7 @@ function defaultWrittenConfig(): Record<string, unknown> {
     responseMode: 'LONG',
     minLength: 0,
     maxLength: 5_000,
-    allowAttachments: true,
+    allowAttachments: false,
     rubric: [],
   };
 }

@@ -669,6 +669,17 @@
   gap: 20px;
 }
 
+.editorFieldset {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.editorFieldset:disabled {
+  opacity: 0.78;
+}
+
 .editorMain {
   display: grid;
   gap: 16px;
@@ -2220,10 +2231,15 @@
 .compactBuilderList button { display: inline-grid; width: 38px; height: 38px; place-items: center; color: var(--danger); background: transparent; border: 1px solid var(--line-soft); border-radius: 8px; cursor: pointer; }
 .fillBuilder { display: grid; gap: 10px; margin-bottom: 18px; }
 .fillBuilder > div { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 11px; background: rgb(196 147 52 / 7%); border: 1px solid rgb(196 147 52 / 22%); border-radius: 9px; }
-.hotspotEditor { position: relative; width: fit-content; max-width: 100%; margin: 15px auto; overflow: hidden; border: 1px solid var(--line-soft); border-radius: 11px; cursor: crosshair; }
+.fillBuilder > div > button { display: inline-grid; width: 38px; height: 38px; place-items: center; color: var(--danger); background: transparent; border: 1px solid var(--line-soft); border-radius: 8px; cursor: pointer; }
+.hotspotEditor { position: relative; display: block; width: fit-content; max-width: 100%; padding: 0; margin: 15px auto; overflow: hidden; background: transparent; border: 1px solid var(--line-soft); border-radius: 11px; cursor: crosshair; }
 .hotspotEditor img { display: block; width: auto; max-width: 100%; max-height: 560px; object-fit: contain; }
 .hotspotEditor svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .hotspotEditor circle { fill: rgb(196 147 52 / 26%); stroke: var(--gold); stroke-width: 3px; vector-effect: non-scaling-stroke; }
+.hotspotCoordinates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+.hotspotCoordinates label { display: grid; gap: 7px; color: var(--copy); font-size: 0.78rem; }
+.saveState { margin: 0; color: var(--ink-soft); font-size: 0.75rem; }
+.saveState[data-state='error'], .saveState[data-state='conflict'] { color: var(--danger); }
 .validationList { display: grid; gap: 6px; padding: 11px; color: var(--danger); background: rgb(174 65 65 / 8%); border: 1px solid rgb(174 65 65 / 20%); border-radius: 9px; font-size: 0.8rem; }
 .promptImageField { display: grid; gap: 12px; margin-top: 17px; padding: 14px; background: color-mix(in srgb, var(--panel-solid), var(--gold) 4%); border: 1px dashed rgb(196 147 52 / 38%); border-radius: 10px; }
 .promptImageField > div:first-child { display: grid; gap: 3px; }
@@ -2538,4 +2554,9 @@
   .matchingPreview label { grid-template-columns: 1fr; }
   .orderingGrip { display: none; }
   .orderingRow { grid-template-columns: auto minmax(0, 1fr); }
+  .compactBuilderList > div { grid-template-columns: minmax(0, 1fr) auto; }
+  .compactBuilderList > div > select { grid-column: 1 / -1; }
+  .fillBuilder > div { grid-template-columns: minmax(0, 1fr) auto; }
+  .fillBuilder > div > strong { grid-column: 1 / -1; }
+  .hotspotCoordinates { grid-template-columns: 1fr; }
 }

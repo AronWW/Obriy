@@ -23,6 +23,7 @@ import {
   RemoveTestItemDto,
   ReorderTestItemsDto,
   UpdateTestItemDto,
+  UpdateTestItemRevisionDto,
 } from './dto/test-items.dto';
 import { TestEditorDto, TestListResponseDto } from './dto/test-response.dto';
 import { UpdateTestDraftDto } from './dto/update-test-draft.dto';
@@ -339,6 +340,71 @@ export class TestsService {
     });
   }
 
+  async updateItemRevision(
+    user: AuthUser,
+    testId: string,
+    itemId: string,
+    dto: UpdateTestItemRevisionDto,
+  ): Promise<TestEditorDto> {
+    this.assertTeacher(user);
+    const assignmentId = await this.prisma.$transaction(async (transaction) => {
+      const test = await this.lockOwnedTest(transaction, user.id, testId);
+      this.assertNotArchived(test.status);
+      const draft = await this.findDraft(transaction, testId);
+      this.assertDraftVersion(draft, dto);
+      return this.assertDraftItem(draft, itemId).assignmentId;
+    });
+    const assignment = await this.assignmentsService.getAssignment(
+      user,
+      assignmentId,
+    );
+    const revision = assignment.draftRevision
+      ? (
+          await this.assignmentsService.publish(user, assignment.id, {
+            expectedRevisionId: assignment.draftRevision.id,
+            expectedEditVersion: assignment.draftRevision.editVersion,
+          })
+        ).publishedRevision
+      : assignment.publishedRevision;
+    if (!revision) {
+      throw new ConflictException({
+        code: 'TEST_ITEM_ASSIGNMENT_NOT_PUBLISHED',
+        message: 'The assignment must be complete before updating it',
+      });
+    }
+
+    return this.prisma.$transaction(async (transaction) => {
+      const test = await this.lockOwnedTest(transaction, user.id, testId);
+      this.assertNotArchived(test.status);
+      if (test.contentLocale !== assignment.contentLocale) {
+        throw new ConflictException({
+          code: 'ASSIGNMENT_CONTENT_LOCALE_MISMATCH',
+          message: 'The assignment language must match the test language',
+        });
+      }
+      const draft = await this.findDraft(transaction, testId);
+      this.assertDraftVersion(draft, dto);
+      const item = this.assertDraftItem(draft, itemId);
+      if (item.assignmentId !== assignment.id) {
+        throw new ConflictException({
+          code: 'TEST_ITEM_ASSIGNMENT_CHANGED',
+          message: 'The test item assignment changed during the update',
+        });
+      }
+      if (item.assignmentRevisionId === revision.id) {
+        return this.findOwnedEditorInTransaction(transaction, user.id, testId);
+      }
+
+      await transaction.testItem.update({
+        where: { id: itemId },
+        data: { assignmentRevisionId: revision.id },
+      });
+      await this.incrementDraftVersion(transaction, draft, testId);
+
+      return this.findOwnedEditorInTransaction(transaction, user.id, testId);
+    });
+  }
+
   async reorderItems(
     user: AuthUser,
     testId: string,
@@ -612,13 +678,18 @@ export class TestsService {
     }
   }
 
-  private assertDraftItem(draft: MutableRevisionRecord, itemId: string): void {
-    if (!draft.items.some((item) => item.id === itemId)) {
+  private assertDraftItem(
+    draft: MutableRevisionRecord,
+    itemId: string,
+  ): MutableRevisionRecord['items'][number] {
+    const item = draft.items.find((candidate) => candidate.id === itemId);
+    if (!item) {
       throw new NotFoundException({
         code: 'TEST_ITEM_NOT_FOUND',
         message: 'Test item not found',
       });
     }
+    return item;
   }
 
   private async writeItemOrder(

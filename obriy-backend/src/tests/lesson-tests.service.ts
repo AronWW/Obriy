@@ -173,6 +173,7 @@ export class LessonTestsService {
     if (link.testRevisionId !== revisionId) {
       await this.prisma.$transaction(async (transaction) => {
         await this.lockOwnedLesson(transaction, user.id, lessonId);
+        await this.lockLessonTestReleases(transaction, lessonId, testId);
         await this.assertNoOpenAttempts(transaction, lessonId, testId);
         const revision = await this.findOwnedPublishedRevision(
           transaction,
@@ -244,6 +245,7 @@ export class LessonTestsService {
     this.assertTeacher(user);
     await this.prisma.$transaction(async (transaction) => {
       await this.lockOwnedLesson(transaction, user.id, lessonId);
+      await this.lockLessonTestReleases(transaction, lessonId, testId);
       const link = await transaction.lessonTest.findUnique({
         where: { lessonId_testId: { lessonId, testId } },
         select: { id: true },
@@ -251,6 +253,7 @@ export class LessonTestsService {
       if (!link) {
         throw this.linkNotFound();
       }
+      await this.assertNoOpenAttempts(transaction, lessonId, testId);
       await transaction.testRelease.deleteMany({
         where: { lessonId, testId, studentStates: { none: {} } },
       });
@@ -498,6 +501,20 @@ export class LessonTestsService {
         message: 'Wait for open attempts before updating the test version',
       });
     }
+  }
+
+  private async lockLessonTestReleases(
+    transaction: Prisma.TransactionClient,
+    lessonId: string,
+    testId: string,
+  ): Promise<void> {
+    await transaction.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT "id"
+      FROM "TestRelease"
+      WHERE "lessonId" = ${lessonId} AND "testId" = ${testId}
+      ORDER BY "id"
+      FOR UPDATE
+    `);
   }
 
   private async lockOwnedLesson(

@@ -88,12 +88,14 @@ export class AssignmentImagesService {
             publicConfig: true,
             schemaVersion: true,
             editVersion: true,
+            promptImage: { select: { attachmentId: true } },
           },
         });
         if (!current) throw this.draftNotFound();
         this.assertVersion(current.id, current.editVersion, dto);
         const publicConfig = this.toObject(current.publicConfig);
-        const previousAttachmentId = this.promptImageId(publicConfig);
+        const previousAttachmentId =
+          current.promptImage?.attachmentId ?? this.promptImageId(publicConfig);
         const nextConfig = {
           ...publicConfig,
           promptImage: {
@@ -116,7 +118,6 @@ export class AssignmentImagesService {
         await transaction.assignmentAttachment.create({
           data: {
             id: attachmentId,
-            revisionId: current.id,
             uploadedById: user.id,
             kind: AssignmentAttachmentKind.PROMPT,
             status: AssignmentAttachmentStatus.READY,
@@ -129,6 +130,11 @@ export class AssignmentImagesService {
               .digest('hex'),
           },
         });
+        await transaction.assignmentRevisionPromptImage.upsert({
+          where: { revisionId: current.id },
+          create: { revisionId: current.id, attachmentId },
+          update: { attachmentId },
+        });
         const updated = await transaction.assignmentRevision.updateMany({
           where: { id: current.id, editVersion: dto.expectedEditVersion },
           data: {
@@ -140,16 +146,10 @@ export class AssignmentImagesService {
           throw this.conflict(current.id, current.editVersion);
         let obsoleteStorageKey: string | null = null;
         if (previousAttachmentId && previousAttachmentId !== attachmentId) {
-          const obsolete = await transaction.assignmentAttachment.findFirst({
-            where: { id: previousAttachmentId, revisionId: current.id },
-            select: { id: true, storageKey: true },
-          });
-          if (obsolete) {
-            await transaction.assignmentAttachment.delete({
-              where: { id: obsolete.id },
-            });
-            obsoleteStorageKey = obsolete.storageKey;
-          }
+          obsoleteStorageKey = await this.deleteAttachmentIfUnreferenced(
+            transaction,
+            previousAttachmentId,
+          );
         }
         await transaction.assignment.update({
           where: { id: assignmentId },
@@ -217,6 +217,7 @@ export class AssignmentImagesService {
               publicConfig: true,
               schemaVersion: true,
               editVersion: true,
+              promptImage: { select: { attachmentId: true } },
             },
           },
         },
@@ -228,7 +229,8 @@ export class AssignmentImagesService {
       if (!draft) throw this.draftNotFound();
       this.assertVersion(draft.id, draft.editVersion, dto);
       const publicConfig = this.toObject(draft.publicConfig);
-      const previousAttachmentId = this.promptImageId(publicConfig);
+      const previousAttachmentId =
+        draft.promptImage?.attachmentId ?? this.promptImageId(publicConfig);
       const validation = validateAssignmentDraftPublicConfig(
         assignment.type,
         draft.schemaVersion,
@@ -248,18 +250,15 @@ export class AssignmentImagesService {
         },
       });
       if (updated.count !== 1) throw this.conflict(draft.id, draft.editVersion);
+      await transaction.assignmentRevisionPromptImage.deleteMany({
+        where: { revisionId: draft.id },
+      });
       let obsoleteStorageKey: string | null = null;
       if (previousAttachmentId) {
-        const obsolete = await transaction.assignmentAttachment.findFirst({
-          where: { id: previousAttachmentId, revisionId: draft.id },
-          select: { id: true, storageKey: true },
-        });
-        if (obsolete) {
-          await transaction.assignmentAttachment.delete({
-            where: { id: obsolete.id },
-          });
-          obsoleteStorageKey = obsolete.storageKey;
-        }
+        obsoleteStorageKey = await this.deleteAttachmentIfUnreferenced(
+          transaction,
+          previousAttachmentId,
+        );
       }
       await transaction.assignment.update({
         where: { id: assignmentId },
@@ -328,6 +327,31 @@ export class AssignmentImagesService {
   private promptImageId(config: Record<string, unknown>): string | null {
     const image = this.toObjectOrNull(config.promptImage);
     return typeof image?.attachmentId === 'string' ? image.attachmentId : null;
+  }
+
+  private async deleteAttachmentIfUnreferenced(
+    transaction: Prisma.TransactionClient,
+    attachmentId: string,
+  ): Promise<string | null> {
+    const obsolete = await transaction.assignmentAttachment.findFirst({
+      where: {
+        id: attachmentId,
+        kind: AssignmentAttachmentKind.PROMPT,
+        testAnswerId: null,
+        revisionLinks: { none: {} },
+      },
+      select: { id: true, storageKey: true },
+    });
+    if (!obsolete) return null;
+
+    const removed = await transaction.assignmentAttachment.deleteMany({
+      where: {
+        id: obsolete.id,
+        revisionLinks: { none: {} },
+        testAnswerId: null,
+      },
+    });
+    return removed.count === 1 ? obsolete.storageKey : null;
   }
 
   private toObjectOrNull(value: unknown): Record<string, unknown> | null {

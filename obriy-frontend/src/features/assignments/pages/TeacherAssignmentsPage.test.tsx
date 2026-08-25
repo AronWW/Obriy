@@ -94,8 +94,6 @@ describe('teacher assignment workspace', () => {
       screen.getByRole('textbox', { name: 'Question or prompt' }),
       'Explain two important causes.',
     )
-    await user.click(screen.getByRole('checkbox', { name: /Allow files/ }))
-
     expect(createCount).toBe(0)
     await user.click(screen.getAllByRole('button', { name: 'Save' })[0])
 
@@ -113,7 +111,7 @@ describe('teacher assignment workspace', () => {
           responseMode: 'LONG',
           minLength: 0,
           maxLength: 5000,
-          allowAttachments: true,
+          allowAttachments: false,
           rubric: [],
         },
         gradingConfig: { mode: 'MANUAL' },
@@ -257,7 +255,16 @@ describe('teacher assignment workspace', () => {
     expect(body.type).toBe('CATEGORIZATION')
     expect(body.draft.publicConfig.categories.map((value) => value.title)).toEqual(['Plants', 'Animals'])
     expect(body.draft.publicConfig.items.map((value) => value.text)).toEqual(['Oak', 'Wolf'])
-    expect(body.draft.gradingConfig.assignments).toHaveLength(2)
+    expect(body.draft.gradingConfig.assignments).toEqual([
+      {
+        itemId: body.draft.publicConfig.items[0]!.id,
+        categoryId: body.draft.publicConfig.categories[0]!.id,
+      },
+      {
+        itemId: body.draft.publicConfig.items[1]!.id,
+        categoryId: body.draft.publicConfig.categories[1]!.id,
+      },
+    ])
   })
 
   it('starts a transparent new revision before editing a ready assignment', async () => {
@@ -367,7 +374,7 @@ function assignmentEditor() {
         responseMode: 'LONG',
         minLength: 0,
         maxLength: 5000,
-        allowAttachments: true,
+        allowAttachments: false,
         rubric: [],
       },
       gradingConfig: { mode: 'MANUAL' },

@@ -83,6 +83,17 @@ export function updateTestItem(
   )
 }
 
+export function updateTestItemRevision(
+  testId: string,
+  itemId: string,
+  version: TestDraftVersionInput,
+): Promise<TestEditor> {
+  return authorizedRequest<TestEditor>(
+    `/tests/${testId}/draft/items/${itemId}/update-revision`,
+    { method: 'POST', body: version },
+  )
+}
+
 export function reorderTestItems(
   testId: string,
   itemIds: string[],

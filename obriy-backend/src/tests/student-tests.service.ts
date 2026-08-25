@@ -294,6 +294,7 @@ export class StudentTestsService {
   ): Promise<StudentTestAttemptDto> {
     this.assertStudent(user);
     const result = await this.prisma.$transaction(async (transaction) => {
+      await this.lockRelease(transaction, releaseId);
       const release = await this.findAccessibleRelease(
         transaction,
         user.id,
@@ -332,19 +333,34 @@ export class StudentTestsService {
       }
       const current = lockedState.attempts[0];
       if (current) {
-        if (!this.isAttemptExpired(current.expiresAt)) {
+        if (
+          !this.isAttemptExpired(current.expiresAt) &&
+          !this.isClosedByDeadline(release) &&
+          (release.status === TestReleaseStatus.ACTIVE ||
+            release.status === TestReleaseStatus.CLOSED)
+        ) {
           return {
             kind: 'attempt' as const,
             attempt: this.toAttemptDto(current),
           };
         }
-        await this.markAttemptExpired(
-          transaction,
-          current.id,
-          lockedState.id,
-          lockedState.bestPercent,
-          release,
-        );
+        if (release.status === TestReleaseStatus.ARCHIVED) {
+          await this.markAttemptCancelled(
+            transaction,
+            current.id,
+            lockedState.id,
+            lockedState.bestPercent,
+            release,
+          );
+        } else {
+          await this.markAttemptExpired(
+            transaction,
+            current.id,
+            lockedState.id,
+            lockedState.bestPercent,
+            release,
+          );
+        }
       }
       if (lockedState.status === TestStudentStatus.AWAITING_REVIEW) {
         throw this.attemptLocked();
@@ -436,6 +452,16 @@ export class StudentTestsService {
         );
         return { kind: 'expired' as const };
       }
+      if (this.isClosedByDeadline(attempt.studentState.release)) {
+        await this.markAttemptExpired(
+          transaction,
+          attempt.id,
+          attempt.studentState.id,
+          attempt.studentState.bestPercent,
+          attempt.studentState.release,
+        );
+        return { kind: 'closed' as const };
+      }
       this.assertAttemptEditable(attempt);
       const answer = attempt.answers.find(
         (candidate) => candidate.testItem.id === testItemId,
@@ -466,6 +492,9 @@ export class StudentTestsService {
     if (result.kind === 'expired') {
       throw this.timeExpired();
     }
+    if (result.kind === 'closed') {
+      throw this.testClosed();
+    }
     return result.attempt;
   }
 
@@ -480,6 +509,16 @@ export class StudentTestsService {
         user.id,
         attemptId,
       );
+      if (
+        attempt.status === TestAttemptStatus.AWAITING_REVIEW ||
+        attempt.status === TestAttemptStatus.GRADED ||
+        attempt.status === TestAttemptStatus.RETURNED
+      ) {
+        return {
+          kind: 'attempt' as const,
+          attempt: await this.findAttemptDto(transaction, attempt.id),
+        };
+      }
       if (this.isAttemptExpired(attempt.expiresAt)) {
         await this.markAttemptExpired(
           transaction,
@@ -489,6 +528,16 @@ export class StudentTestsService {
           attempt.studentState.release,
         );
         return { kind: 'expired' as const };
+      }
+      if (this.isClosedByDeadline(attempt.studentState.release)) {
+        await this.markAttemptExpired(
+          transaction,
+          attempt.id,
+          attempt.studentState.id,
+          attempt.studentState.bestPercent,
+          attempt.studentState.release,
+        );
+        return { kind: 'closed' as const };
       }
       this.assertAttemptEditable(attempt);
       const submittedAt = new Date();
@@ -601,6 +650,9 @@ export class StudentTestsService {
     if (result.kind === 'expired') {
       throw this.timeExpired();
     }
+    if (result.kind === 'closed') {
+      throw this.testClosed();
+    }
     return result.attempt;
   }
 
@@ -702,16 +754,6 @@ export class StudentTestsService {
     ) {
       throw this.attemptLocked();
     }
-    if (
-      release.dueAt &&
-      release.dueAt < new Date() &&
-      release.latePolicy === TestLatePolicy.DISALLOW
-    ) {
-      throw new ConflictException({
-        code: 'TEST_CLOSED',
-        message: 'This test no longer accepts responses',
-      });
-    }
   }
 
   private assertReleaseOpen(release: StudentReleaseRecord): void {
@@ -739,6 +781,29 @@ export class StudentTestsService {
 
   private isAttemptExpired(expiresAt: Date | null): boolean {
     return Boolean(expiresAt && expiresAt <= new Date());
+  }
+
+  private isClosedByDeadline(release: {
+    dueAt: Date | null;
+    latePolicy: TestLatePolicy;
+  }): boolean {
+    return Boolean(
+      release.dueAt &&
+      release.dueAt <= new Date() &&
+      release.latePolicy === TestLatePolicy.DISALLOW,
+    );
+  }
+
+  private async lockRelease(
+    transaction: Prisma.TransactionClient,
+    releaseId: string,
+  ): Promise<void> {
+    await transaction.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT "id"
+      FROM "TestRelease"
+      WHERE "id" = ${releaseId}
+      FOR UPDATE
+    `);
   }
 
   private validateResponse(
@@ -1154,6 +1219,32 @@ export class StudentTestsService {
     });
   }
 
+  private async markAttemptCancelled(
+    transaction: Prisma.TransactionClient,
+    attemptId: string,
+    studentStateId: string,
+    bestPercent: Prisma.Decimal | null,
+    release: {
+      passingPercent: Prisma.Decimal;
+      scorePolicy: TestScorePolicy;
+    },
+  ): Promise<void> {
+    const cancelledAt = new Date();
+    await transaction.testAttempt.updateMany({
+      where: { id: attemptId, status: TestAttemptStatus.IN_PROGRESS },
+      data: { status: TestAttemptStatus.CANCELLED },
+    });
+    await transaction.testStudentState.update({
+      where: { id: studentStateId },
+      data: {
+        status: this.preserveCompletedState(bestPercent, release)
+          ? TestStudentStatus.COMPLETED
+          : TestStudentStatus.EXPIRED,
+        lastActivityAt: cancelledAt,
+      },
+    });
+  }
+
   private assertStudent(user: AuthUser): void {
     if (user.role !== UserRole.STUDENT) {
       throw new ForbiddenException({
@@ -1202,6 +1293,13 @@ export class StudentTestsService {
     return new ConflictException({
       code: 'TEST_TIME_EXPIRED',
       message: 'The time limit for this attempt has expired',
+    });
+  }
+
+  private testClosed(): ConflictException {
+    return new ConflictException({
+      code: 'TEST_CLOSED',
+      message: 'This test no longer accepts responses',
     });
   }
 }

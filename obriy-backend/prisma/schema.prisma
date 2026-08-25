@@ -304,10 +304,10 @@ model Class {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  teacher            User                @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
-  students           User[]              @relation("ClassStudents")
-  lessonLinks        ClassLesson[]
-  testReleases       TestRelease[]
+  teacher      User          @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  students     User[]        @relation("ClassStudents")
+  lessonLinks  ClassLesson[]
+  testReleases TestRelease[]
 
   @@index([teacherId])
 }
@@ -324,10 +324,10 @@ model Lesson {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  teacher            User                @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
-  classLinks         ClassLesson[]
-  testLinks          LessonTest[]
-  testReleases       TestRelease[]
+  teacher      User          @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
+  classLinks   ClassLesson[]
+  testLinks    LessonTest[]
+  testReleases TestRelease[]
 
   @@index([teacherId, status, updatedAt])
 }
@@ -360,9 +360,9 @@ model Assignment {
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
 
-  teacher     User                 @relation("TeacherAssignments", fields: [teacherId], references: [id], onDelete: Cascade)
-  revisions   AssignmentRevision[]
-  testItems   TestItem[]
+  teacher   User                 @relation("TeacherAssignments", fields: [teacherId], references: [id], onDelete: Cascade)
+  revisions AssignmentRevision[]
+  testItems TestItem[]
 
   @@index([teacherId, status, updatedAt])
   @@index([teacherId, type, updatedAt])
@@ -385,10 +385,10 @@ model AssignmentRevision {
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt
 
-  assignment  Assignment             @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  mapPreset   MapPreset?             @relation(fields: [mapPresetId], references: [id], onDelete: Restrict)
+  assignment  Assignment                     @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  mapPreset   MapPreset?                     @relation(fields: [mapPresetId], references: [id], onDelete: Restrict)
   solution    AssignmentSolution?
-  attachments AssignmentAttachment[]
+  promptImage AssignmentRevisionPromptImage?
   testItems   TestItem[]
 
   @@unique([assignmentId, version])
@@ -408,7 +408,6 @@ model AssignmentSolution {
 
 model AssignmentAttachment {
   id             String                     @id @default(uuid())
-  revisionId     String?
   testAnswerId   String?
   uploadedById   String?
   kind           AssignmentAttachmentKind
@@ -421,13 +420,23 @@ model AssignmentAttachment {
   createdAt      DateTime                   @default(now())
   updatedAt      DateTime                   @updatedAt
 
-  revision   AssignmentRevision? @relation(fields: [revisionId], references: [id], onDelete: Cascade)
-  testAnswer TestAnswer?         @relation(fields: [testAnswerId], references: [id], onDelete: Cascade)
-  uploadedBy User?               @relation("AssignmentAttachmentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  revisionLinks AssignmentRevisionPromptImage[]
+  testAnswer    TestAnswer?                     @relation(fields: [testAnswerId], references: [id], onDelete: Cascade)
+  uploadedBy    User?                           @relation("AssignmentAttachmentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
 
-  @@index([revisionId, kind])
   @@index([testAnswerId, kind])
   @@index([uploadedById])
+}
+
+model AssignmentRevisionPromptImage {
+  revisionId   String   @id
+  attachmentId String
+  createdAt    DateTime @default(now())
+
+  revision   AssignmentRevision   @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  attachment AssignmentAttachment @relation(fields: [attachmentId], references: [id], onDelete: Restrict)
+
+  @@index([attachmentId])
 }
 
 model Test {

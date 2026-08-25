@@ -16,6 +16,7 @@ export interface TestItem {
   assignmentRevisionId: string
   assignmentType: AssignmentType
   title: string
+  hasUpdate: boolean
 }
 
 export interface TestRevision {
@@ -218,7 +219,11 @@ export interface TeacherTestAnswerReview {
   maxPoints: number
   scorePoints: number | null
   scorePercent: number | null
+  isCorrect: boolean | null
   teacherComment: string | null
+  publicConfig: Record<string, unknown>
+  gradingConfig: Record<string, unknown>
+  gradingData: Record<string, unknown>
   choiceOptions: Array<{
     id: string
     text: string

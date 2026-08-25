@@ -25,6 +25,7 @@ describe('AssignmentsService boundaries', () => {
   const assignmentDelete = jest.fn();
   const revisionFindFirst = jest.fn();
   const revisionUpdateMany = jest.fn();
+  const revisionPromptImageFindUnique = jest.fn();
   const solutionUpsert = jest.fn();
   const queryRaw = jest.fn();
   const transaction = {
@@ -39,6 +40,9 @@ describe('AssignmentsService boundaries', () => {
       findFirst: revisionFindFirst,
       updateMany: revisionUpdateMany,
     },
+    assignmentRevisionPromptImage: {
+      findUnique: revisionPromptImageFindUnique,
+    },
     assignmentSolution: { upsert: solutionUpsert },
   };
   const runTransaction = jest.fn();
@@ -51,7 +55,8 @@ describe('AssignmentsService boundaries', () => {
     user: { findUnique: userFindUnique },
     $transaction: runTransaction,
   } as unknown as PrismaService;
-  const service = new AssignmentsService(prisma);
+  const cloudinary = { destroyImage: jest.fn() };
+  const service = new AssignmentsService(prisma, cloudinary as never);
 
   const teacher: AuthUser = {
     id: 'teacher-1',
@@ -69,6 +74,7 @@ describe('AssignmentsService boundaries', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     queryRaw.mockResolvedValue([{ id: 'assignment-1' }]);
+    revisionPromptImageFindUnique.mockResolvedValue(null);
     runTransaction.mockImplementation(
       async (callback: (client: typeof transaction) => Promise<unknown>) =>
         callback(transaction),

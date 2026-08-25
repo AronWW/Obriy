@@ -3,6 +3,7 @@ import { CheckCircle2, ClipboardCheck, Clock3, UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../../shared/api/api-client'
+import { assignmentImageUrl } from '../../assignments/api/assignments.api'
 import { AssignmentDialog } from '../../assignments/components/AssignmentDialog'
 import { listLessonTestReviews, reviewTestAnswer } from '../api/tests.api'
 import { testQueryKeys } from '../model/test-query-keys'
@@ -170,25 +171,7 @@ function ReviewAnswerCard({ answer, index, mutationError, onSubmit, pending }: {
         {manual ? (
           <p>{text || t('tests.reviews.emptyAnswer')}</p>
         ) : (
-          <div className={styles.reviewChoiceOptions}>
-            {(answer.choiceOptions ?? []).map((option) => (
-              <div
-                className={option.correct ? styles.reviewChoiceCorrect : undefined}
-                key={option.id}
-              >
-                <span>{option.text}</span>
-                <small>
-                  {option.selected
-                    ? t('tests.reviews.optionSelected')
-                    : t('tests.reviews.optionNotSelected')}
-                  {' · '}
-                  {option.correct
-                    ? t('tests.reviews.optionCorrect')
-                    : t('tests.reviews.optionIncorrect')}
-                </small>
-              </div>
-            ))}
-          </div>
+          <ObjectiveReviewResponse answer={answer} />
         )}
       </div>
       {answer.teacherComment && !awaiting && <p className={styles.teacherComment}>{answer.teacherComment}</p>}
@@ -206,6 +189,84 @@ function ReviewAnswerCard({ answer, index, mutationError, onSubmit, pending }: {
       {!manual && <p className={styles.autoGraded}><CheckCircle2 size={15} />{t('tests.reviews.autoGraded')}</p>}
     </article>
   )
+}
+
+function ObjectiveReviewResponse({ answer }: { answer: TeacherTestAnswerReview }) {
+  const { t } = useTranslation()
+  if (answer.type === 'SINGLE_CHOICE' || answer.type === 'MULTIPLE_CHOICE') {
+    return <div className={styles.reviewChoiceOptions}>{(answer.choiceOptions ?? []).map((option) => <div className={option.correct ? styles.reviewChoiceCorrect : undefined} key={option.id}><span>{option.text}</span><small>{option.selected ? t('tests.reviews.optionSelected') : t('tests.reviews.optionNotSelected')}{' · '}{option.correct ? t('tests.reviews.optionCorrect') : t('tests.reviews.optionIncorrect')}</small></div>)}</div>
+  }
+  if (answer.type === 'MATCHING') {
+    const left = recordList(answer.publicConfig.leftItems)
+    const right = new Map(recordList(answer.publicConfig.rightItems).map((item) => [stringField(item, 'id'), stringField(item, 'text')]))
+    const selected = pairMap(answer.responseData.matches, 'leftItemId', 'rightItemId')
+    const correct = pairMap(answer.gradingConfig.matches, 'leftItemId', 'rightItemId')
+    return <div className={styles.reviewStructuredAnswer}>{left.map((item) => { const id = stringField(item, 'id'); const selectedId = selected.get(id); const correctId = correct.get(id); return <div data-correct={selectedId === correctId || undefined} key={id}><strong>{stringField(item, 'text')}</strong><span>{right.get(selectedId ?? '') || t('tests.reviews.emptyAnswer')}</span><small>{t('tests.reviews.correctValue', { value: right.get(correctId ?? '') ?? '—' })}</small></div> })}</div>
+  }
+  if (answer.type === 'ORDERING') {
+    const items = new Map(recordList(answer.publicConfig.items).map((item) => [stringField(item, 'id'), stringField(item, 'text')]))
+    const selected = stringList(answer.responseData.orderedItemIds)
+    const correct = stringList(answer.gradingConfig.correctOrderIds)
+    return <SequenceReview selected={selected.map((id) => items.get(id) ?? id)} correct={correct.map((id) => items.get(id) ?? id)} />
+  }
+  if (answer.type === 'CATEGORIZATION') {
+    const categories = new Map(recordList(answer.publicConfig.categories).map((category) => [stringField(category, 'id'), stringField(category, 'title')]))
+    const selected = pairMap(answer.responseData.assignments, 'itemId', 'categoryId')
+    const correct = pairMap(answer.gradingConfig.assignments, 'itemId', 'categoryId')
+    return <div className={styles.reviewStructuredAnswer}>{recordList(answer.publicConfig.items).map((item) => { const id = stringField(item, 'id'); const selectedId = selected.get(id); const correctId = correct.get(id); return <div data-correct={selectedId === correctId || undefined} key={id}><strong>{stringField(item, 'text')}</strong><span>{categories.get(selectedId ?? '') || t('tests.reviews.emptyAnswer')}</span><small>{t('tests.reviews.correctValue', { value: categories.get(correctId ?? '') ?? '—' })}</small></div> })}</div>
+  }
+  if (answer.type === 'FILL_BLANKS') {
+    const selected = pairMap(answer.responseData.answers, 'blankId', 'text')
+    const correct = new Map(recordList(answer.gradingConfig.blanks).map((blank) => [stringField(blank, 'blankId'), stringList(blank.acceptedAnswers).join(', ')]))
+    const blanks = recordList(answer.publicConfig.segments).filter((segment) => segment.type === 'BLANK')
+    return <div className={styles.reviewStructuredAnswer}>{blanks.map((blank, index) => { const id = stringField(blank, 'id'); return <div key={id}><strong>{t('tests.reviews.blankNumber', { count: index + 1 })}</strong><span>{selected.get(id) || t('tests.reviews.emptyAnswer')}</span><small>{t('tests.reviews.correctValue', { value: correct.get(id) ?? '—' })}</small></div> })}</div>
+  }
+  if (answer.type === 'IMAGE_HOTSPOT') {
+    const image = asRecord(answer.publicConfig.promptImage)
+    const target = asRecord(answer.gradingConfig.target)
+    const selectedX = numberField(answer.responseData, 'x')
+    const selectedY = numberField(answer.responseData, 'y')
+    const targetX = numberField(target, 'x')
+    const targetY = numberField(target, 'y')
+    const attachmentId = stringField(image, 'attachmentId')
+    return <div className={styles.reviewHotspotAnswer}>{attachmentId && <div><img alt={answer.title} src={assignmentImageUrl(attachmentId)} />{selectedX !== null && selectedY !== null && <span className={styles.reviewHotspotSelected} style={{ left: `${selectedX * 100}%`, top: `${selectedY * 100}%` }} />}{targetX !== null && targetY !== null && <span className={styles.reviewHotspotCorrect} style={{ left: `${targetX * 100}%`, top: `${targetY * 100}%` }} />}</div>}<small>{t('tests.reviews.hotspotResult', { selected: formatPoint(selectedX, selectedY), correct: formatPoint(targetX, targetY) })}</small></div>
+  }
+  return <pre className={styles.reviewRawAnswer}>{JSON.stringify(answer.responseData, null, 2)}</pre>
+}
+
+function SequenceReview({ selected, correct }: { selected: string[]; correct: string[] }) {
+  const { t } = useTranslation()
+  return <div className={styles.reviewSequence}><div><strong>{t('tests.reviews.studentSequence')}</strong><ol>{selected.map((value, index) => <li key={`${value}-${index}`}>{value}</li>)}</ol></div><div><strong>{t('tests.reviews.correctSequence')}</strong><ol>{correct.map((value, index) => <li key={`${value}-${index}`}>{value}</li>)}</ol></div></div>
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {}
+}
+
+function recordList(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.map(asRecord) : []
+}
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+}
+
+function stringField(value: unknown, field: string): string {
+  const record = asRecord(value)
+  return typeof record[field] === 'string' ? record[field] : ''
+}
+
+function numberField(value: unknown, field: string): number | null {
+  const record = asRecord(value)
+  return typeof record[field] === 'number' && Number.isFinite(record[field]) ? record[field] : null
+}
+
+function pairMap(value: unknown, left: string, right: string): Map<string, string> {
+  return new Map(recordList(value).flatMap((item) => { const leftValue = stringField(item, left); const rightValue = stringField(item, right); return leftValue && rightValue ? [[leftValue, rightValue] as const] : [] }))
+}
+
+function formatPoint(x: number | null, y: number | null): string {
+  return x === null || y === null ? '—' : `${Math.round(x * 100)}%, ${Math.round(y * 100)}%`
 }
 
 function reviewError(error: Error | null, t: (key: string) => string): string {

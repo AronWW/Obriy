@@ -33,6 +33,8 @@ export class UpdateTestItemDto extends TestDraftVersionDto {
   maxPoints: number;
 }
 
+export class UpdateTestItemRevisionDto extends TestDraftVersionDto {}
+
 export class ReorderTestItemsDto extends TestDraftVersionDto {
   @ApiProperty({ type: String, isArray: true, format: 'uuid' })
   @IsArray()

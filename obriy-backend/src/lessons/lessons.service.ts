@@ -9,6 +9,7 @@ import {
 import {
   LessonStatus,
   Prisma,
+  TestAttemptStatus,
   TestLatePolicy,
   TestReleaseStatus,
   TestStudentStatus,
@@ -833,6 +834,33 @@ export class LessonsService {
     lessonId: string,
     classId?: string,
   ): Promise<void> {
+    await this.lockLessonTestReleases(transaction, lessonId, classId);
+    const cancelledAt = new Date();
+    await transaction.testAttempt.updateMany({
+      where: {
+        status: TestAttemptStatus.IN_PROGRESS,
+        studentState: {
+          release: {
+            lessonId,
+            ...(classId ? { classId } : {}),
+          },
+        },
+      },
+      data: { status: TestAttemptStatus.CANCELLED },
+    });
+    await transaction.testStudentState.updateMany({
+      where: {
+        status: TestStudentStatus.IN_PROGRESS,
+        release: {
+          lessonId,
+          ...(classId ? { classId } : {}),
+        },
+      },
+      data: {
+        status: TestStudentStatus.EXPIRED,
+        lastActivityAt: cancelledAt,
+      },
+    });
     await transaction.testRelease.updateMany({
       where: {
         lessonId,
@@ -847,9 +875,33 @@ export class LessonsService {
       },
       data: {
         status: TestReleaseStatus.ARCHIVED,
-        closedAt: new Date(),
+        closedAt: cancelledAt,
       },
     });
+  }
+
+  private async lockLessonTestReleases(
+    transaction: Prisma.TransactionClient,
+    lessonId: string,
+    classId?: string,
+  ): Promise<void> {
+    if (classId) {
+      await transaction.$queryRaw<{ id: string }[]>(Prisma.sql`
+        SELECT "id"
+        FROM "TestRelease"
+        WHERE "lessonId" = ${lessonId} AND "classId" = ${classId}
+        ORDER BY "id"
+        FOR UPDATE
+      `);
+      return;
+    }
+    await transaction.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT "id"
+      FROM "TestRelease"
+      WHERE "lessonId" = ${lessonId}
+      ORDER BY "id"
+      FOR UPDATE
+    `);
   }
 
   private async assertOwnedClass(

@@ -6,6 +6,7 @@ import {
   TestStudentStatus,
 } from '@prisma/client';
 import { IsObject } from 'class-validator';
+import { MapPresetDto } from '../../map-presets/dto/map-preset.dto';
 
 export class SaveTestAnswerDto {
   @ApiProperty({ type: 'object', additionalProperties: true })
@@ -40,6 +41,14 @@ export class StudentTestAnswerDto {
 
   @ApiPropertyOptional({ nullable: true })
   teacherComment: string | null;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    description: 'Correct solution details exposed only when no retry remains',
+  })
+  solutionFeedback: Record<string, unknown> | null;
 
   constructor(data: StudentTestAnswerDto) {
     Object.assign(this, data);
@@ -121,6 +130,9 @@ export class StudentTestItemDto {
 
   @ApiProperty({ type: 'object', additionalProperties: true })
   publicConfig: Record<string, unknown>;
+
+  @ApiPropertyOptional({ type: MapPresetDto, nullable: true })
+  mapPreset: MapPresetDto | null;
 
   constructor(data: StudentTestItemDto) {
     Object.assign(this, data);

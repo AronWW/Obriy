@@ -3,6 +3,7 @@ import type {
   AssignmentType,
   ContentLocale,
 } from '../../assignments/model/assignment.types'
+import type { MapPoint, MapPreset } from '../../maps/model/map.types'
 
 export type TestStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 export type TestRevisionStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
@@ -120,11 +121,7 @@ export interface LessonTest {
 }
 
 export type TestReleaseStatus =
-  | 'DRAFT'
-  | 'SCHEDULED'
-  | 'ACTIVE'
-  | 'CLOSED'
-  | 'ARCHIVED'
+  'DRAFT' | 'SCHEDULED' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED'
 
 export type TestStudentStatus =
   | 'NOT_STARTED'
@@ -143,10 +140,7 @@ export type TestAttemptStatus =
   | 'CANCELLED'
 
 export type TestAnswerStatus =
-  | 'DRAFT'
-  | 'AWAITING_REVIEW'
-  | 'GRADED'
-  | 'RETURNED'
+  'DRAFT' | 'AWAITING_REVIEW' | 'GRADED' | 'RETURNED'
 
 export interface StudentTestAnswer {
   id: string
@@ -158,6 +152,14 @@ export interface StudentTestAnswer {
   scorePercent: number | null
   isCorrect: boolean | null
   teacherComment: string | null
+  solutionFeedback: MapPointSolutionFeedback | null
+}
+
+export interface MapPointSolutionFeedback {
+  target: MapPoint
+  radiusKm: number
+  distanceKm: number | null
+  withinRadius: boolean | null
 }
 
 export interface StudentTestAttempt {
@@ -187,6 +189,7 @@ export interface StudentTestItem {
   prompt: string
   instructions: string | null
   publicConfig: Record<string, unknown>
+  mapPreset: MapPreset | null
 }
 
 export interface StudentLessonTest {
@@ -224,6 +227,7 @@ export interface TeacherTestAnswerReview {
   publicConfig: Record<string, unknown>
   gradingConfig: Record<string, unknown>
   gradingData: Record<string, unknown>
+  mapPreset: MapPreset | null
   choiceOptions: Array<{
     id: string
     text: string

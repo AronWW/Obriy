@@ -19,7 +19,8 @@
     "test:cov": "jest --config ./test/jest-unit.json --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --config ./test/jest-unit.json --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:admin": "ts-node prisma/seed-admin.ts"
+    "seed:admin": "ts-node prisma/seed-admin.ts",
+    "seed:maps": "ts-node prisma/seed-maps.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

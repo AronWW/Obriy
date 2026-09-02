@@ -1,9 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../../i18n/config'
 import { API_BASE_URL } from '../../../shared/config/env'
 import { server } from '../../../test/server'
@@ -19,6 +25,40 @@ import type {
   StudentLessonSummary,
 } from '../model/lesson.types'
 import { StudentLessonReaderPage } from './StudentLessonReaderPage'
+
+vi.mock('../../maps/components/MapCanvas', () => ({
+  MapCanvas: ({
+    comparisonPoint,
+    onPointChange,
+    point,
+    radiusKm,
+  }: {
+    comparisonPoint?: { longitude: number; latitude: number } | null
+    onPointChange?: (point: { longitude: number; latitude: number }) => void
+    point?: { longitude: number; latitude: number } | null
+    radiusKm?: number | null
+  }) => (
+    <div
+      data-comparison={
+        comparisonPoint
+          ? `${comparisonPoint.longitude},${comparisonPoint.latitude}`
+          : undefined
+      }
+      data-point={point ? `${point.longitude},${point.latitude}` : undefined}
+      data-radius={radiusKm ?? undefined}
+      data-testid="map-canvas-mock"
+    >
+      {onPointChange && (
+        <button
+          onClick={() => onPointChange({ longitude: 30.5, latitude: 50.45 })}
+          type="button"
+        >
+          Mark student answer
+        </button>
+      )}
+    </div>
+  ),
+}))
 
 const student = {
   id: 'student-1',
@@ -45,9 +85,8 @@ describe('student lessons', () => {
       user: student,
     })
     server.use(
-      http.get(
-        `${API_BASE_URL}/classes/me/lessons/:lessonId/tests`,
-        () => HttpResponse.json([]),
+      http.get(`${API_BASE_URL}/classes/me/lessons/:lessonId/tests`, () =>
+        HttpResponse.json([]),
       ),
     )
   })
@@ -112,7 +151,9 @@ describe('student lessons', () => {
       .closest('li')
     expect(firstLesson).not.toBeNull()
     expect(within(firstLesson!).queryByText(/min$/)).not.toBeInTheDocument()
-    expect(within(firstLesson!).getByText('0/2 · Not started')).toBeInTheDocument()
+    expect(
+      within(firstLesson!).getByText('0/2 · Not started'),
+    ).toBeInTheDocument()
     expect(
       within(firstLesson!).getByRole('link', {
         name: 'Open lesson “First settlement”',
@@ -123,7 +164,9 @@ describe('student lessons', () => {
       .getByRole('heading', { name: 'The Ukrainian Revolution' })
       .closest('li')
     expect(within(secondLesson!).getByText('25 min')).toBeInTheDocument()
-    expect(within(secondLesson!).getByText('2/2 · Completed')).toBeInTheDocument()
+    expect(
+      within(secondLesson!).getByText('2/2 · Completed'),
+    ).toBeInTheDocument()
   })
 
   it('keeps the class page useful when no lessons have been published', async () => {
@@ -147,7 +190,9 @@ describe('student lessons', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('A material will appear here when your teacher opens it.'),
+      screen.getByText(
+        'A material will appear here when your teacher opens it.',
+      ),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: 'Classmates' }),
@@ -170,7 +215,10 @@ describe('student lessons', () => {
     renderStudentReader('/app/student/lessons/lesson-1')
 
     expect(
-      await screen.findByRole('heading', { name: 'First settlement', level: 1 }),
+      await screen.findByRole('heading', {
+        name: 'First settlement',
+        level: 1,
+      }),
     ).toBeInTheDocument()
     expect(screen.getByText('Grade 9-A')).toBeInTheDocument()
     expect(screen.getByText('Olena Koval')).toBeInTheDocument()
@@ -187,7 +235,9 @@ describe('student lessons', () => {
       '/app/student/classes',
     )
     expect(
-      await screen.findByText('No knowledge checks have been added to this lesson yet.'),
+      await screen.findByText(
+        'No knowledge checks have been added to this lesson yet.',
+      ),
     ).toBeInTheDocument()
   })
 
@@ -206,9 +256,8 @@ describe('student lessons', () => {
           teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
         }),
       ),
-      http.get(
-        `${API_BASE_URL}/classes/me/lessons/lesson-1/tests`,
-        () => HttpResponse.json([test]),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () =>
+        HttpResponse.json([test]),
       ),
       http.get(`${API_BASE_URL}/test-releases/release-1`, () =>
         HttpResponse.json(test),
@@ -223,7 +272,9 @@ describe('student lessons', () => {
         async ({ request }) => {
           const body = await request.json()
           savedBodies.push(body)
-          const responseData = (body as { responseData: Record<string, unknown> }).responseData
+          const responseData = (
+            body as { responseData: Record<string, unknown> }
+          ).responseData
           const attempt = studentTestAttempt({
             answers: [studentTestAnswer({ responseData })],
           })
@@ -237,7 +288,12 @@ describe('student lessons', () => {
           status: 'AWAITING_REVIEW',
           pendingReviewCount: 1,
           submittedAt: '2026-08-13T12:00:00.000Z',
-          answers: [studentTestAnswer({ status: 'AWAITING_REVIEW', responseData: { text: 'My reasoned answer', attachmentIds: [] } })],
+          answers: [
+            studentTestAnswer({
+              status: 'AWAITING_REVIEW',
+              responseData: { text: 'My reasoned answer', attachmentIds: [] },
+            }),
+          ],
         })
         test = { ...test, stateStatus: 'AWAITING_REVIEW', attempt }
         return HttpResponse.json(attempt)
@@ -252,19 +308,33 @@ describe('student lessons', () => {
     await user.click(screen.getByRole('button', { name: 'Start' }))
     const dialog = await screen.findByRole('dialog', { name: 'History check' })
     await user.click(within(dialog).getByRole('button', { name: 'Start' }))
-    const answer = await within(dialog).findByRole('textbox', { name: /Your answer/ })
+    const answer = await within(dialog).findByRole('textbox', {
+      name: /Your answer/,
+    })
     await user.type(answer, 'My reasoned answer')
 
-    await waitFor(() => expect(savedBodies).toEqual([{ responseData: { text: 'My reasoned answer', attachmentIds: [] } }]), {
-      timeout: 2_500,
-    })
+    await waitFor(
+      () =>
+        expect(savedBodies).toEqual([
+          { responseData: { text: 'My reasoned answer', attachmentIds: [] } },
+        ]),
+      {
+        timeout: 2_500,
+      },
+    )
     expect(within(dialog).getByText('Answer saved')).toBeInTheDocument()
 
-    await user.click(within(dialog).getByRole('button', { name: 'Finish test' }))
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Finish test' }),
+    )
     const confirm = screen.getByRole('dialog', { name: 'Finish this attempt?' })
-    await user.click(within(confirm).getByRole('button', { name: 'Submit answers' }))
+    await user.click(
+      within(confirm).getByRole('button', { name: 'Submit answers' }),
+    )
     await waitFor(() => expect(submitted).toBe(true))
-    expect(await screen.findByText('Awaiting teacher review')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Awaiting teacher review'),
+    ).toBeInTheDocument()
   })
 
   it('keeps matching answers one-to-one and submits every pair', async () => {
@@ -277,46 +347,94 @@ describe('student lessons', () => {
     const rightB = 'right-b'
     let test = studentTest({
       maxPoints: 6,
-      items: [{
-        id: 'item-1', position: 0, maxPoints: 6, assignmentId: 'assignment-1', assignmentRevisionId: 'revision-1', type: 'MATCHING',
-        title: 'Countries and capitals', prompt: 'Match every country to its capital.', instructions: null,
-        publicConfig: {
-          leftItems: [{ id: leftA, text: 'Ukraine' }, { id: leftB, text: 'France' }],
-          rightItems: [{ id: rightA, text: 'Kyiv' }, { id: rightB, text: 'Paris' }, { id: 'distractor', text: 'Warsaw' }],
-          shuffleRightItems: true,
+      items: [
+        {
+          id: 'item-1',
+          position: 0,
+          maxPoints: 6,
+          assignmentId: 'assignment-1',
+          assignmentRevisionId: 'revision-1',
+          type: 'MATCHING',
+          title: 'Countries and capitals',
+          prompt: 'Match every country to its capital.',
+          instructions: null,
+          mapPreset: null,
+          publicConfig: {
+            leftItems: [
+              { id: leftA, text: 'Ukraine' },
+              { id: leftB, text: 'France' },
+            ],
+            rightItems: [
+              { id: rightA, text: 'Kyiv' },
+              { id: rightB, text: 'Paris' },
+              { id: 'distractor', text: 'Warsaw' },
+            ],
+            shuffleRightItems: true,
+          },
         },
-      }],
+      ],
     })
 
     server.use(
-      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () => HttpResponse.json({
-        ...studentLesson(), content: 'Read this lesson before answering.',
-        class: { id: 'class-1', name: 'Grade 9-A' }, teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
-      })),
-      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () => HttpResponse.json([test])),
-      http.get(`${API_BASE_URL}/test-releases/release-1`, () => HttpResponse.json(test)),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
+        HttpResponse.json({
+          ...studentLesson(),
+          content: 'Read this lesson before answering.',
+          class: { id: 'class-1', name: 'Grade 9-A' },
+          teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
+        }),
+      ),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () =>
+        HttpResponse.json([test]),
+      ),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () =>
+        HttpResponse.json(test),
+      ),
       http.post(`${API_BASE_URL}/test-releases/release-1/attempts`, () => {
         const attempt = studentTestAttempt({
           maxPoints: 6,
-          answers: [studentTestAnswer({ maxPoints: 6, responseData: { matches: [] } })],
+          answers: [
+            studentTestAnswer({ maxPoints: 6, responseData: { matches: [] } }),
+          ],
         })
         test = { ...test, stateStatus: 'IN_PROGRESS', attempt }
         return HttpResponse.json(attempt)
       }),
-      http.put(`${API_BASE_URL}/test-attempts/attempt-1/answers/item-1`, async ({ request }) => {
-        savedBodies.push(await request.json())
-        return HttpResponse.json(test.attempt)
-      }),
+      http.put(
+        `${API_BASE_URL}/test-attempts/attempt-1/answers/item-1`,
+        async ({ request }) => {
+          savedBodies.push(await request.json())
+          return HttpResponse.json(test.attempt)
+        },
+      ),
       http.post(`${API_BASE_URL}/test-attempts/attempt-1/submit`, () => {
         submitted = true
-        return HttpResponse.json(studentTestAttempt({
-          status: 'GRADED', maxPoints: 6, scorePoints: 6, scorePercent: 100, isPassed: true,
-          submittedAt: '2026-08-13T12:00:00.000Z', gradedAt: '2026-08-13T12:00:00.000Z',
-          answers: [studentTestAnswer({
-            status: 'GRADED', maxPoints: 6, scorePoints: 6, scorePercent: 100, isCorrect: true,
-            responseData: { matches: [{ leftItemId: leftA, rightItemId: rightA }, { leftItemId: leftB, rightItemId: rightB }] },
-          })],
-        }))
+        return HttpResponse.json(
+          studentTestAttempt({
+            status: 'GRADED',
+            maxPoints: 6,
+            scorePoints: 6,
+            scorePercent: 100,
+            isPassed: true,
+            submittedAt: '2026-08-13T12:00:00.000Z',
+            gradedAt: '2026-08-13T12:00:00.000Z',
+            answers: [
+              studentTestAnswer({
+                status: 'GRADED',
+                maxPoints: 6,
+                scorePoints: 6,
+                scorePercent: 100,
+                isCorrect: true,
+                responseData: {
+                  matches: [
+                    { leftItemId: leftA, rightItemId: rightA },
+                    { leftItemId: leftB, rightItemId: rightB },
+                  ],
+                },
+              }),
+            ],
+          }),
+        )
       }),
     )
 
@@ -326,15 +444,33 @@ describe('student lessons', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Start' }))
     const selects = await within(dialog).findAllByRole('combobox')
     await user.selectOptions(selects[0]!, rightA)
-    expect(within(selects[1]!).getByRole('option', { name: 'Kyiv' })).toBeDisabled()
+    expect(
+      within(selects[1]!).getByRole('option', { name: 'Kyiv' }),
+    ).toBeDisabled()
     await user.selectOptions(selects[1]!, rightB)
 
-    await waitFor(() => expect(savedBodies).toEqual([{ responseData: { matches: [
-      { leftItemId: leftA, rightItemId: rightA },
-      { leftItemId: leftB, rightItemId: rightB },
-    ] } }]), { timeout: 2_500 })
-    await user.click(within(dialog).getByRole('button', { name: 'Finish test' }))
-    await user.click(within(screen.getByRole('dialog', { name: 'Finish this attempt?' })).getByRole('button', { name: 'Submit answers' }))
+    await waitFor(
+      () =>
+        expect(savedBodies).toEqual([
+          {
+            responseData: {
+              matches: [
+                { leftItemId: leftA, rightItemId: rightA },
+                { leftItemId: leftB, rightItemId: rightB },
+              ],
+            },
+          },
+        ]),
+      { timeout: 2_500 },
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Finish test' }),
+    )
+    await user.click(
+      within(
+        screen.getByRole('dialog', { name: 'Finish this attempt?' }),
+      ).getByRole('button', { name: 'Submit answers' }),
+    )
     await waitFor(() => expect(submitted).toBe(true))
   })
 
@@ -347,48 +483,89 @@ describe('student lessons', () => {
     const precipitation = 'precipitation'
     let test = studentTest({
       maxPoints: 6,
-      items: [{
-        id: 'item-1', position: 0, maxPoints: 6, assignmentId: 'assignment-1', assignmentRevisionId: 'revision-1', type: 'ORDERING',
-        title: 'Water cycle', prompt: 'Put the stages in order.', instructions: null,
-        publicConfig: {
-          items: [
-            { id: precipitation, text: 'Precipitation' },
-            { id: evaporation, text: 'Evaporation' },
-            { id: condensation, text: 'Condensation' },
-          ],
+      items: [
+        {
+          id: 'item-1',
+          position: 0,
+          maxPoints: 6,
+          assignmentId: 'assignment-1',
+          assignmentRevisionId: 'revision-1',
+          type: 'ORDERING',
+          title: 'Water cycle',
+          prompt: 'Put the stages in order.',
+          instructions: null,
+          mapPreset: null,
+          publicConfig: {
+            items: [
+              { id: precipitation, text: 'Precipitation' },
+              { id: evaporation, text: 'Evaporation' },
+              { id: condensation, text: 'Condensation' },
+            ],
+          },
         },
-      }],
+      ],
     })
 
     server.use(
-      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () => HttpResponse.json({
-        ...studentLesson(), content: 'Read this lesson before answering.',
-        class: { id: 'class-1', name: 'Grade 9-A' }, teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
-      })),
-      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () => HttpResponse.json([test])),
-      http.get(`${API_BASE_URL}/test-releases/release-1`, () => HttpResponse.json(test)),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
+        HttpResponse.json({
+          ...studentLesson(),
+          content: 'Read this lesson before answering.',
+          class: { id: 'class-1', name: 'Grade 9-A' },
+          teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
+        }),
+      ),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () =>
+        HttpResponse.json([test]),
+      ),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () =>
+        HttpResponse.json(test),
+      ),
       http.post(`${API_BASE_URL}/test-releases/release-1/attempts`, () => {
         const attempt = studentTestAttempt({
           maxPoints: 6,
-          answers: [studentTestAnswer({ maxPoints: 6, responseData: { orderedItemIds: [] } })],
+          answers: [
+            studentTestAnswer({
+              maxPoints: 6,
+              responseData: { orderedItemIds: [] },
+            }),
+          ],
         })
         test = { ...test, stateStatus: 'IN_PROGRESS', attempt }
         return HttpResponse.json(attempt)
       }),
-      http.put(`${API_BASE_URL}/test-attempts/attempt-1/answers/item-1`, async ({ request }) => {
-        savedBodies.push(await request.json())
-        return HttpResponse.json(test.attempt)
-      }),
+      http.put(
+        `${API_BASE_URL}/test-attempts/attempt-1/answers/item-1`,
+        async ({ request }) => {
+          savedBodies.push(await request.json())
+          return HttpResponse.json(test.attempt)
+        },
+      ),
       http.post(`${API_BASE_URL}/test-attempts/attempt-1/submit`, () => {
         submitted = true
-        return HttpResponse.json(studentTestAttempt({
-          status: 'GRADED', maxPoints: 6, scorePoints: 6, scorePercent: 100, isPassed: true,
-          submittedAt: '2026-08-13T12:00:00.000Z', gradedAt: '2026-08-13T12:00:00.000Z',
-          answers: [studentTestAnswer({
-            status: 'GRADED', maxPoints: 6, scorePoints: 6, scorePercent: 100, isCorrect: true,
-            responseData: { orderedItemIds: [evaporation, condensation, precipitation] },
-          })],
-        }))
+        return HttpResponse.json(
+          studentTestAttempt({
+            status: 'GRADED',
+            maxPoints: 6,
+            scorePoints: 6,
+            scorePercent: 100,
+            isPassed: true,
+            submittedAt: '2026-08-13T12:00:00.000Z',
+            gradedAt: '2026-08-13T12:00:00.000Z',
+            answers: [
+              studentTestAnswer({
+                status: 'GRADED',
+                maxPoints: 6,
+                scorePoints: 6,
+                scorePercent: 100,
+                isCorrect: true,
+                responseData: {
+                  orderedItemIds: [evaporation, condensation, precipitation],
+                },
+              }),
+            ],
+          }),
+        )
       }),
     )
 
@@ -396,13 +573,29 @@ describe('student lessons', () => {
     await user.click(await screen.findByRole('button', { name: 'Start' }))
     const dialog = await screen.findByRole('dialog', { name: 'History check' })
     await user.click(within(dialog).getByRole('button', { name: 'Start' }))
-    await user.click(await within(dialog).findByRole('button', { name: 'Move “Precipitation” down' }))
+    await user.click(
+      await within(dialog).findByRole('button', {
+        name: 'Move “Precipitation” down',
+      }),
+    )
 
-    await waitFor(() => expect(savedBodies.at(-1)).toEqual({
-      responseData: { orderedItemIds: [evaporation, precipitation, condensation] },
-    }), { timeout: 2_500 })
-    await user.click(within(dialog).getByRole('button', { name: 'Finish test' }))
-    await user.click(within(screen.getByRole('dialog', { name: 'Finish this attempt?' })).getByRole('button', { name: 'Submit answers' }))
+    await waitFor(
+      () =>
+        expect(savedBodies.at(-1)).toEqual({
+          responseData: {
+            orderedItemIds: [evaporation, precipitation, condensation],
+          },
+        }),
+      { timeout: 2_500 },
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Finish test' }),
+    )
+    await user.click(
+      within(
+        screen.getByRole('dialog', { name: 'Finish this attempt?' }),
+      ).getByRole('button', { name: 'Submit answers' }),
+    )
     await waitFor(() => expect(submitted).toBe(true))
   })
 
@@ -418,40 +611,133 @@ describe('student lessons', () => {
       maxPoints: 9,
       items: [
         {
-          id: 'item-category', position: 0, maxPoints: 3, assignmentId: 'assignment-category', assignmentRevisionId: 'revision-category', type: 'CATEGORIZATION', title: 'Sort examples', prompt: 'Choose a category.', instructions: null,
-          publicConfig: { categories: [{ id: categoryA, title: 'Plants' }, { id: categoryB, title: 'Animals' }], items: [{ id: 'oak', text: 'Oak' }, { id: 'wolf', text: 'Wolf' }] },
+          id: 'item-category',
+          position: 0,
+          maxPoints: 3,
+          assignmentId: 'assignment-category',
+          assignmentRevisionId: 'revision-category',
+          type: 'CATEGORIZATION',
+          title: 'Sort examples',
+          prompt: 'Choose a category.',
+          instructions: null,
+          mapPreset: null,
+          publicConfig: {
+            categories: [
+              { id: categoryA, title: 'Plants' },
+              { id: categoryB, title: 'Animals' },
+            ],
+            items: [
+              { id: 'oak', text: 'Oak' },
+              { id: 'wolf', text: 'Wolf' },
+            ],
+          },
         },
         {
-          id: 'item-blanks', position: 1, maxPoints: 3, assignmentId: 'assignment-blanks', assignmentRevisionId: 'revision-blanks', type: 'FILL_BLANKS', title: 'Complete the sentence', prompt: 'Fill every blank.', instructions: null,
-          publicConfig: { segments: [{ id: 'text-a', type: 'TEXT', text: 'The capital is ' }, { id: blankA, type: 'BLANK' }], wordBankEnabled: true, wordBank: [{ id: 'word-a', text: 'Kyiv' }, { id: 'word-b', text: 'Lviv' }] },
+          id: 'item-blanks',
+          position: 1,
+          maxPoints: 3,
+          assignmentId: 'assignment-blanks',
+          assignmentRevisionId: 'revision-blanks',
+          type: 'FILL_BLANKS',
+          title: 'Complete the sentence',
+          prompt: 'Fill every blank.',
+          instructions: null,
+          mapPreset: null,
+          publicConfig: {
+            segments: [
+              { id: 'text-a', type: 'TEXT', text: 'The capital is ' },
+              { id: blankA, type: 'BLANK' },
+            ],
+            wordBankEnabled: true,
+            wordBank: [
+              { id: 'word-a', text: 'Kyiv' },
+              { id: 'word-b', text: 'Lviv' },
+            ],
+          },
         },
         {
-          id: 'item-hotspot', position: 2, maxPoints: 3, assignmentId: 'assignment-hotspot', assignmentRevisionId: 'revision-hotspot', type: 'IMAGE_HOTSPOT', title: 'Find the location', prompt: 'Mark the correct point.', instructions: null,
-          publicConfig: { promptImage: { attachmentId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', width: 800, height: 600 } },
+          id: 'item-hotspot',
+          position: 2,
+          maxPoints: 3,
+          assignmentId: 'assignment-hotspot',
+          assignmentRevisionId: 'revision-hotspot',
+          type: 'IMAGE_HOTSPOT',
+          title: 'Find the location',
+          prompt: 'Mark the correct point.',
+          instructions: null,
+          mapPreset: null,
+          publicConfig: {
+            promptImage: {
+              attachmentId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              width: 800,
+              height: 600,
+            },
+          },
         },
       ],
     })
 
     server.use(
-      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () => HttpResponse.json({ ...studentLesson(), content: 'Read this lesson first.', class: { id: 'class-1', name: 'Grade 9-A' }, teacher: { id: 'teacher-1', displayName: 'Olena Koval' } })),
-      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () => HttpResponse.json([test])),
-      http.get(`${API_BASE_URL}/test-releases/release-1`, () => HttpResponse.json(test)),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
+        HttpResponse.json({
+          ...studentLesson(),
+          content: 'Read this lesson first.',
+          class: { id: 'class-1', name: 'Grade 9-A' },
+          teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
+        }),
+      ),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () =>
+        HttpResponse.json([test]),
+      ),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () =>
+        HttpResponse.json(test),
+      ),
       http.post(`${API_BASE_URL}/test-releases/release-1/attempts`, () => {
-        const attempt = studentTestAttempt({ maxPoints: 9, answers: [
-          studentTestAnswer({ id: 'answer-category', testItemId: 'item-category', maxPoints: 3, responseData: { assignments: [] } }),
-          studentTestAnswer({ id: 'answer-blanks', testItemId: 'item-blanks', maxPoints: 3, responseData: { answers: [] } }),
-          studentTestAnswer({ id: 'answer-hotspot', testItemId: 'item-hotspot', maxPoints: 3, responseData: {} }),
-        ] })
+        const attempt = studentTestAttempt({
+          maxPoints: 9,
+          answers: [
+            studentTestAnswer({
+              id: 'answer-category',
+              testItemId: 'item-category',
+              maxPoints: 3,
+              responseData: { assignments: [] },
+            }),
+            studentTestAnswer({
+              id: 'answer-blanks',
+              testItemId: 'item-blanks',
+              maxPoints: 3,
+              responseData: { answers: [] },
+            }),
+            studentTestAnswer({
+              id: 'answer-hotspot',
+              testItemId: 'item-hotspot',
+              maxPoints: 3,
+              responseData: {},
+            }),
+          ],
+        })
         test = { ...test, stateStatus: 'IN_PROGRESS', attempt }
         return HttpResponse.json(attempt)
       }),
-      http.put(`${API_BASE_URL}/test-attempts/attempt-1/answers/:itemId`, async ({ params, request }) => {
-        saved.set(String(params.itemId), await request.json())
-        return HttpResponse.json(test.attempt)
-      }),
+      http.put(
+        `${API_BASE_URL}/test-attempts/attempt-1/answers/:itemId`,
+        async ({ params, request }) => {
+          saved.set(String(params.itemId), await request.json())
+          return HttpResponse.json(test.attempt)
+        },
+      ),
       http.post(`${API_BASE_URL}/test-attempts/attempt-1/submit`, () => {
         submitted = true
-        return HttpResponse.json(studentTestAttempt({ status: 'GRADED', maxPoints: 9, scorePoints: 9, scorePercent: 100, isPassed: true, answers: [] }))
+        return HttpResponse.json(
+          studentTestAttempt({
+            status: 'GRADED',
+            maxPoints: 9,
+            scorePoints: 9,
+            scorePercent: 100,
+            isPassed: true,
+            answers: [],
+          }),
+        )
       }),
     )
 
@@ -463,18 +749,38 @@ describe('student lessons', () => {
     await user.selectOptions(categorySelects[0]!, categoryA)
     await user.selectOptions(categorySelects[1]!, categoryB)
     await user.click(within(dialog).getByRole('button', { name: 'Next' }))
-    await user.type(within(dialog).getByRole('textbox', { name: /Blank/ }), 'Kyiv')
+    await user.type(
+      within(dialog).getByRole('textbox', { name: /Blank/ }),
+      'Kyiv',
+    )
     await user.click(within(dialog).getByRole('button', { name: 'Next' }))
     const sliders = within(dialog).getAllByRole('slider')
     fireEvent.change(sliders[0]!, { target: { value: '0.6' } })
     fireEvent.change(sliders[1]!, { target: { value: '0.4' } })
-    await user.click(within(dialog).getByRole('button', { name: 'Finish test' }))
-    await user.click(within(screen.getByRole('dialog', { name: 'Finish this attempt?' })).getByRole('button', { name: 'Submit answers' }))
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Finish test' }),
+    )
+    await user.click(
+      within(
+        screen.getByRole('dialog', { name: 'Finish this attempt?' }),
+      ).getByRole('button', { name: 'Submit answers' }),
+    )
 
     await waitFor(() => expect(submitted).toBe(true))
-    expect(saved.get('item-category')).toEqual({ responseData: { assignments: [{ itemId: 'oak', categoryId: categoryA }, { itemId: 'wolf', categoryId: categoryB }] } })
-    expect(saved.get('item-blanks')).toEqual({ responseData: { answers: [{ blankId: blankA, text: 'Kyiv' }] } })
-    expect(saved.get('item-hotspot')).toEqual({ responseData: { x: 0.6, y: 0.4 } })
+    expect(saved.get('item-category')).toEqual({
+      responseData: {
+        assignments: [
+          { itemId: 'oak', categoryId: categoryA },
+          { itemId: 'wolf', categoryId: categoryB },
+        ],
+      },
+    })
+    expect(saved.get('item-blanks')).toEqual({
+      responseData: { answers: [{ blankId: blankA, text: 'Kyiv' }] },
+    })
+    expect(saved.get('item-hotspot')).toEqual({
+      responseData: { x: 0.6, y: 0.4 },
+    })
   })
 
   it('shows the reviewed result for a completed test', async () => {
@@ -509,11 +815,12 @@ describe('student lessons', () => {
           teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
         }),
       ),
-      http.get(
-        `${API_BASE_URL}/classes/me/lessons/lesson-1/tests`,
-        () => HttpResponse.json([completed]),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () =>
+        HttpResponse.json([completed]),
       ),
-      http.get(`${API_BASE_URL}/test-releases/release-1`, () => HttpResponse.json(completed)),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () =>
+        HttpResponse.json(completed),
+      ),
     )
 
     renderStudentReader('/app/student/lessons/lesson-1')
@@ -522,6 +829,125 @@ describe('student lessons', () => {
     expect(screen.getAllByText('3 / 5 points')).toHaveLength(2)
     expect(screen.getByText(/3 \/ 5 points.*60%/)).toBeInTheDocument()
     expect(screen.getByText('Test passed')).toBeInTheDocument()
+  })
+
+  it('autosaves MAP_POINT and reveals its solution only after the final attempt', async () => {
+    const user = userEvent.setup()
+    const savedBodies: unknown[] = []
+    const preset = mapPresetFixture()
+    let test = studentTest({
+      title: 'Map check',
+      description: 'Find the requested city.',
+      maxAttempts: 1,
+      items: [
+        {
+          id: 'item-1',
+          position: 0,
+          maxPoints: 5,
+          assignmentId: 'assignment-map',
+          assignmentRevisionId: 'revision-map',
+          type: 'MAP_POINT',
+          title: 'Find Kyiv',
+          prompt: 'Mark Kyiv on the map.',
+          instructions: null,
+          publicConfig: { initialProjection: 'MERCATOR' },
+          mapPreset: preset,
+        },
+      ],
+    })
+    server.use(
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
+        HttpResponse.json({
+          ...studentLesson(),
+          content: 'Read this lesson first.',
+          class: { id: 'class-1', name: 'Grade 9-A' },
+          teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
+        }),
+      ),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () =>
+        HttpResponse.json([test]),
+      ),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () =>
+        HttpResponse.json(test),
+      ),
+      http.post(`${API_BASE_URL}/test-releases/release-1/attempts`, () => {
+        const attempt = studentTestAttempt({
+          answers: [studentTestAnswer({ responseData: {} })],
+        })
+        test = { ...test, stateStatus: 'IN_PROGRESS', attempt }
+        return HttpResponse.json(attempt)
+      }),
+      http.put(
+        `${API_BASE_URL}/test-attempts/attempt-1/answers/item-1`,
+        async ({ request }) => {
+          savedBodies.push(await request.json())
+          return HttpResponse.json(test.attempt)
+        },
+      ),
+      http.post(`${API_BASE_URL}/test-attempts/attempt-1/submit`, () => {
+        const attempt = studentTestAttempt({
+          status: 'GRADED',
+          scorePoints: 5,
+          scorePercent: 100,
+          isPassed: true,
+          submittedAt: '2026-08-13T12:00:00.000Z',
+          gradedAt: '2026-08-13T12:00:00.000Z',
+          answers: [
+            studentTestAnswer({
+              status: 'GRADED',
+              responseData: { longitude: 30.5, latitude: 50.45 },
+              scorePoints: 5,
+              scorePercent: 100,
+              isCorrect: true,
+              solutionFeedback: {
+                target: { longitude: 30.5234, latitude: 50.4501 },
+                radiusKm: 100,
+                distanceKm: 1.66,
+                withinRadius: true,
+              },
+            }),
+          ],
+        })
+        test = { ...test, stateStatus: 'COMPLETED', attempt }
+        return HttpResponse.json(attempt)
+      }),
+    )
+
+    renderStudentReader('/app/student/lessons/lesson-1')
+    await user.click(await screen.findByRole('button', { name: 'Start' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Map check' })
+    await user.click(within(dialog).getByRole('button', { name: 'Start' }))
+    const activeMap = await within(dialog).findByTestId('map-canvas-mock')
+    expect(activeMap).not.toHaveAttribute('data-radius')
+    await user.click(
+      within(activeMap).getByRole('button', { name: 'Mark student answer' }),
+    )
+    await waitFor(
+      () =>
+        expect(savedBodies).toEqual([
+          { responseData: { longitude: 30.5, latitude: 50.45 } },
+        ]),
+      { timeout: 2_500 },
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Finish test' }),
+    )
+    await user.click(
+      within(
+        screen.getByRole('dialog', { name: 'Finish this attempt?' }),
+      ).getByRole('button', { name: 'Submit answers' }),
+    )
+
+    await waitFor(() =>
+      expect(within(dialog).getByTestId('map-canvas-mock')).toHaveAttribute(
+        'data-radius',
+        '100',
+      ),
+    )
+    const resultMap = within(dialog).getByTestId('map-canvas-mock')
+    expect(resultMap).toHaveAttribute('data-radius', '100')
+    expect(resultMap).toHaveAttribute('data-point', '30.5234,50.4501')
+    expect(resultMap).toHaveAttribute('data-comparison', '30.5,50.45')
   })
 
   it('shows a stable unavailable state for an inaccessible lesson', async () => {
@@ -540,7 +966,9 @@ describe('student lessons', () => {
       await screen.findByRole('heading', { name: 'Lesson unavailable' }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
-    expect(screen.getByRole('link', { name: 'Back to class' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Back to class' }),
+    ).toBeInTheDocument()
   })
 })
 
@@ -644,6 +1072,7 @@ function studentTest(
         title: 'Historical reflection',
         prompt: 'Explain why this event mattered.',
         instructions: null,
+        mapPreset: null,
         publicConfig: {
           responseMode: 'LONG',
           minLength: 0,
@@ -692,6 +1121,23 @@ function studentTestAnswer(
     scorePercent: null,
     isCorrect: null,
     teacherComment: null,
+    solutionFeedback: null,
     ...overrides,
+  }
+}
+
+function mapPresetFixture() {
+  return {
+    id: '99999999-9999-4999-8999-999999999999',
+    key: 'world-adm0',
+    name: 'World countries',
+    contentLocale: 'UK' as const,
+    sourceType: 'BUILT_IN' as const,
+    geojsonUrl: '/maps/world-adm0.geojson',
+    idProperty: 'featureId',
+    year: null,
+    attribution: 'geoBoundaries',
+    bounds: { west: -180, south: -85, east: 180, north: 85 },
+    defaultViewport: { longitude: 15, latitude: 20, zoom: 1.25 },
   }
 }

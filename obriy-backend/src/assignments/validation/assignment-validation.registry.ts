@@ -36,6 +36,10 @@ import {
   IMAGE_HOTSPOT_SCHEMA_VERSION,
   imageHotspotAssignmentValidationDefinition,
 } from './image-hotspot-assignment.schemas';
+import {
+  MAP_POINT_SCHEMA_VERSION,
+  mapPointAssignmentValidationDefinition,
+} from './map-point-assignment.schemas';
 
 type UnknownAssignmentValidationDefinition = AssignmentValidationDefinition<
   unknown,
@@ -75,6 +79,9 @@ const assignmentValidationRegistry: Readonly<
   }),
   IMAGE_HOTSPOT: Object.freeze({
     [IMAGE_HOTSPOT_SCHEMA_VERSION]: imageHotspotAssignmentValidationDefinition,
+  }),
+  MAP_POINT: Object.freeze({
+    [MAP_POINT_SCHEMA_VERSION]: mapPointAssignmentValidationDefinition,
   }),
 });
 

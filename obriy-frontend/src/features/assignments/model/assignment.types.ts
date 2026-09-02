@@ -103,8 +103,7 @@ export interface CategorizationGradingConfig {
 }
 
 export type FillBlanksSegment =
-  | { id: string; type: 'TEXT'; text: string }
-  | { id: string; type: 'BLANK' }
+  { id: string; type: 'TEXT'; text: string } | { id: string; type: 'BLANK' }
 
 export interface FillBlanksPublicConfig {
   segments: FillBlanksSegment[]
@@ -124,6 +123,20 @@ export interface ImageHotspotPublicConfig {
 
 export interface ImageHotspotGradingConfig {
   target: { x: number; y: number; radius: number }
+}
+
+export interface MapPointPublicConfig {
+  initialProjection: 'MERCATOR' | 'GLOBE'
+}
+
+export interface AssignmentMapPoint {
+  longitude: number
+  latitude: number
+}
+
+export interface MapPointGradingConfig {
+  target: AssignmentMapPoint | null
+  radiusKm: number
 }
 
 export interface AssignmentRevisionSummary {
@@ -207,6 +220,7 @@ export interface AssignmentDraftInput {
     | CategorizationPublicConfig
     | FillBlanksPublicConfig
     | ImageHotspotPublicConfig
+    | MapPointPublicConfig
   gradingConfig:
     | { mode: 'MANUAL' }
     | ChoiceGradingConfig
@@ -215,6 +229,8 @@ export interface AssignmentDraftInput {
     | CategorizationGradingConfig
     | FillBlanksGradingConfig
     | ImageHotspotGradingConfig
+    | MapPointGradingConfig
+  mapPresetId?: string | null
 }
 
 export interface WrittenAssignmentDraftInput extends AssignmentDraftInput {
@@ -245,6 +261,12 @@ export interface FillBlanksAssignmentDraftInput extends AssignmentDraftInput {
 export interface ImageHotspotAssignmentDraftInput extends AssignmentDraftInput {
   publicConfig: ImageHotspotPublicConfig
   gradingConfig: ImageHotspotGradingConfig
+}
+
+export interface MapPointAssignmentDraftInput extends AssignmentDraftInput {
+  publicConfig: MapPointPublicConfig
+  gradingConfig: MapPointGradingConfig
+  mapPresetId: string | null
 }
 
 export interface CreateAssignmentInput {

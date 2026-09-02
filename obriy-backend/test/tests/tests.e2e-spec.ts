@@ -4,6 +4,8 @@ import {
   AssignmentType,
   LessonStatus,
   Locale,
+  MapPresetSourceType,
+  MapPresetStatus,
   TestAnswerStatus,
   TestAttemptStatus,
   TestStudentStatus,
@@ -33,6 +35,7 @@ describe('Tests module (e2e)', () => {
   let studentId = '';
   let classId = '';
   let lessonId = '';
+  let mapPresetId = '';
 
   const optionA = '123e4567-e89b-42d3-a456-426614174000';
   const optionB = '223e4567-e89b-42d3-a456-426614174000';
@@ -67,6 +70,21 @@ describe('Tests module (e2e)', () => {
       },
     });
     lessonId = lesson.id;
+    const mapPreset = await context.prisma.mapPreset.create({
+      data: {
+        key: `e2e-world-${stamp}`,
+        name: 'E2E world map',
+        contentLocale: Locale.UK,
+        sourceType: MapPresetSourceType.BUILT_IN,
+        status: MapPresetStatus.ACTIVE,
+        geojsonUrl: '/maps/world-adm0.geojson',
+        idProperty: 'featureId',
+        attribution: 'geoBoundaries test fixture',
+        bounds: { west: -180, south: -85, east: 180, north: 85 },
+        defaultViewport: { longitude: 15, latitude: 20, zoom: 1.25 },
+      },
+    });
+    mapPresetId = mapPreset.id;
   });
 
   afterAll(async () => {
@@ -77,6 +95,8 @@ describe('Tests module (e2e)', () => {
       where: { test: { teacherId } },
     });
     await context.prisma.test.deleteMany({ where: { teacherId } });
+    await context.prisma.assignment.deleteMany({ where: { teacherId } });
+    await context.prisma.mapPreset.deleteMany({ where: { id: mapPresetId } });
     await closeAuthTestContext(context, Object.values(emails));
   });
 
@@ -847,6 +867,198 @@ describe('Tests module (e2e)', () => {
         isPassed: true,
       }),
     );
+  });
+
+  it('runs MAP_POINT end to end without revealing the solution before the final attempt', async () => {
+    const target = { longitude: 30.5234, latitude: 50.4501 };
+    const assignmentResponse = await request(context.app.getHttpServer())
+      .post('/assignments')
+      .set('Authorization', bearer('teacher'))
+      .send({
+        type: AssignmentType.MAP_POINT,
+        contentLocale: Locale.UK,
+        defaultMaxPoints: 5,
+        draft: {
+          title: 'Find Kyiv on the map',
+          prompt: 'Mark Kyiv.',
+          mapPresetId,
+          publicConfig: { initialProjection: 'MERCATOR' },
+          gradingConfig: { target, radiusKm: 100 },
+        },
+      })
+      .expect(201);
+    const assignmentId = getStringField(assignmentResponse, 'id');
+    const assignmentDraft = getRecordField(
+      getResponseBody(assignmentResponse),
+      'draftRevision',
+    );
+    await request(context.app.getHttpServer())
+      .post(`/assignments/${assignmentId}/publish`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(assignmentDraft, 'id'),
+        expectedEditVersion: getNumberValue(assignmentDraft, 'editVersion'),
+      })
+      .expect(200);
+
+    const testResponse = await request(context.app.getHttpServer())
+      .post('/tests')
+      .set('Authorization', bearer('teacher'))
+      .send({
+        contentLocale: Locale.UK,
+        title: 'Map point check',
+        passingPercent: 50,
+        maxAttempts: 2,
+      })
+      .expect(201);
+    const testId = getStringField(testResponse, 'id');
+    let testDraft = getRecordField(
+      getResponseBody(testResponse),
+      'draftRevision',
+    );
+    const addResponse = await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/draft/items`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        assignmentId,
+        expectedRevisionId: getStringValue(testDraft, 'id'),
+        expectedEditVersion: getNumberValue(testDraft, 'editVersion'),
+      })
+      .expect(201);
+    testDraft = getRecordField(getResponseBody(addResponse), 'draftRevision');
+    await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/publish`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(testDraft, 'id'),
+        expectedEditVersion: getNumberValue(testDraft, 'editVersion'),
+      })
+      .expect(200);
+    await request(context.app.getHttpServer())
+      .post(`/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('teacher'))
+      .send({ testId })
+      .expect(201);
+
+    const studentListResponse = await request(context.app.getHttpServer())
+      .get(`/classes/me/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const studentTest = getResponseArray(studentListResponse).find(
+      (candidate) => getStringValue(candidate, 'testId') === testId,
+    );
+    if (!studentTest) throw new Error('Expected MAP_POINT test release');
+    const releaseId = getStringValue(studentTest, 'releaseId');
+
+    await context.prisma.mapPreset.update({
+      where: { id: mapPresetId },
+      data: { status: MapPresetStatus.ARCHIVED, archivedAt: new Date() },
+    });
+    const firstAttemptResponse = await request(context.app.getHttpServer())
+      .post(`/test-releases/${releaseId}/attempts`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const firstAttemptId = getStringField(firstAttemptResponse, 'id');
+    const activeResponse = await request(context.app.getHttpServer())
+      .get(`/test-releases/${releaseId}`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const activeBody = getResponseBody(activeResponse);
+    const mapItem = getRecordArray(activeBody, 'items')[0];
+    if (!mapItem) throw new Error('Expected MAP_POINT test item');
+    expect(getStringValue(mapItem, 'type')).toBe(AssignmentType.MAP_POINT);
+    expect(getRecordField(mapItem, 'mapPreset')).toEqual(
+      expect.objectContaining({
+        id: mapPresetId,
+        geojsonUrl: '/maps/world-adm0.geojson',
+      }),
+    );
+    expect(JSON.stringify(activeBody)).not.toContain('gradingConfig');
+    expect(JSON.stringify(activeBody)).not.toContain('radiusKm');
+    expect(JSON.stringify(activeBody)).not.toContain('30.5234');
+
+    const testItemId = getStringValue(mapItem, 'id');
+    await saveAnswer(firstAttemptId, testItemId, {
+      longitude: 30.5,
+      latitude: 50.45,
+    });
+    const firstSubmitResponse = await request(context.app.getHttpServer())
+      .post(`/test-attempts/${firstAttemptId}/submit`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const firstAnswer = getRecordArray(
+      getResponseBody(firstSubmitResponse),
+      'answers',
+    )[0];
+    if (!firstAnswer) throw new Error('Expected first MAP_POINT answer');
+    expect(firstAnswer).toEqual(
+      expect.objectContaining({
+        scorePoints: 5,
+        scorePercent: 100,
+        isCorrect: true,
+        solutionFeedback: null,
+      }),
+    );
+    const retryableResultResponse = await request(context.app.getHttpServer())
+      .get(`/test-releases/${releaseId}`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    expect(JSON.stringify(retryableResultResponse.body)).not.toContain(
+      'radiusKm',
+    );
+
+    const secondAttemptResponse = await request(context.app.getHttpServer())
+      .post(`/test-releases/${releaseId}/attempts`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const secondAttemptId = getStringField(secondAttemptResponse, 'id');
+    await saveAnswer(secondAttemptId, testItemId, {
+      longitude: 0,
+      latitude: 0,
+    });
+    const finalSubmitResponse = await request(context.app.getHttpServer())
+      .post(`/test-attempts/${secondAttemptId}/submit`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const finalAnswer = getRecordArray(
+      getResponseBody(finalSubmitResponse),
+      'answers',
+    )[0];
+    if (!finalAnswer) throw new Error('Expected final MAP_POINT answer');
+    expect(finalAnswer).toMatchObject({
+      scorePoints: 0,
+      scorePercent: 0,
+      isCorrect: false,
+    });
+    const solutionFeedback = getRecordField(finalAnswer, 'solutionFeedback');
+    expect(solutionFeedback).toMatchObject({
+      target,
+      radiusKm: 100,
+      withinRadius: false,
+    });
+    expect(getNumberValue(solutionFeedback, 'distanceKm')).toBeGreaterThan(0);
+
+    const reviewsResponse = await request(context.app.getHttpServer())
+      .get(`/lessons/${lessonId}/test-attempts`)
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    const finalReview = getRecordArray(
+      getResponseBody(reviewsResponse),
+      'items',
+    ).find((review) => getStringValue(review, 'attemptId') === secondAttemptId);
+    if (!finalReview) throw new Error('Expected MAP_POINT teacher review');
+    const reviewAnswer = getRecordArray(finalReview, 'answers')[0];
+    if (!reviewAnswer) throw new Error('Expected MAP_POINT review answer');
+    expect(getRecordField(reviewAnswer, 'mapPreset')).toEqual(
+      expect.objectContaining({ id: mapPresetId }),
+    );
+    expect(getRecordField(reviewAnswer, 'gradingConfig')).toEqual({
+      target,
+      radiusKm: 100,
+    });
+    const reviewGradingData = getRecordField(reviewAnswer, 'gradingData');
+    expect(reviewGradingData).toMatchObject({ withinRadius: false });
+    expect(getNumberValue(reviewGradingData, 'distanceKm')).toBeGreaterThan(0);
   });
 
   it('updates a test item to the latest assignment revision in place', async () => {

@@ -220,7 +220,7 @@ describe('WRITTEN assignment validation', () => {
   });
 
   it('returns safe structured failures for unsupported types and versions', () => {
-    expect(validateAssignmentSolution('MAP_POINT', 1, {})).toEqual({
+    expect(validateAssignmentSolution('MAP_REGION', 1, {})).toEqual({
       success: false,
       issues: [
         {

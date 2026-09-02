@@ -10,6 +10,7 @@ import {
   AssignmentStatus,
   AssignmentType,
   Locale,
+  MapPresetStatus,
   Prisma,
   UserRole,
 } from '@prisma/client';
@@ -147,6 +148,9 @@ export class AssignmentsService {
     const contentLocale =
       dto.contentLocale ?? (await this.findPreferredLocale(user.id));
     const assignmentId = await this.prisma.$transaction(async (transaction) => {
+      if (this.supportsMapPreset(dto.type) && dto.draft?.mapPresetId) {
+        await this.assertActiveMapPreset(transaction, dto.draft.mapPresetId);
+      }
       const assignment = await transaction.assignment.create({
         data: {
           teacherId: user.id,
@@ -343,6 +347,13 @@ export class AssignmentsService {
           ],
           undefined,
         );
+      }
+      if (
+        this.supportsMapPreset(assignment.type) &&
+        dto.mapPresetId !== undefined &&
+        dto.mapPresetId !== null
+      ) {
+        await this.assertActiveMapPreset(transaction, dto.mapPresetId);
       }
 
       const update = await transaction.assignmentRevision.updateMany({
@@ -556,7 +567,11 @@ export class AssignmentsService {
         draft.id,
         draft.publicConfig,
       );
-      const issues = this.getPublishIssues(assignment.type, draft);
+      const issues = await this.getPublishIssues(
+        transaction,
+        assignment.type,
+        draft,
+      );
       if (issues.length > 0) {
         throw new ConflictException({
           code: 'ASSIGNMENT_INCOMPLETE',
@@ -946,10 +961,11 @@ export class AssignmentsService {
     await this.destroyImages(storageKeys);
   }
 
-  private getPublishIssues(
+  private async getPublishIssues(
+    transaction: Prisma.TransactionClient,
     type: AssignmentType,
     draft: EditableRevisionRecord,
-  ): AssignmentValidationIssue[] {
+  ): Promise<AssignmentValidationIssue[]> {
     const issues: AssignmentValidationIssue[] = [];
 
     if (draft.title.trim().length === 0) {
@@ -973,6 +989,25 @@ export class AssignmentsService {
         message: 'This assignment type cannot use a map preset.',
       });
     }
+    if (this.supportsMapPreset(type) && !draft.mapPresetId) {
+      issues.push({
+        path: ['mapPresetId'],
+        code: 'TOO_SMALL',
+        message: 'A map preset is required.',
+      });
+    } else if (this.supportsMapPreset(type) && draft.mapPresetId) {
+      const activePreset = await transaction.mapPreset.findFirst({
+        where: { id: draft.mapPresetId, status: MapPresetStatus.ACTIVE },
+        select: { id: true },
+      });
+      if (!activePreset) {
+        issues.push({
+          path: ['mapPresetId'],
+          code: 'INVALID_CONFIGURATION',
+          message: 'The selected map preset is unavailable.',
+        });
+      }
+    }
 
     const validation = validateAssignmentPublishPayload(
       type,
@@ -987,6 +1022,25 @@ export class AssignmentsService {
     }
 
     return issues;
+  }
+
+  private async assertActiveMapPreset(
+    transaction: Prisma.TransactionClient,
+    mapPresetId: string,
+  ): Promise<void> {
+    const preset = await transaction.mapPreset.findFirst({
+      where: { id: mapPresetId, status: MapPresetStatus.ACTIVE },
+      select: { id: true },
+    });
+    if (!preset) {
+      throw this.invalidConfig([
+        {
+          path: ['mapPresetId'],
+          code: 'INVALID_CONFIGURATION',
+          message: 'The selected map preset is unavailable.',
+        },
+      ]);
+    }
   }
 
   private selectDuplicateRevision(

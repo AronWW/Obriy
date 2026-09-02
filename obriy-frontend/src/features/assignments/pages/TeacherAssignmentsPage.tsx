@@ -1,9 +1,14 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   Archive,
   ClipboardList,
   Copy,
   Edit3,
+  Map,
   PenLine,
   Plus,
   RotateCcw,
@@ -69,7 +74,8 @@ export function TeacherAssignmentsPage() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   })
-  const assignments = assignmentsQuery.data?.pages.flatMap((page) => page.items) ?? []
+  const assignments =
+    assignmentsQuery.data?.pages.flatMap((page) => page.items) ?? []
 
   const actionMutation = useMutation({
     mutationFn: async ({ assignment, type: action }: PendingAction) => {
@@ -114,19 +120,27 @@ export function TeacherAssignmentsPage() {
             <h1 id="assignments-title">{t('assignments.library.title')}</h1>
             <p>{t('assignments.library.description')}</p>
           </div>
-          <button
-            className={styles.primaryButton}
-            onClick={() => setShowTypePicker(true)}
-            type="button"
-          >
-            <Plus size={17} aria-hidden="true" />
-            {t('assignments.library.create')}
-          </button>
+          <div className={styles.introActions}>
+            <Link className={styles.secondaryButton} to="/app/teacher/maps">
+              <Map size={17} aria-hidden="true" />
+              {t('maps.sandbox.open')}
+            </Link>
+            <button
+              className={styles.primaryButton}
+              onClick={() => setShowTypePicker(true)}
+              type="button"
+            >
+              <Plus size={17} aria-hidden="true" />
+              {t('assignments.library.create')}
+            </button>
+          </div>
         </header>
 
         <div className={styles.filters}>
           <label className={styles.searchField}>
-            <span className={styles.srOnly}>{t('assignments.library.search')}</span>
+            <span className={styles.srOnly}>
+              {t('assignments.library.search')}
+            </span>
             <Search size={17} aria-hidden="true" />
             <input
               onChange={(event) => setSearch(event.target.value)}
@@ -145,8 +159,12 @@ export function TeacherAssignmentsPage() {
             >
               <option value="ALL">{t('assignments.status.ALL')}</option>
               <option value="DRAFT">{t('assignments.status.DRAFT')}</option>
-              <option value="PUBLISHED">{t('assignments.status.PUBLISHED')}</option>
-              <option value="ARCHIVED">{t('assignments.status.ARCHIVED')}</option>
+              <option value="PUBLISHED">
+                {t('assignments.status.PUBLISHED')}
+              </option>
+              <option value="ARCHIVED">
+                {t('assignments.status.ARCHIVED')}
+              </option>
             </select>
           </label>
           <label className={styles.filterField}>
@@ -158,17 +176,39 @@ export function TeacherAssignmentsPage() {
               value={type}
             >
               <option value="ALL">{t('assignments.types.ALL')}</option>
-              <option value="WRITTEN">{t('assignments.types.WRITTEN.title')}</option>
-              <option value="SINGLE_CHOICE">{t('assignments.types.SINGLE_CHOICE.title')}</option>
-              <option value="MULTIPLE_CHOICE">{t('assignments.types.MULTIPLE_CHOICE.title')}</option>
-              <option value="MATCHING">{t('assignments.types.MATCHING.title')}</option>
-              <option value="ORDERING">{t('assignments.types.ORDERING.title')}</option>
-              <option value="CATEGORIZATION">{t('assignments.types.CATEGORIZATION.title')}</option>
-              <option value="FILL_BLANKS">{t('assignments.types.FILL_BLANKS.title')}</option>
-              <option value="IMAGE_HOTSPOT">{t('assignments.types.IMAGE_HOTSPOT.title')}</option>
-              <option value="MAP_POINT">{t('assignments.types.MAP_POINT.title')}</option>
-              <option value="MAP_REGION">{t('assignments.types.MAP_REGION.title')}</option>
-              <option value="MAP_MULTI_REGION">{t('assignments.types.MAP_MULTI_REGION.title')}</option>
+              <option value="WRITTEN">
+                {t('assignments.types.WRITTEN.title')}
+              </option>
+              <option value="SINGLE_CHOICE">
+                {t('assignments.types.SINGLE_CHOICE.title')}
+              </option>
+              <option value="MULTIPLE_CHOICE">
+                {t('assignments.types.MULTIPLE_CHOICE.title')}
+              </option>
+              <option value="MATCHING">
+                {t('assignments.types.MATCHING.title')}
+              </option>
+              <option value="ORDERING">
+                {t('assignments.types.ORDERING.title')}
+              </option>
+              <option value="CATEGORIZATION">
+                {t('assignments.types.CATEGORIZATION.title')}
+              </option>
+              <option value="FILL_BLANKS">
+                {t('assignments.types.FILL_BLANKS.title')}
+              </option>
+              <option value="IMAGE_HOTSPOT">
+                {t('assignments.types.IMAGE_HOTSPOT.title')}
+              </option>
+              <option value="MAP_POINT">
+                {t('assignments.types.MAP_POINT.title')}
+              </option>
+              <option value="MAP_REGION">
+                {t('assignments.types.MAP_REGION.title')}
+              </option>
+              <option value="MAP_MULTI_REGION">
+                {t('assignments.types.MAP_MULTI_REGION.title')}
+              </option>
             </select>
           </label>
         </div>
@@ -183,33 +223,40 @@ export function TeacherAssignmentsPage() {
             onAction={() => void assignmentsQuery.refetch()}
           />
         )}
-        {!assignmentsQuery.isLoading && !assignmentsQuery.isError && assignments.length === 0 && (
-          <StatusPanel
-            action={!hasFilters ? t('assignments.library.create') : undefined}
-            icon={<ClipboardList size={30} />}
-            message={
-              hasFilters
-                ? t('assignments.library.noResultsDescription')
-                : t('assignments.library.emptyDescription')
-            }
-            onAction={!hasFilters ? () => setShowTypePicker(true) : undefined}
-            title={
-              hasFilters
-                ? t('assignments.library.noResultsTitle')
-                : t('assignments.library.emptyTitle')
-            }
-          />
-        )}
+        {!assignmentsQuery.isLoading &&
+          !assignmentsQuery.isError &&
+          assignments.length === 0 && (
+            <StatusPanel
+              action={!hasFilters ? t('assignments.library.create') : undefined}
+              icon={<ClipboardList size={30} />}
+              message={
+                hasFilters
+                  ? t('assignments.library.noResultsDescription')
+                  : t('assignments.library.emptyDescription')
+              }
+              onAction={!hasFilters ? () => setShowTypePicker(true) : undefined}
+              title={
+                hasFilters
+                  ? t('assignments.library.noResultsTitle')
+                  : t('assignments.library.emptyTitle')
+              }
+            />
+          )}
 
         {assignments.length > 0 && (
           <div className={styles.assignmentList}>
             {assignments.map((assignment) => {
-              const revision = assignment.draftRevision ?? assignment.publishedRevision
-              const title = revision?.title.trim() || t('assignments.common.untitled')
+              const revision =
+                assignment.draftRevision ?? assignment.publishedRevision
+              const title =
+                revision?.title.trim() || t('assignments.common.untitled')
 
               return (
                 <article className={styles.assignmentRow} key={assignment.id}>
-                  <span className={styles.assignmentTypeIcon} aria-hidden="true">
+                  <span
+                    className={styles.assignmentTypeIcon}
+                    aria-hidden="true"
+                  >
                     <PenLine size={21} />
                   </span>
                   <div className={styles.assignmentCopy}>
@@ -219,7 +266,9 @@ export function TeacherAssignmentsPage() {
                       >
                         {t(`assignments.status.${assignment.status}`)}
                       </span>
-                      <span>{t(`assignments.types.${assignment.type}.title`)}</span>
+                      <span>
+                        {t(`assignments.types.${assignment.type}.title`)}
+                      </span>
                       <span>
                         {t('assignments.library.points', {
                           count: assignment.defaultMaxPoints,
@@ -246,7 +295,9 @@ export function TeacherAssignmentsPage() {
                       {t('assignments.actions.edit')}
                     </Link>
                     <button
-                      aria-label={t('assignments.actions.duplicateNamed', { title })}
+                      aria-label={t('assignments.actions.duplicateNamed', {
+                        title,
+                      })}
                       className={styles.iconButton}
                       disabled={duplicateMutation.isPending}
                       onClick={() => duplicateMutation.mutate(assignment)}
@@ -257,9 +308,13 @@ export function TeacherAssignmentsPage() {
                     </button>
                     {assignment.status === 'ARCHIVED' ? (
                       <button
-                        aria-label={t('assignments.actions.restoreNamed', { title })}
+                        aria-label={t('assignments.actions.restoreNamed', {
+                          title,
+                        })}
                         className={styles.iconButton}
-                        onClick={() => setPendingAction({ assignment, type: 'restore' })}
+                        onClick={() =>
+                          setPendingAction({ assignment, type: 'restore' })
+                        }
                         title={t('assignments.actions.restore')}
                         type="button"
                       >
@@ -267,9 +322,13 @@ export function TeacherAssignmentsPage() {
                       </button>
                     ) : (
                       <button
-                        aria-label={t('assignments.actions.archiveNamed', { title })}
+                        aria-label={t('assignments.actions.archiveNamed', {
+                          title,
+                        })}
                         className={styles.iconButton}
-                        onClick={() => setPendingAction({ assignment, type: 'archive' })}
+                        onClick={() =>
+                          setPendingAction({ assignment, type: 'archive' })
+                        }
                         title={t('assignments.actions.archive')}
                         type="button"
                       >
@@ -277,9 +336,13 @@ export function TeacherAssignmentsPage() {
                       </button>
                     )}
                     <button
-                      aria-label={t('assignments.actions.deleteNamed', { title })}
+                      aria-label={t('assignments.actions.deleteNamed', {
+                        title,
+                      })}
                       className={`${styles.iconButton} ${styles.dangerIconButton}`}
-                      onClick={() => setPendingAction({ assignment, type: 'delete' })}
+                      onClick={() =>
+                        setPendingAction({ assignment, type: 'delete' })
+                      }
                       title={t('assignments.actions.delete')}
                       type="button"
                     >
@@ -309,10 +372,7 @@ export function TeacherAssignmentsPage() {
 
         {duplicateMutation.isError && (
           <p className={styles.errorStatus} role="alert">
-            {getAssignmentError(
-              duplicateMutation.error,
-              t,
-            )}
+            {getAssignmentError(duplicateMutation.error, t)}
           </p>
         )}
       </div>
@@ -331,12 +391,15 @@ export function TeacherAssignmentsPage() {
         <AssignmentConfirmDialog
           cancelLabel={t('assignments.common.cancel')}
           confirmLabel={t(`assignments.confirm.${pendingAction.type}.confirm`)}
-          description={t(`assignments.confirm.${pendingAction.type}.description`, {
-            title:
-              pendingAction.assignment.draftRevision?.title ||
-              pendingAction.assignment.publishedRevision?.title ||
-              t('assignments.common.untitled'),
-          })}
+          description={t(
+            `assignments.confirm.${pendingAction.type}.description`,
+            {
+              title:
+                pendingAction.assignment.draftRevision?.title ||
+                pendingAction.assignment.publishedRevision?.title ||
+                t('assignments.common.untitled'),
+            },
+          )}
           error={
             actionMutation.isError
               ? getAssignmentError(actionMutation.error, t)
@@ -375,7 +438,11 @@ function StatusPanel({
       {title && <h2>{title}</h2>}
       <p>{message}</p>
       {action && onAction && (
-        <button className={styles.secondaryButton} onClick={onAction} type="button">
+        <button
+          className={styles.secondaryButton}
+          onClick={onAction}
+          type="button"
+        >
           {action}
         </button>
       )}

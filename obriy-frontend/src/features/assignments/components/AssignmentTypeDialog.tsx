@@ -63,7 +63,8 @@ export function AssignmentTypeDialog({
             type === 'ORDERING' ||
             type === 'CATEGORIZATION' ||
             type === 'FILL_BLANKS' ||
-            type === 'IMAGE_HOTSPOT'
+            type === 'IMAGE_HOTSPOT' ||
+            type === 'MAP_POINT'
 
           return (
             <button

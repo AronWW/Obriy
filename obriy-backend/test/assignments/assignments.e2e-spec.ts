@@ -63,7 +63,7 @@ describe('Assignments (e2e)', () => {
     await request(context.app.getHttpServer())
       .post('/assignments')
       .set('Authorization', bearer('teacher'))
-      .send({ type: AssignmentType.MAP_POINT })
+      .send({ type: AssignmentType.MAP_REGION })
       .expect(400)
       .expect((response) => {
         expect(getStringField(response, 'code')).toBe(

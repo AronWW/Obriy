@@ -28,6 +28,7 @@ import { TeacherChoiceAssignmentEditorPage } from './TeacherChoiceAssignmentEdit
 import { TeacherMatchingAssignmentEditorPage } from './TeacherMatchingAssignmentEditorPage'
 import { TeacherOrderingAssignmentEditorPage } from './TeacherOrderingAssignmentEditorPage'
 import { TeacherInteractiveAssignmentEditorPage } from './TeacherInteractiveAssignmentEditorPage'
+import { TeacherMapPointAssignmentEditorPage } from './TeacherMapPointAssignmentEditorPage'
 import type {
   AssignmentEditor,
   AssignmentEditorRevision,
@@ -96,6 +97,9 @@ export function TeacherAssignmentEditorPage() {
   ) {
     return <TeacherInteractiveAssignmentEditorPage type={type} />
   }
+  if (type === 'MAP_POINT') {
+    return <TeacherMapPointAssignmentEditorPage />
+  }
 
   return <TeacherWrittenAssignmentEditorPage />
 }
@@ -112,7 +116,9 @@ function TeacherWrittenAssignmentEditorPage() {
   const [hasHydrated, setHasHydrated] = useState(isNew)
   const [showPreview, setShowPreview] = useState(false)
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+    null,
+  )
   const [saveState, setSaveState] = useState<
     'idle' | 'dirty' | 'saving' | 'saved' | 'error' | 'conflict'
   >('idle')
@@ -193,7 +199,8 @@ function TeacherWrittenAssignmentEditorPage() {
     onMutate: () => setSaveState('saving'),
     onSuccess: ({ assignment, savedValues, wasCreated }) => {
       const snapshotHash = serializeValues(savedValues)
-      const hasNewerChanges = serializeValues(valuesRef.current) !== snapshotHash
+      const hasNewerChanges =
+        serializeValues(valuesRef.current) !== snapshotHash
       setSavedHash(snapshotHash)
       setSaveState(hasNewerChanges ? 'dirty' : 'saved')
       setHasHydrated(true)
@@ -201,7 +208,9 @@ function TeacherWrittenAssignmentEditorPage() {
         assignmentQueryKeys.detail(assignment.id),
         assignment,
       )
-      void queryClient.invalidateQueries({ queryKey: assignmentQueryKeys.lists })
+      void queryClient.invalidateQueries({
+        queryKey: assignmentQueryKeys.lists,
+      })
       if (wasCreated) {
         navigate(`/app/teacher/tasks/${assignment.id}/edit`, { replace: true })
       }
@@ -525,7 +534,9 @@ function TeacherWrittenAssignmentEditorPage() {
                 </div>
                 <button
                   className={styles.secondaryButton}
-                  disabled={isArchived || values.publicConfig.rubric.length >= 50}
+                  disabled={
+                    isArchived || values.publicConfig.rubric.length >= 50
+                  }
                   onClick={() =>
                     setValues((current) => ({
                       ...current,
@@ -642,7 +653,9 @@ function TeacherWrittenAssignmentEditorPage() {
               </label>
               <div className={styles.saveSummary} aria-live="polite">
                 <span
-                  className={styles[`saveState${capitalize(displayedSaveState)}`]}
+                  className={
+                    styles[`saveState${capitalize(displayedSaveState)}`]
+                  }
                 />
                 <p>{t(`assignments.editor.saveState.${displayedSaveState}`)}</p>
               </div>
@@ -740,7 +753,9 @@ function RubricEditor({
           <input
             disabled={disabled}
             maxLength={160}
-            onChange={(event) => onChange({ ...item, title: event.target.value })}
+            onChange={(event) =>
+              onChange({ ...item, title: event.target.value })
+            }
             placeholder={t('assignments.editor.criteria.namePlaceholder')}
             value={item.title}
           />
@@ -805,7 +820,11 @@ function EditorStatus({
         {title && <h1>{title}</h1>}
         <p>{message}</p>
         {action && onAction && (
-          <button className={styles.secondaryButton} onClick={onAction} type="button">
+          <button
+            className={styles.secondaryButton}
+            onClick={onAction}
+            type="button"
+          >
             {action}
           </button>
         )}
@@ -859,7 +878,9 @@ function isRubricItem(value: unknown): value is AssignmentRubricItem {
   )
 }
 
-function editorValuesToDraft(values: EditorValues): WrittenAssignmentDraftInput {
+function editorValuesToDraft(
+  values: EditorValues,
+): WrittenAssignmentDraftInput {
   return {
     title: values.title,
     prompt: values.prompt,
@@ -922,7 +943,11 @@ function validateValues(
   const issues: string[] = []
   const maxPoints = Number(values.defaultMaxPoints)
   const passingPercent = Number(values.defaultPassingPercent)
-  if (!Number.isFinite(maxPoints) || maxPoints < 0.01 || maxPoints > 999_999.99) {
+  if (
+    !Number.isFinite(maxPoints) ||
+    maxPoints < 0.01 ||
+    maxPoints > 999_999.99
+  ) {
     issues.push(t('assignments.editor.validation.points'))
   }
   if (
@@ -946,10 +971,7 @@ function capitalize(value: string): string {
   return `${value.charAt(0).toUpperCase()}${value.slice(1)}`
 }
 
-function getSaveError(
-  error: Error | null,
-  t: (key: string) => string,
-): string {
+function getSaveError(error: Error | null, t: (key: string) => string): string {
   if (error instanceof ApiError && error.code === 'NETWORK_ERROR') {
     return t('assignments.errors.network')
   }

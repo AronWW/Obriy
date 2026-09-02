@@ -1,14 +1,46 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../../i18n/config'
 import { API_BASE_URL } from '../../../shared/config/env'
 import { server } from '../../../test/server'
 import { TeacherAssignmentEditorPage } from './TeacherAssignmentEditorPage'
 import { TeacherAssignmentsPage } from './TeacherAssignmentsPage'
+
+vi.mock('../../maps/components/MapCanvas', () => ({
+  MapCanvas: ({
+    onPointChange,
+    onRadiusChange,
+    radiusKm,
+  }: {
+    onPointChange?: (point: { longitude: number; latitude: number }) => void
+    onRadiusChange?: (radiusKm: number) => void
+    radiusKm?: number | null
+  }) => (
+    <div data-radius={radiusKm} data-testid="map-point-canvas">
+      <button
+        onClick={() =>
+          onPointChange?.({ longitude: 30.5234, latitude: 50.4501 })
+        }
+        type="button"
+      >
+        Mark point
+      </button>
+      <button onClick={() => onRadiusChange?.(333)} type="button">
+        Drag radius edge
+      </button>
+    </div>
+  ),
+}))
 
 describe('teacher assignment workspace', () => {
   beforeEach(async () => {
@@ -57,6 +89,9 @@ describe('teacher assignment workspace', () => {
     ).toBeEnabled()
     expect(
       within(dialog).getByRole('button', { name: /Image hotspot/ }),
+    ).toBeEnabled()
+    expect(
+      within(dialog).getByRole('button', { name: /Point on a map/ }),
     ).toBeEnabled()
     expect(within(dialog).queryByText(/soon/i)).not.toBeInTheDocument()
     expect(createCount).toBe(0)
@@ -136,15 +171,32 @@ describe('teacher assignment workspace', () => {
     )
 
     renderWorkspace('/app/teacher/tasks/new/matching')
-    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Countries and capitals')
-    await user.type(screen.getByRole('textbox', { name: 'Question or prompt' }), 'Match every country to its capital.')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Title' }),
+      'Countries and capitals',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Question or prompt' }),
+      'Match every country to its capital.',
+    )
     await user.type(screen.getByRole('textbox', { name: 'Item 1' }), 'Ukraine')
-    await user.type(screen.getByRole('textbox', { name: 'Correct match 1' }), 'Kyiv')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Correct match 1' }),
+      'Kyiv',
+    )
     await user.type(screen.getByRole('textbox', { name: 'Item 2' }), 'France')
-    await user.type(screen.getByRole('textbox', { name: 'Correct match 2' }), 'Paris')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Correct match 2' }),
+      'Paris',
+    )
     await user.click(screen.getByRole('button', { name: 'Add extra choice' }))
-    await user.type(screen.getByRole('textbox', { name: 'Extra choice 1' }), 'Warsaw')
-    await user.click(screen.getByRole('checkbox', { name: /Always shuffle the right column/ }))
+    await user.type(
+      screen.getByRole('textbox', { name: 'Extra choice 1' }),
+      'Warsaw',
+    )
+    await user.click(
+      screen.getByRole('checkbox', { name: /Always shuffle the right column/ }),
+    )
 
     expect(createCount).toBe(0)
     await user.click(screen.getAllByRole('button', { name: 'Save' })[0])
@@ -152,13 +204,31 @@ describe('teacher assignment workspace', () => {
     await waitFor(() => expect(createCount).toBe(1))
     const body = receivedBody as {
       draft: {
-        publicConfig: { leftItems: Array<{ id: string; text: string }>; rightItems: Array<{ id: string; text: string }>; shuffleRightItems: boolean }
-        gradingConfig: { matches: Array<{ leftItemId: string; rightItemId: string }>; scoringMode: string }
+        publicConfig: {
+          leftItems: Array<{ id: string; text: string }>
+          rightItems: Array<{ id: string; text: string }>
+          shuffleRightItems: boolean
+        }
+        gradingConfig: {
+          matches: Array<{ leftItemId: string; rightItemId: string }>
+          scoringMode: string
+        }
       }
     }
-    expect(body).toEqual(expect.objectContaining({ type: 'MATCHING', defaultMaxPoints: 1, defaultPassingPercent: 100 }))
-    expect(body.draft.publicConfig.leftItems.map((item) => item.text)).toEqual(['Ukraine', 'France'])
-    expect(body.draft.publicConfig.rightItems.map((item) => item.text)).toEqual(['Kyiv', 'Paris', 'Warsaw'])
+    expect(body).toEqual(
+      expect.objectContaining({
+        type: 'MATCHING',
+        defaultMaxPoints: 1,
+        defaultPassingPercent: 100,
+      }),
+    )
+    expect(body.draft.publicConfig.leftItems.map((item) => item.text)).toEqual([
+      'Ukraine',
+      'France',
+    ])
+    expect(body.draft.publicConfig.rightItems.map((item) => item.text)).toEqual(
+      ['Kyiv', 'Paris', 'Warsaw'],
+    )
     expect(body.draft.publicConfig.shuffleRightItems).toBe(true)
     expect(body.draft.gradingConfig).toEqual({
       matches: body.draft.publicConfig.leftItems.map((leftItem, index) => ({
@@ -185,12 +255,27 @@ describe('teacher assignment workspace', () => {
     )
 
     renderWorkspace('/app/teacher/tasks/new/ordering')
-    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Water cycle')
-    await user.type(screen.getByRole('textbox', { name: 'Question or prompt' }), 'Put the stages in order.')
-    await user.type(screen.getByRole('textbox', { name: 'Item 1' }), 'Evaporation')
-    await user.type(screen.getByRole('textbox', { name: 'Item 2' }), 'Condensation')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Title' }),
+      'Water cycle',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Question or prompt' }),
+      'Put the stages in order.',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Item 1' }),
+      'Evaporation',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Item 2' }),
+      'Condensation',
+    )
     await user.click(screen.getByRole('button', { name: 'Add item' }))
-    await user.type(screen.getByRole('textbox', { name: 'Item 3' }), 'Precipitation')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Item 3' }),
+      'Precipitation',
+    )
     await user.click(screen.getByRole('button', { name: 'Move item 3 up' }))
 
     expect(createCount).toBe(0)
@@ -203,11 +288,13 @@ describe('teacher assignment workspace', () => {
         gradingConfig: { correctOrderIds: string[]; scoringMode: string }
       }
     }
-    expect(body).toEqual(expect.objectContaining({
-      type: 'ORDERING',
-      defaultMaxPoints: 1,
-      defaultPassingPercent: 100,
-    }))
+    expect(body).toEqual(
+      expect.objectContaining({
+        type: 'ORDERING',
+        defaultMaxPoints: 1,
+        defaultPassingPercent: 100,
+      }),
+    )
     expect(body.draft.publicConfig.items.map((item) => item.text)).toEqual([
       'Evaporation',
       'Precipitation',
@@ -225,7 +312,9 @@ describe('teacher assignment workspace', () => {
     server.use(
       http.post(`${API_BASE_URL}/assignments`, async ({ request }) => {
         receivedBody = await request.json()
-        return HttpResponse.json(categorizationAssignmentEditor(), { status: 201 })
+        return HttpResponse.json(categorizationAssignmentEditor(), {
+          status: 201,
+        })
       }),
       http.get(`${API_BASE_URL}/assignments/:assignmentId`, () =>
         HttpResponse.json(categorizationAssignmentEditor()),
@@ -233,28 +322,58 @@ describe('teacher assignment workspace', () => {
     )
 
     renderWorkspace('/app/teacher/tasks/new/categorization')
-    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Living things')
-    await user.type(screen.getByRole('textbox', { name: 'Question or prompt' }), 'Sort every example.')
-    await user.type(screen.getByRole('textbox', { name: 'Category 1' }), 'Plants')
-    await user.type(screen.getByRole('textbox', { name: 'Category 2' }), 'Animals')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Title' }),
+      'Living things',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Question or prompt' }),
+      'Sort every example.',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Category 1' }),
+      'Plants',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Category 2' }),
+      'Animals',
+    )
     await user.type(screen.getByRole('textbox', { name: 'Item 1' }), 'Oak')
     await user.type(screen.getByRole('textbox', { name: 'Item 2' }), 'Wolf')
-    const categories = screen.getAllByRole('combobox', { name: 'Correct category' })
-    await user.selectOptions(categories[0]!, within(categories[0]!).getByRole('option', { name: 'Plants' }))
-    await user.selectOptions(categories[1]!, within(categories[1]!).getByRole('option', { name: 'Animals' }))
+    const categories = screen.getAllByRole('combobox', {
+      name: 'Correct category',
+    })
+    await user.selectOptions(
+      categories[0]!,
+      within(categories[0]!).getByRole('option', { name: 'Plants' }),
+    )
+    await user.selectOptions(
+      categories[1]!,
+      within(categories[1]!).getByRole('option', { name: 'Animals' }),
+    )
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(receivedBody).toBeDefined())
     const body = receivedBody as {
       type: string
       draft: {
-        publicConfig: { categories: Array<{ id: string; title: string }>; items: Array<{ id: string; text: string }> }
-        gradingConfig: { assignments: Array<{ itemId: string; categoryId: string }> }
+        publicConfig: {
+          categories: Array<{ id: string; title: string }>
+          items: Array<{ id: string; text: string }>
+        }
+        gradingConfig: {
+          assignments: Array<{ itemId: string; categoryId: string }>
+        }
       }
     }
     expect(body.type).toBe('CATEGORIZATION')
-    expect(body.draft.publicConfig.categories.map((value) => value.title)).toEqual(['Plants', 'Animals'])
-    expect(body.draft.publicConfig.items.map((value) => value.text)).toEqual(['Oak', 'Wolf'])
+    expect(
+      body.draft.publicConfig.categories.map((value) => value.title),
+    ).toEqual(['Plants', 'Animals'])
+    expect(body.draft.publicConfig.items.map((value) => value.text)).toEqual([
+      'Oak',
+      'Wolf',
+    ])
     expect(body.draft.gradingConfig.assignments).toEqual([
       {
         itemId: body.draft.publicConfig.items[0]!.id,
@@ -286,13 +405,10 @@ describe('teacher assignment workspace', () => {
       http.get(`${API_BASE_URL}/assignments/:assignmentId`, () =>
         HttpResponse.json(published),
       ),
-      http.post(
-        `${API_BASE_URL}/assignments/:assignmentId/start-edit`,
-        () => {
-          startEditCount += 1
-          return HttpResponse.json(editable)
-        },
-      ),
+      http.post(`${API_BASE_URL}/assignments/:assignmentId/start-edit`, () => {
+        startEditCount += 1
+        return HttpResponse.json(editable)
+      }),
       http.patch(
         `${API_BASE_URL}/assignments/:assignmentId/draft`,
         async ({ request }) => {
@@ -323,6 +439,69 @@ describe('teacher assignment workspace', () => {
     )
   })
 
+  it('creates MAP_POINT after synchronizing point and all radius controls', async () => {
+    const user = userEvent.setup()
+    let receivedBody: unknown
+    server.use(
+      http.get(`${API_BASE_URL}/map-presets`, () =>
+        HttpResponse.json([mapPreset()]),
+      ),
+      http.post(`${API_BASE_URL}/assignments`, async ({ request }) => {
+        receivedBody = await request.json()
+        return HttpResponse.json(mapPointAssignmentEditor(), { status: 201 })
+      }),
+      http.get(`${API_BASE_URL}/assignments/:assignmentId`, () =>
+        HttpResponse.json(mapPointAssignmentEditor()),
+      ),
+    )
+
+    renderWorkspace('/app/teacher/tasks/new/map_point')
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Find Kyiv')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Question or prompt' }),
+      'Mark Kyiv on the map.',
+    )
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Geographic dataset' }),
+      mapPreset().id,
+    )
+    const canvas = await screen.findByTestId('map-point-canvas')
+    await user.click(within(canvas).getByRole('button', { name: 'Mark point' }))
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Radius, km' }), {
+      target: { value: '250' },
+    })
+    expect(canvas).toHaveAttribute('data-radius', '250')
+    fireEvent.change(
+      screen.getByRole('slider', { name: 'Quick radius adjustment' }),
+      { target: { value: '400' } },
+    )
+    expect(canvas).toHaveAttribute('data-radius', '400')
+    await user.click(
+      within(canvas).getByRole('button', { name: 'Drag radius edge' }),
+    )
+    expect(canvas).toHaveAttribute('data-radius', '333')
+
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(receivedBody).toBeDefined())
+    expect(receivedBody).toEqual({
+      type: 'MAP_POINT',
+      defaultMaxPoints: 1,
+      defaultPassingPercent: 100,
+      draft: {
+        title: 'Find Kyiv',
+        prompt: 'Mark Kyiv on the map.',
+        instructions: null,
+        explanation: null,
+        publicConfig: { initialProjection: 'MERCATOR' },
+        gradingConfig: {
+          target: { longitude: 30.5234, latitude: 50.4501 },
+          radiusKm: 333,
+        },
+        mapPresetId: mapPreset().id,
+      },
+    })
+  })
 })
 
 function renderWorkspace(initialEntry: string) {
@@ -417,12 +596,22 @@ function matchingAssignmentEditor() {
       title: 'Countries and capitals',
       prompt: 'Match every country to its capital.',
       publicConfig: {
-        leftItems: [{ id: leftA, text: 'Ukraine' }, { id: leftB, text: 'France' }],
-        rightItems: [{ id: rightA, text: 'Kyiv' }, { id: rightB, text: 'Paris' }, { id: distractor, text: 'Warsaw' }],
+        leftItems: [
+          { id: leftA, text: 'Ukraine' },
+          { id: leftB, text: 'France' },
+        ],
+        rightItems: [
+          { id: rightA, text: 'Kyiv' },
+          { id: rightB, text: 'Paris' },
+          { id: distractor, text: 'Warsaw' },
+        ],
         shuffleRightItems: true,
       },
       gradingConfig: {
-        matches: [{ leftItemId: leftA, rightItemId: rightA }, { leftItemId: leftB, rightItemId: rightB }],
+        matches: [
+          { leftItemId: leftA, rightItemId: rightA },
+          { leftItemId: leftB, rightItemId: rightB },
+        ],
         scoringMode: 'PARTIAL',
       },
     },
@@ -468,14 +657,57 @@ function categorizationAssignmentEditor() {
       title: 'Living things',
       prompt: 'Sort every example.',
       publicConfig: {
-        categories: [{ id: plant, title: 'Plants' }, { id: animal, title: 'Animals' }],
-        items: [{ id: oak, text: 'Oak' }, { id: wolf, text: 'Wolf' }],
+        categories: [
+          { id: plant, title: 'Plants' },
+          { id: animal, title: 'Animals' },
+        ],
+        items: [
+          { id: oak, text: 'Oak' },
+          { id: wolf, text: 'Wolf' },
+        ],
         promptImage: null,
       },
       gradingConfig: {
-        assignments: [{ itemId: oak, categoryId: plant }, { itemId: wolf, categoryId: animal }],
+        assignments: [
+          { itemId: oak, categoryId: plant },
+          { itemId: wolf, categoryId: animal },
+        ],
         scoringMode: 'PARTIAL',
       },
+    },
+  }
+}
+
+function mapPreset() {
+  return {
+    id: '99999999-9999-4999-8999-999999999999',
+    key: 'world-adm0',
+    name: 'World countries',
+    contentLocale: 'UK',
+    sourceType: 'BUILT_IN',
+    geojsonUrl: '/maps/world-adm0.geojson',
+    idProperty: 'featureId',
+    year: null,
+    attribution: 'geoBoundaries',
+    bounds: { west: -180, south: -85, east: 180, north: 85 },
+    defaultViewport: { longitude: 15, latitude: 20, zoom: 1.25 },
+  }
+}
+
+function mapPointAssignmentEditor() {
+  return {
+    ...assignmentEditor(),
+    type: 'MAP_POINT',
+    draftRevision: {
+      ...assignmentEditor().draftRevision,
+      title: 'Find Kyiv',
+      prompt: 'Mark Kyiv on the map.',
+      publicConfig: { initialProjection: 'MERCATOR' },
+      gradingConfig: {
+        target: { longitude: 30.5234, latitude: 50.4501 },
+        radiusKm: 333,
+      },
+      mapPresetId: mapPreset().id,
     },
   }
 }

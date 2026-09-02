@@ -23,9 +23,17 @@ import { gradeCategorizationResponse } from '../assignments/grading/categorizati
 import { gradeFillBlanksResponse } from '../assignments/grading/fill-blanks-grading';
 import { gradeImageHotspotResponse } from '../assignments/grading/image-hotspot-grading';
 import { gradeMatchingResponse } from '../assignments/grading/matching-grading';
+import { gradeMapPointResponse } from '../assignments/grading/map-point-grading';
 import { gradeOrderingResponse } from '../assignments/grading/ordering-grading';
-import { validateAssignmentStudentResponse } from '../assignments/validation';
+import {
+  mapPointPublishSolutionSchema,
+  validateAssignmentStudentResponse,
+} from '../assignments/validation';
 import type { AuthUser } from '../common/types/auth-user.type';
+import {
+  mapPresetSelect,
+  toMapPresetDto,
+} from '../map-presets/map-preset.mapper';
 import { SaveTestAnswerDto } from './dto/student-test.dto';
 import {
   StudentLessonTestDto,
@@ -74,6 +82,7 @@ const studentReleaseSelect = {
               instructions: true,
               publicConfig: true,
               schemaVersion: true,
+              mapPreset: { select: mapPresetSelect },
             },
           },
         },
@@ -92,6 +101,17 @@ const answerSelect = {
   scorePercent: true,
   isCorrect: true,
   teacherComment: true,
+  gradingData: true,
+  testItem: {
+    select: {
+      assignment: { select: { type: true } },
+      assignmentRevision: {
+        select: {
+          solution: { select: { gradingConfig: true } },
+        },
+      },
+    },
+  },
 } satisfies Prisma.TestAnswerSelect;
 
 const attemptSelect = {
@@ -516,7 +536,14 @@ export class StudentTestsService {
       ) {
         return {
           kind: 'attempt' as const,
-          attempt: await this.findAttemptDto(transaction, attempt.id),
+          attempt: await this.findAttemptDto(
+            transaction,
+            attempt.id,
+            this.noRetryRemains(
+              attempt.studentState.release,
+              attempt.studentState.attemptCount,
+            ),
+          ),
         };
       }
       if (this.isAttemptExpired(attempt.expiresAt)) {
@@ -592,7 +619,9 @@ export class StudentTestsService {
                   ? gradeFillBlanksResponse(gradingInput)
                   : assignmentType === AssignmentType.IMAGE_HOTSPOT
                     ? gradeImageHotspotResponse(gradingInput)
-                    : gradeChoiceResponse(gradingInput);
+                    : assignmentType === AssignmentType.MAP_POINT
+                      ? gradeMapPointResponse(gradingInput)
+                      : gradeChoiceResponse(gradingInput);
         await transaction.testAnswer.update({
           where: { id: answer.id },
           data: {
@@ -644,7 +673,14 @@ export class StudentTestsService {
       }
       return {
         kind: 'attempt' as const,
-        attempt: await this.findAttemptDto(transaction, attemptId),
+        attempt: await this.findAttemptDto(
+          transaction,
+          attemptId,
+          this.noRetryRemains(
+            attempt.studentState.release,
+            attempt.studentState.attemptCount,
+          ),
+        ),
       };
     });
     if (result.kind === 'expired') {
@@ -922,6 +958,12 @@ export class StudentTestsService {
     if (type === AssignmentType.IMAGE_HOTSPOT) {
       return typeof response.x === 'number' && typeof response.y === 'number';
     }
+    if (type === AssignmentType.MAP_POINT) {
+      return (
+        typeof response.longitude === 'number' &&
+        typeof response.latitude === 'number'
+      );
+    }
     return false;
   }
 
@@ -944,12 +986,14 @@ export class StudentTestsService {
     if (type === AssignmentType.CATEGORIZATION) return { assignments: [] };
     if (type === AssignmentType.FILL_BLANKS) return { answers: [] };
     if (type === AssignmentType.IMAGE_HOTSPOT) return {};
+    if (type === AssignmentType.MAP_POINT) return {};
     return {};
   }
 
   private async findAttemptDto(
     transaction: Prisma.TransactionClient,
     attemptId: string,
+    revealSolutions = false,
   ): Promise<StudentTestAttemptDto> {
     const attempt = await transaction.testAttempt.findUnique({
       where: { id: attemptId },
@@ -958,7 +1002,7 @@ export class StudentTestsService {
     if (!attempt) {
       throw this.attemptNotFound();
     }
-    return this.toAttemptDto(attempt);
+    return this.toAttemptDto(attempt, revealSolutions);
   }
 
   private toReleaseDto(
@@ -1009,14 +1053,22 @@ export class StudentTestsService {
                   item.assignmentRevision.publicConfig,
                   `${release.id}:${studentId}:${item.id}`,
                 ),
+                mapPreset: item.assignmentRevision.mapPreset
+                  ? toMapPresetDto(item.assignmentRevision.mapPreset)
+                  : null,
               }),
           )
         : [],
-      attempt: attempt ? this.toAttemptDto(attempt) : null,
+      attempt: attempt
+        ? this.toAttemptDto(attempt, this.canRevealSolutions(release, attempt))
+        : null,
     });
   }
 
-  private toAttemptDto(attempt: AttemptRecord): StudentTestAttemptDto {
+  private toAttemptDto(
+    attempt: AttemptRecord,
+    revealSolutions = false,
+  ): StudentTestAttemptDto {
     return new StudentTestAttemptDto({
       id: attempt.id,
       attemptNumber: attempt.attemptNumber,
@@ -1042,6 +1094,7 @@ export class StudentTestsService {
               answer.scorePercent === null ? null : Number(answer.scorePercent),
             isCorrect: answer.isCorrect,
             teacherComment: answer.teacherComment,
+            solutionFeedback: this.toSolutionFeedback(answer, revealSolutions),
           }),
       ),
       startedAt: attempt.startedAt,
@@ -1049,6 +1102,64 @@ export class StudentTestsService {
       submittedAt: attempt.submittedAt,
       gradedAt: attempt.gradedAt,
     });
+  }
+
+  private canRevealSolutions(
+    release: StudentReleaseRecord,
+    attempt: AttemptRecord,
+  ): boolean {
+    return Boolean(
+      attempt.submittedAt &&
+      attempt.status !== TestAttemptStatus.RETURNED &&
+      attempt.status !== TestAttemptStatus.CANCELLED &&
+      this.noRetryRemains(release, attempt.attemptNumber),
+    );
+  }
+
+  private noRetryRemains(
+    release: {
+      status: TestReleaseStatus;
+      dueAt: Date | null;
+      latePolicy: TestLatePolicy;
+      maxAttempts: number | null;
+    },
+    usedAttempts: number,
+  ): boolean {
+    return (
+      release.status === TestReleaseStatus.CLOSED ||
+      release.status === TestReleaseStatus.ARCHIVED ||
+      this.isClosedByDeadline(release) ||
+      (release.maxAttempts !== null && usedAttempts >= release.maxAttempts)
+    );
+  }
+
+  private toSolutionFeedback(
+    answer: AttemptRecord['answers'][number],
+    reveal: boolean,
+  ): Record<string, unknown> | null {
+    if (
+      !reveal ||
+      answer.testItem.assignment.type !== AssignmentType.MAP_POINT
+    ) {
+      return null;
+    }
+    const parsed = mapPointPublishSolutionSchema.safeParse(
+      answer.testItem.assignmentRevision.solution?.gradingConfig,
+    );
+    if (!parsed.success) return null;
+    const gradingData = this.toJsonObject(answer.gradingData);
+    return {
+      target: parsed.data.target,
+      radiusKm: parsed.data.radiusKm,
+      distanceKm:
+        typeof gradingData.distanceKm === 'number'
+          ? gradingData.distanceKm
+          : null,
+      withinRadius:
+        typeof gradingData.withinRadius === 'boolean'
+          ? gradingData.withinRadius
+          : null,
+    };
   }
 
   private resolveStudentStatus(

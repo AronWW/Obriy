@@ -17,6 +17,10 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../common/types/auth-user.type';
 import {
+  mapPresetSelect,
+  toMapPresetDto,
+} from '../map-presets/map-preset.mapper';
+import {
   ReviewTestAnswerDto,
   ListTestReviewsQueryDto,
   TeacherChoiceReviewOptionDto,
@@ -90,6 +94,7 @@ const teacherAttemptSelect = {
               title: true,
               prompt: true,
               publicConfig: true,
+              mapPreset: { select: mapPresetSelect },
               solution: { select: { gradingConfig: true } },
             },
           },
@@ -453,6 +458,9 @@ export class TestReviewsService {
             publicConfig: this.toJsonObject(
               answer.testItem.assignmentRevision.publicConfig,
             ),
+            mapPreset: answer.testItem.assignmentRevision.mapPreset
+              ? toMapPresetDto(answer.testItem.assignmentRevision.mapPreset)
+              : null,
             gradingConfig: this.toJsonObject(
               answer.testItem.assignmentRevision.solution?.gradingConfig ??
                 null,

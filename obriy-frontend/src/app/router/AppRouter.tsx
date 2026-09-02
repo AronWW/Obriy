@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '../../features/auth/components/ProtectedRoute'
 import { PublicOnlyRoute } from '../../features/auth/components/PublicOnlyRoute'
@@ -43,6 +44,12 @@ import { DesignLabPage } from '../../pages/design-lab/DesignLabPage'
 import { HomePage } from '../../pages/home/HomePage'
 import { TeacherPlaceholderPage } from '../../pages/teacher/TeacherPlaceholderPage'
 import { StudentPlaceholderPage } from '../../pages/student/StudentPlaceholderPage'
+
+const TeacherMapSandboxPage = lazy(() =>
+  import('../../features/maps').then((module) => ({
+    default: module.TeacherMapSandboxPage,
+  })),
+)
 
 export function AppRouter() {
   return (
@@ -92,10 +99,7 @@ export function AppRouter() {
               path="leaderboard"
               element={<StudentPlaceholderPage section="leaderboard" />}
             />
-            <Route
-              path="profile"
-              element={<StudentProfilePage />}
-            />
+            <Route path="profile" element={<StudentProfilePage />} />
           </Route>
         </Route>
         <Route element={<RoleRoute role="TEACHER" />}>
@@ -109,16 +113,21 @@ export function AppRouter() {
               path="classes/:classId"
               element={<TeacherClassDetailPage />}
             />
-            <Route
-              path="lessons"
-              element={<TeacherLessonsPage />}
-            />
+            <Route path="lessons" element={<TeacherLessonsPage />} />
             <Route path="lessons/new" element={<TeacherLessonEditorPage />} />
             <Route
               path="lessons/:lessonId/edit"
               element={<TeacherLessonEditorPage />}
             />
             <Route path="tasks" element={<TeacherAssignmentsPage />} />
+            <Route
+              path="maps"
+              element={
+                <Suspense fallback={null}>
+                  <TeacherMapSandboxPage />
+                </Suspense>
+              }
+            />
             <Route
               path="tasks/new/:assignmentType"
               element={<TeacherAssignmentEditorPage />}
@@ -137,10 +146,7 @@ export function AppRouter() {
               path="analytics"
               element={<TeacherPlaceholderPage section="analytics" />}
             />
-            <Route
-              path="profile"
-              element={<TeacherProfilePage />}
-            />
+            <Route path="profile" element={<TeacherProfilePage />} />
           </Route>
         </Route>
         <Route element={<RoleRoute role="PARENT" />}>

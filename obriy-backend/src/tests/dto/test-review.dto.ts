@@ -4,6 +4,7 @@ import {
   TestAnswerStatus,
   TestAttemptStatus,
 } from '@prisma/client';
+import { MapPresetDto } from '../../map-presets/dto/map-preset.dto';
 import { Transform, type TransformFnParams } from 'class-transformer';
 import {
   IsEnum,
@@ -105,6 +106,9 @@ export class TeacherTestAnswerReviewDto {
 
   @ApiProperty({ type: 'object', additionalProperties: true })
   gradingData: Record<string, unknown>;
+
+  @ApiPropertyOptional({ type: MapPresetDto, nullable: true })
+  mapPreset: MapPresetDto | null;
 
   @ApiPropertyOptional({
     type: () => TeacherChoiceReviewOptionDto,

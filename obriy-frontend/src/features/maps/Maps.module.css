@@ -160,7 +160,7 @@
   border-right: 1px solid var(--line-soft);
 }
 
-.mapCanvas {
+.mapFrame > .mapCanvas {
   position: absolute;
   inset: 0;
 }
@@ -203,6 +203,87 @@
 .mapPointMarker:active,
 .mapRadiusHandle:active {
   cursor: grabbing;
+}
+
+.regionPicker {
+  display: grid;
+  gap: 7px;
+}
+
+.regionPicker > label {
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.regionSearchField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 11px;
+  color: var(--ink-soft);
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.regionSearchField input,
+.regionPicker select {
+  width: 100%;
+  min-width: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+  background: transparent;
+  border: 0;
+  outline: 0;
+}
+
+.regionPicker select {
+  min-height: 42px;
+  padding: 0 10px;
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.regionPicker > small {
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+}
+
+.selectedRegion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 10px;
+  margin: 3px 0 0;
+  padding: 10px 11px;
+  background: color-mix(in srgb, var(--gold), transparent 90%);
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 70%);
+  border-radius: 10px;
+}
+
+.selectedRegion span {
+  grid-column: 1 / -1;
+  color: var(--ink-soft);
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.selectedRegion strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.83rem;
+}
+
+.selectedRegion small {
+  color: var(--ink-soft);
+  font-size: 0.72rem;
 }
 
 .mapCanvas :global(.maplibregl-ctrl-group) {

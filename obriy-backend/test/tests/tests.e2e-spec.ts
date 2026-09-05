@@ -1059,6 +1059,152 @@ describe('Tests module (e2e)', () => {
     const reviewGradingData = getRecordField(reviewAnswer, 'gradingData');
     expect(reviewGradingData).toMatchObject({ withinRadius: false });
     expect(getNumberValue(reviewGradingData, 'distanceKm')).toBeGreaterThan(0);
+    await context.prisma.mapPreset.update({
+      where: { id: mapPresetId },
+      data: { status: MapPresetStatus.ACTIVE, archivedAt: null },
+    });
+  });
+
+  it('runs MAP_REGION end to end and reveals the correct region only after the final attempt', async () => {
+    const assignmentResponse = await request(context.app.getHttpServer())
+      .post('/assignments')
+      .set('Authorization', bearer('teacher'))
+      .send({
+        type: AssignmentType.MAP_REGION,
+        contentLocale: Locale.UK,
+        defaultMaxPoints: 4,
+        draft: {
+          title: 'Find India',
+          prompt: 'Choose India on the map.',
+          mapPresetId,
+          publicConfig: { initialProjection: 'GLOBE' },
+          gradingConfig: { correctRegionId: 'IND' },
+        },
+      })
+      .expect(201);
+    const assignmentId = getStringField(assignmentResponse, 'id');
+    const assignmentDraft = getRecordField(
+      getResponseBody(assignmentResponse),
+      'draftRevision',
+    );
+    await request(context.app.getHttpServer())
+      .post(`/assignments/${assignmentId}/publish`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(assignmentDraft, 'id'),
+        expectedEditVersion: getNumberValue(assignmentDraft, 'editVersion'),
+      })
+      .expect(200);
+
+    const testResponse = await request(context.app.getHttpServer())
+      .post('/tests')
+      .set('Authorization', bearer('teacher'))
+      .send({
+        contentLocale: Locale.UK,
+        title: 'Map region check',
+        maxAttempts: 1,
+      })
+      .expect(201);
+    const testId = getStringField(testResponse, 'id');
+    let testDraft = getRecordField(
+      getResponseBody(testResponse),
+      'draftRevision',
+    );
+    const addResponse = await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/draft/items`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        assignmentId,
+        expectedRevisionId: getStringValue(testDraft, 'id'),
+        expectedEditVersion: getNumberValue(testDraft, 'editVersion'),
+      })
+      .expect(201);
+    testDraft = getRecordField(getResponseBody(addResponse), 'draftRevision');
+    await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/publish`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(testDraft, 'id'),
+        expectedEditVersion: getNumberValue(testDraft, 'editVersion'),
+      })
+      .expect(200);
+    await request(context.app.getHttpServer())
+      .post(`/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('teacher'))
+      .send({ testId })
+      .expect(201);
+
+    const studentListResponse = await request(context.app.getHttpServer())
+      .get(`/classes/me/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const studentTest = getResponseArray(studentListResponse).find(
+      (candidate) => getStringValue(candidate, 'testId') === testId,
+    );
+    if (!studentTest) throw new Error('Expected MAP_REGION test release');
+    const releaseId = getStringValue(studentTest, 'releaseId');
+    const attemptResponse = await request(context.app.getHttpServer())
+      .post(`/test-releases/${releaseId}/attempts`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const attemptId = getStringField(attemptResponse, 'id');
+    const activeResponse = await request(context.app.getHttpServer())
+      .get(`/test-releases/${releaseId}`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const activeBody = getResponseBody(activeResponse);
+    const mapItem = getRecordArray(activeBody, 'items')[0];
+    if (!mapItem) throw new Error('Expected MAP_REGION test item');
+    expect(getStringValue(mapItem, 'type')).toBe(AssignmentType.MAP_REGION);
+    expect(getRecordField(mapItem, 'mapPreset')).toEqual(
+      expect.objectContaining({ id: mapPresetId }),
+    );
+    expect(JSON.stringify(activeBody)).not.toContain('correctRegionId');
+
+    const testItemId = getStringValue(mapItem, 'id');
+    const saveResponse = await request(context.app.getHttpServer())
+      .put(`/test-attempts/${attemptId}/answers/${testItemId}`)
+      .set('Authorization', bearer('student'))
+      .send({ responseData: { regionId: 'PRI' } })
+      .expect(200);
+    expect(JSON.stringify(saveResponse.body)).not.toContain('IND');
+    const submitResponse = await request(context.app.getHttpServer())
+      .post(`/test-attempts/${attemptId}/submit`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const answer = getRecordArray(
+      getResponseBody(submitResponse),
+      'answers',
+    )[0];
+    if (!answer) throw new Error('Expected MAP_REGION answer');
+    expect(answer).toMatchObject({
+      responseData: { regionId: 'PRI' },
+      scorePoints: 0,
+      scorePercent: 0,
+      isCorrect: false,
+    });
+    expect(getRecordField(answer, 'solutionFeedback')).toEqual({
+      correctRegionId: 'IND',
+      matches: false,
+    });
+
+    const reviewsResponse = await request(context.app.getHttpServer())
+      .get(`/lessons/${lessonId}/test-attempts`)
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    const review = getRecordArray(
+      getResponseBody(reviewsResponse),
+      'items',
+    ).find((candidate) => getStringValue(candidate, 'attemptId') === attemptId);
+    if (!review) throw new Error('Expected MAP_REGION teacher review');
+    const reviewAnswer = getRecordArray(review, 'answers')[0];
+    if (!reviewAnswer) throw new Error('Expected MAP_REGION review answer');
+    expect(getRecordField(reviewAnswer, 'gradingConfig')).toEqual({
+      correctRegionId: 'IND',
+    });
+    expect(getRecordField(reviewAnswer, 'gradingData')).toEqual({
+      matches: false,
+    });
   });
 
   it('updates a test item to the latest assignment revision in place', async () => {

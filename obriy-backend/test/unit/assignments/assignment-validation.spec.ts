@@ -220,7 +220,7 @@ describe('WRITTEN assignment validation', () => {
   });
 
   it('returns safe structured failures for unsupported types and versions', () => {
-    expect(validateAssignmentSolution('MAP_REGION', 1, {})).toEqual({
+    expect(validateAssignmentSolution('MAP_MULTI_REGION', 1, {})).toEqual({
       success: false,
       issues: [
         {
@@ -257,5 +257,60 @@ describe('WRITTEN assignment validation', () => {
     expect(
       result.issues.find((issue) => issue.path.join('.') === 'mode'),
     ).toMatchObject({ code: 'INVALID_VALUE' });
+  });
+});
+
+describe('MAP_REGION assignment validation', () => {
+  it('allows an incomplete draft but requires a region for publishing', () => {
+    expect(createAssignmentValidationDefaults('MAP_REGION', 1)).toEqual({
+      success: true,
+      data: {
+        publicConfig: { initialProjection: 'MERCATOR' },
+        gradingConfig: { correctRegionId: null },
+      },
+    });
+    expect(
+      validateAssignmentSolution('MAP_REGION', 1, {
+        correctRegionId: null,
+      }),
+    ).toEqual({
+      success: true,
+      data: { correctRegionId: null },
+    });
+
+    const result = validateAssignmentPublishPayload('MAP_REGION', 1, {
+      publicConfig: { initialProjection: 'GLOBE' },
+      gradingConfig: { correctRegionId: null },
+    });
+    expect(result).toMatchObject({
+      success: false,
+      issues: [{ path: ['gradingConfig', 'correctRegionId'] }],
+    });
+  });
+
+  it('normalizes a valid region ID and rejects malformed responses', () => {
+    expect(
+      validateAssignmentPublishPayload('MAP_REGION', 1, {
+        publicConfig: { initialProjection: 'GLOBE' },
+        gradingConfig: { correctRegionId: '  IND  ' },
+      }),
+    ).toEqual({
+      success: true,
+      data: {
+        publicConfig: { initialProjection: 'GLOBE' },
+        gradingConfig: { correctRegionId: 'IND' },
+      },
+    });
+    expect(
+      validateAssignmentStudentResponse('MAP_REGION', 1, {
+        regionId: '  PRI  ',
+      }),
+    ).toEqual({ success: true, data: { regionId: 'PRI' } });
+    expect(
+      validateAssignmentStudentResponse('MAP_REGION', 1, {
+        regionId: '',
+        correctRegionId: 'IND',
+      }),
+    ).toMatchObject({ success: false });
   });
 });

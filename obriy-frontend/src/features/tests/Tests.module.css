@@ -1514,6 +1514,20 @@
   border-radius: 12px;
 }
 
+.mapRegionAnswerLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  align-items: start;
+  gap: 12px;
+}
+
+.mapRegionAnswerLayout > :last-child {
+  padding: 13px;
+  background: color-mix(in srgb, var(--panel-solid), var(--gold) 2%);
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+}
+
 .reviewResponse .mapResult {
   margin-top: 8px;
 }
@@ -2024,6 +2038,10 @@
 }
 
 @media (max-width: 680px) {
+  .mapRegionAnswerLayout {
+    grid-template-columns: 1fr;
+  }
+
   .content {
     padding: 22px 15px 40px;
   }

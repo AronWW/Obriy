@@ -38,3 +38,11 @@ export interface MapInspection {
   featureId: string | null
   featureName: string | null
 }
+
+export interface MapRegionOption {
+  id: string
+  isoCode: string
+  name: string
+  nameEn: string
+  nameUk: string
+}

@@ -12,10 +12,10 @@ import {
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { RotateCcw } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '../../../shared/theme/theme-context'
-import { parseMapFeatureCollection } from '../model/geojson'
+import { mapRegionOptions, parseMapFeatureCollection } from '../model/geojson'
 import {
   clampMapRadius,
   destinationPoint,
@@ -28,6 +28,7 @@ import type {
   MapPoint,
   MapPreset,
   MapProjection,
+  MapRegionOption,
 } from '../model/map.types'
 import styles from '../Maps.module.css'
 
@@ -42,32 +43,40 @@ const RADIUS_LINE_LAYER_ID = 'obriy-map-radius-line'
 
 export interface MapCanvasProps {
   comparisonPoint?: MapPoint | null
+  comparisonRegionIds?: readonly string[]
   mapLabel?: string
   onInspect?: (inspection: MapInspection) => void
   onPointChange?: (point: MapPoint) => void
   onRadiusChange?: (radiusKm: number) => void
+  onRegionChange?: (region: MapRegionOption) => void
+  onRegionsLoad?: (regions: MapRegionOption[]) => void
   point?: MapPoint | null
   pointKind?: 'TARGET' | 'ANSWER'
   preset: MapPreset
   projection: MapProjection
   radiusKm?: number | null
+  selectedRegionIds?: readonly string[]
   variant?: 'SANDBOX' | 'ASSIGNMENT'
 }
 
 export function MapCanvas({
   comparisonPoint = null,
+  comparisonRegionIds = [],
   mapLabel,
   onInspect,
   onPointChange,
   onRadiusChange,
+  onRegionChange,
+  onRegionsLoad,
   point = null,
   pointKind = 'TARGET',
   preset,
   projection,
   radiusKm = null,
+  selectedRegionIds = [],
   variant = 'SANDBOX',
 }: MapCanvasProps) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const { theme } = useTheme()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
@@ -77,10 +86,14 @@ export function MapCanvas({
   const inspectRef = useRef(onInspect)
   const pointChangeRef = useRef(onPointChange)
   const radiusChangeRef = useRef(onRadiusChange)
+  const regionChangeRef = useRef(onRegionChange)
+  const regionsLoadRef = useRef(onRegionsLoad)
   const pointRef = useRef(point)
   const projectionRef = useRef(projection)
   const hoveredIdRef = useRef<string | number | null>(null)
   const selectedIdRef = useRef<string | number | null>(null)
+  const selectedRegionIdsRef = useRef(new Set<string>())
+  const comparisonRegionIdsRef = useRef(new Set<string>())
   const snapshotKey = `${preset.geojsonUrl}:${preset.idProperty}`
   const [snapshot, setSnapshot] = useState<MapSnapshotState>(() => ({
     key: snapshotKey,
@@ -96,13 +109,39 @@ export function MapCanvas({
   const mapInstanceKey = `${snapshotKey}:${theme}`
   const runtimeError = runtimeErrorKey === mapInstanceKey
   const mapReady = readyMapKey === mapInstanceKey
+  const regions = useMemo(
+    () =>
+      geojson
+        ? mapRegionOptions(
+            geojson,
+            i18n.resolvedLanguage ?? i18n.language,
+            preset.idProperty,
+          )
+        : [],
+    [geojson, i18n.language, i18n.resolvedLanguage, preset.idProperty],
+  )
+  const regionsRef = useRef(regions)
 
   useEffect(() => {
     inspectRef.current = onInspect
     pointChangeRef.current = onPointChange
     radiusChangeRef.current = onRadiusChange
+    regionChangeRef.current = onRegionChange
+    regionsLoadRef.current = onRegionsLoad
     pointRef.current = point
-  }, [onInspect, onPointChange, onRadiusChange, point])
+  }, [
+    onInspect,
+    onPointChange,
+    onRadiusChange,
+    onRegionChange,
+    onRegionsLoad,
+    point,
+  ])
+
+  useEffect(() => {
+    regionsRef.current = regions
+    if (regions.length > 0) regionsLoadRef.current?.(regions)
+  }, [regions])
 
   useEffect(() => {
     projectionRef.current = projection
@@ -143,6 +182,8 @@ export function MapCanvas({
       return
     }
     selectedIdRef.current = null
+    selectedRegionIdsRef.current = new Set()
+    comparisonRegionIdsRef.current = new Set()
     hoveredIdRef.current = null
 
     const map = new MapLibreMap({
@@ -194,15 +235,27 @@ export function MapCanvas({
         paint: {
           'fill-color': [
             'case',
-            ['boolean', ['feature-state', 'selected'], false],
+            [
+              'all',
+              ['boolean', ['feature-state', 'selected'], false],
+              ['boolean', ['feature-state', 'comparison'], false],
+            ],
+            '#3c9b72',
+            ['boolean', ['feature-state', 'comparison'], false],
             '#d99235',
+            ['boolean', ['feature-state', 'selected'], false],
+            '#2775a7',
             ['boolean', ['feature-state', 'hover'], false],
             '#e8b45f',
             theme === 'night' ? '#5b7590' : '#7897aa',
           ],
           'fill-opacity': [
             'case',
-            ['boolean', ['feature-state', 'selected'], false],
+            [
+              'any',
+              ['boolean', ['feature-state', 'selected'], false],
+              ['boolean', ['feature-state', 'comparison'], false],
+            ],
             0.72,
             ['boolean', ['feature-state', 'hover'], false],
             0.58,
@@ -261,12 +314,19 @@ export function MapCanvas({
       const feature = firstMapFeature(
         map.queryRenderedFeatures(event.point, { layers: [FILL_LAYER_ID] }),
       )
-      updateFeatureState(map, selectedIdRef.current, 'selected', false)
       const nextId = feature?.id ?? null
-      updateFeatureState(map, nextId, 'selected', true)
-      selectedIdRef.current = nextId
       const inspection = toInspection(event, feature, preset.idProperty)
       inspectRef.current?.(inspection)
+      if (regionChangeRef.current && inspection.featureId) {
+        const region = regionsRef.current.find(
+          (candidate) => candidate.id === inspection.featureId,
+        )
+        if (region) regionChangeRef.current(region)
+      } else if (!pointChangeRef.current) {
+        updateFeatureState(map, selectedIdRef.current, 'selected', false)
+        updateFeatureState(map, nextId, 'selected', true)
+        selectedIdRef.current = nextId
+      }
       pointChangeRef.current?.({
         longitude: inspection.longitude,
         latitude: inspection.latitude,
@@ -287,6 +347,23 @@ export function MapCanvas({
       map.remove()
     }
   }, [dataState, geojson, mapInstanceKey, preset, t, theme, webglAvailable])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapReady) return
+    selectedRegionIdsRef.current = syncRegionStates(
+      map,
+      selectedRegionIdsRef.current,
+      selectedRegionIds,
+      'selected',
+    )
+    comparisonRegionIdsRef.current = syncRegionStates(
+      map,
+      comparisonRegionIdsRef.current,
+      comparisonRegionIds,
+      'comparison',
+    )
+  }, [comparisonRegionIds, mapReady, selectedRegionIds])
 
   useEffect(() => {
     const map = mapRef.current
@@ -521,11 +598,27 @@ function supportsWebGl(): boolean {
 function updateFeatureState(
   map: MapLibreMap,
   id: string | number | null,
-  key: 'hover' | 'selected',
+  key: 'comparison' | 'hover' | 'selected',
   value: boolean,
 ) {
   if (id === null || !map.getSource(SOURCE_ID)) return
   map.setFeatureState({ source: SOURCE_ID, id }, { [key]: value })
+}
+
+function syncRegionStates(
+  map: MapLibreMap,
+  previous: Set<string>,
+  nextValues: readonly string[],
+  key: 'comparison' | 'selected',
+): Set<string> {
+  const next = new Set(nextValues)
+  for (const id of previous) {
+    if (!next.has(id)) updateFeatureState(map, id, key, false)
+  }
+  for (const id of next) {
+    if (!previous.has(id)) updateFeatureState(map, id, key, true)
+  }
+  return next
 }
 
 function firstMapFeature(

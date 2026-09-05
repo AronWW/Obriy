@@ -1,5 +1,11 @@
 import { mkdir, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
+
+const require = createRequire(import.meta.url)
+const isoCountries = require('i18n-iso-countries')
+isoCountries.registerLocale(require('i18n-iso-countries/langs/en.json'))
+isoCountries.registerLocale(require('i18n-iso-countries/langs/uk.json'))
 
 const API_ROOT = 'https://www.geoboundaries.org/api/current/gbOpen'
 const GITHUB_CONTENTS_ROOT =
@@ -7,6 +13,48 @@ const GITHUB_CONTENTS_ROOT =
 const OUTPUT_DIRECTORY = resolve('public/maps')
 const EXPECTED_WORLD_FEATURE_COUNT = 232
 const REQUIRED_WORLD_FEATURE_IDS = ['IND', 'PRI']
+const COUNTRY_NAME_OVERRIDES = {
+  GRE: { nameEn: 'Greece', nameUk: 'Греція' },
+  XKX: { nameEn: 'Kosovo', nameUk: 'Косово' },
+}
+const UKRAINE_REGION_NAMES = {
+  'UA-05': { nameEn: 'Vinnytsia Oblast', nameUk: 'Вінницька область' },
+  'UA-07': { nameEn: 'Volyn Oblast', nameUk: 'Волинська область' },
+  'UA-09': { nameEn: 'Luhansk Oblast', nameUk: 'Луганська область' },
+  'UA-12': {
+    nameEn: 'Dnipropetrovsk Oblast',
+    nameUk: 'Дніпропетровська область',
+  },
+  'UA-14': { nameEn: 'Donetsk Oblast', nameUk: 'Донецька область' },
+  'UA-18': { nameEn: 'Zhytomyr Oblast', nameUk: 'Житомирська область' },
+  'UA-21': { nameEn: 'Zakarpattia Oblast', nameUk: 'Закарпатська область' },
+  'UA-23': { nameEn: 'Zaporizhzhia Oblast', nameUk: 'Запорізька область' },
+  'UA-26': {
+    nameEn: 'Ivano-Frankivsk Oblast',
+    nameUk: 'Івано-Франківська область',
+  },
+  'UA-30': { nameEn: 'Kyiv', nameUk: 'Київ' },
+  'UA-32': { nameEn: 'Kyiv Oblast', nameUk: 'Київська область' },
+  'UA-35': { nameEn: 'Kirovohrad Oblast', nameUk: 'Кіровоградська область' },
+  'UA-40': { nameEn: 'Sevastopol', nameUk: 'Севастополь' },
+  'UA-43': {
+    nameEn: 'Autonomous Republic of Crimea',
+    nameUk: 'Автономна Республіка Крим',
+  },
+  'UA-46': { nameEn: 'Lviv Oblast', nameUk: 'Львівська область' },
+  'UA-48': { nameEn: 'Mykolaiv Oblast', nameUk: 'Миколаївська область' },
+  'UA-51': { nameEn: 'Odesa Oblast', nameUk: 'Одеська область' },
+  'UA-53': { nameEn: 'Poltava Oblast', nameUk: 'Полтавська область' },
+  'UA-56': { nameEn: 'Rivne Oblast', nameUk: 'Рівненська область' },
+  'UA-59': { nameEn: 'Sumy Oblast', nameUk: 'Сумська область' },
+  'UA-61': { nameEn: 'Ternopil Oblast', nameUk: 'Тернопільська область' },
+  'UA-63': { nameEn: 'Kharkiv Oblast', nameUk: 'Харківська область' },
+  'UA-65': { nameEn: 'Kherson Oblast', nameUk: 'Херсонська область' },
+  'UA-68': { nameEn: 'Khmelnytskyi Oblast', nameUk: 'Хмельницька область' },
+  'UA-71': { nameEn: 'Cherkasy Oblast', nameUk: 'Черкаська область' },
+  'UA-74': { nameEn: 'Chernihiv Oblast', nameUk: 'Чернігівська область' },
+  'UA-77': { nameEn: 'Chernivtsi Oblast', nameUk: 'Чернівецька область' },
+}
 
 async function main() {
   const [aggregatedWorldMetadata, ukraineMetadata] = await Promise.all([
@@ -59,6 +107,8 @@ async function main() {
       })
     }),
   )
+  validateLocalizedNames(world)
+  validateLocalizedNames(ukraine)
 
   await mkdir(OUTPUT_DIRECTORY, { recursive: true })
   await Promise.all([
@@ -245,6 +295,8 @@ function normalizeFeature(value, fallbackId, options) {
     stringValue(properties.shapeName) ||
     stringValue(properties.shapeISO) ||
     featureId
+  const isoCode = stringValue(properties.shapeISO) || fallbackId
+  const localizedNames = localizedFeatureNames(isoCode, name)
 
   return {
     type: 'Feature',
@@ -252,7 +304,9 @@ function normalizeFeature(value, fallbackId, options) {
     properties: {
       featureId,
       name,
-      isoCode: stringValue(properties.shapeISO) || fallbackId,
+      nameEn: localizedNames.nameEn,
+      nameUk: localizedNames.nameUk,
+      isoCode,
     },
     geometry: {
       type: geometry.type,
@@ -262,6 +316,32 @@ function normalizeFeature(value, fallbackId, options) {
         options.tolerance,
       ),
     },
+  }
+}
+
+function localizedFeatureNames(isoCode, sourceName) {
+  const ukraineRegion = UKRAINE_REGION_NAMES[isoCode]
+  if (ukraineRegion) return ukraineRegion
+  const override = COUNTRY_NAME_OVERRIDES[isoCode]
+  if (override) return override
+  const nameEn = isoCountries.getName(isoCode, 'en')
+  const nameUk = isoCountries.getName(isoCode, 'uk')
+  if (!nameEn || !nameUk) {
+    throw new Error(
+      `Missing localized map names for ${isoCode} (${sourceName})`,
+    )
+  }
+  return { nameEn, nameUk }
+}
+
+function validateLocalizedNames(collection) {
+  for (const feature of collection.features) {
+    const properties = record(feature.properties)
+    for (const property of ['nameEn', 'nameUk']) {
+      if (!stringValue(properties[property])) {
+        throw new Error(`Feature ${feature.id} is missing ${property}`)
+      }
+    }
   }
 }
 

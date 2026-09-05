@@ -3,7 +3,7 @@
 import { readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { parseMapFeatureCollection } from './geojson'
+import { mapRegionOptions, parseMapFeatureCollection } from './geojson'
 
 describe('map GeoJSON snapshots', () => {
   it.each([
@@ -23,6 +23,15 @@ describe('map GeoJSON snapshots', () => {
           ['Polygon', 'MultiPolygon'].includes(feature.geometry.type),
         ),
       ).toBe(true)
+      expect(
+        collection.features.every(
+          (feature) =>
+            typeof feature.properties?.nameEn === 'string' &&
+            feature.properties.nameEn.length > 0 &&
+            typeof feature.properties?.nameUk === 'string' &&
+            feature.properties.nameUk.length > 0,
+        ),
+      ).toBe(true)
     },
   )
 
@@ -37,6 +46,25 @@ describe('map GeoJSON snapshots', () => {
 
     expect(ids.has('IND')).toBe(true)
     expect(ids.has('PRI')).toBe(true)
+  })
+
+  it('builds localized, sorted region options with stable IDs', () => {
+    const parsed = parseMapFeatureCollection(
+      collection([
+        feature('PRI', 'Puerto Rico', 'Puerto Rico', 'Пуерто-Рико'),
+        feature('IND', 'India', 'India', 'Індія'),
+      ]),
+      'featureId',
+    )
+
+    expect(mapRegionOptions(parsed, 'en', 'featureId')).toEqual([
+      expect.objectContaining({ id: 'IND', name: 'India' }),
+      expect.objectContaining({ id: 'PRI', name: 'Puerto Rico' }),
+    ])
+    expect(mapRegionOptions(parsed, 'uk', 'featureId')).toEqual([
+      expect.objectContaining({ id: 'IND', name: 'Індія' }),
+      expect.objectContaining({ id: 'PRI', name: 'Пуерто-Рико' }),
+    ])
   })
 
   it('rejects duplicate IDs, unsupported geometry, and invalid coordinates', () => {
@@ -85,10 +113,15 @@ function collection(features: unknown[]) {
   return { type: 'FeatureCollection', features }
 }
 
-function feature(featureId: string) {
+function feature(
+  featureId: string,
+  name = featureId,
+  nameEn?: string,
+  nameUk?: string,
+) {
   return {
     type: 'Feature',
-    properties: { featureId, name: featureId },
+    properties: { featureId, name, nameEn, nameUk, isoCode: featureId },
     geometry: {
       type: 'Polygon',
       coordinates: [

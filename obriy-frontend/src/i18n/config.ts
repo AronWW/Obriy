@@ -751,6 +751,14 @@ const resources = {
           answerMarker: 'Відповідь учня',
           radiusHandle: 'Змінити радіус правильної відповіді',
         },
+        region: {
+          search: 'Пошук регіону',
+          searchPlaceholder: 'Назва українською, англійською або ISO-код',
+          list: 'Список регіонів',
+          choose: 'Оберіть регіон',
+          noResults: 'За цим запитом регіонів не знайдено.',
+          selected: 'Вибраний регіон',
+        },
         sandbox: {
           open: 'Лабораторія мап',
           back: 'Назад до завдань',
@@ -1126,6 +1134,26 @@ const resources = {
             preset: 'Оберіть карту.',
             target: 'Позначте правильну точку.',
             radius: 'Радіус має бути від 1 до 5000 км.',
+          },
+        },
+        mapRegion: {
+          newTitle: 'Нове завдання з вибором регіону',
+          description:
+            'Оберіть карту та правильну країну або область для завдання.',
+          content: 'Умова завдання',
+          contentHint:
+            'Чітко поясніть, який регіон учень має знайти на мапі.',
+          mapTitle: 'Правильний регіон',
+          mapHint:
+            'Виберіть регіон кліком на мапі або через синхронізований пошук.',
+          mapLabel: 'Редактор правильного регіону на мапі',
+          readiness: 'Готовність до додавання в тест',
+          ready: 'Завдання готове до публікації.',
+          validation: {
+            title: 'Додайте назву завдання.',
+            prompt: 'Додайте запитання або умову.',
+            preset: 'Оберіть карту.',
+            region: 'Оберіть правильний регіон.',
           },
         },
         interactive: {
@@ -1567,6 +1595,13 @@ const resources = {
           mapSolutionLabel: 'Результат завдання на мапі',
           mapDistance:
             'Відстань: {{distance}} км · допустимий радіус: {{radius}} км',
+          mapRegionInstruction:
+            'Оберіть один регіон на мапі або через пошук.',
+          mapRegionAnswerLabel: 'Мапа для вибору регіону учнем',
+          mapRegionSolution: 'Правильний регіон та ваша відповідь',
+          mapRegionSolutionLabel: 'Результат завдання з вибором регіону',
+          mapRegionResult:
+            'Ваша відповідь: {{answer}} · правильна: {{correct}}',
           previous: 'Назад',
           next: 'Далі',
           submit: 'Завершити тест',
@@ -1646,6 +1681,10 @@ const resources = {
           mapLabel: 'Перевірка відповіді на мапі',
           mapDistance:
             'Відстань: {{distance}} км · допустимий радіус: {{radius}} км',
+          mapRegionResult: 'Відповідь із вибором регіону',
+          mapRegionLabel: 'Перевірка вибраного регіону на мапі',
+          mapRegionSelection:
+            'Відповідь учня: {{answer}} · правильний регіон: {{correct}}',
           score: 'Бал за цю відповідь',
           comment: 'Коментар учню',
           commentPlaceholder: 'Поясніть оцінку або що потрібно виправити…',
@@ -2718,6 +2757,14 @@ const resources = {
           answerMarker: 'Student answer',
           radiusHandle: 'Adjust the accepted-answer radius',
         },
+        region: {
+          search: 'Region search',
+          searchPlaceholder: 'Ukrainian or English name, or ISO code',
+          list: 'Region list',
+          choose: 'Choose a region',
+          noResults: 'No regions match this search.',
+          selected: 'Selected region',
+        },
         sandbox: {
           open: 'Map laboratory',
           back: 'Back to assignments',
@@ -3094,6 +3141,26 @@ const resources = {
             preset: 'Choose a map.',
             target: 'Mark the correct point.',
             radius: 'Radius must be between 1 and 5000 km.',
+          },
+        },
+        mapRegion: {
+          newTitle: 'New region-on-map assignment',
+          description:
+            'Choose a map and the correct country or region for the assignment.',
+          content: 'Assignment content',
+          contentHint:
+            'Explain clearly which region the student needs to find on the map.',
+          mapTitle: 'Correct region',
+          mapHint:
+            'Choose a region by clicking the map or using the synchronized search.',
+          mapLabel: 'Correct map region editor',
+          readiness: 'Ready to add to a test',
+          ready: 'The assignment is ready to publish.',
+          validation: {
+            title: 'Add an assignment title.',
+            prompt: 'Add a question or prompt.',
+            preset: 'Choose a map.',
+            region: 'Choose the correct region.',
           },
         },
         interactive: {
@@ -3539,6 +3606,13 @@ const resources = {
           mapSolutionLabel: 'Point-on-map assignment result',
           mapDistance:
             'Distance: {{distance}} km · accepted radius: {{radius}} km',
+          mapRegionInstruction:
+            'Choose one region on the map or use the search.',
+          mapRegionAnswerLabel: 'Map for the student region selection',
+          mapRegionSolution: 'Correct region and your answer',
+          mapRegionSolutionLabel: 'Region-on-map assignment result',
+          mapRegionResult:
+            'Your answer: {{answer}} · correct: {{correct}}',
           previous: 'Back',
           next: 'Next',
           submit: 'Finish test',
@@ -3614,6 +3688,10 @@ const resources = {
           mapLabel: 'Map answer review',
           mapDistance:
             'Distance: {{distance}} km · accepted radius: {{radius}} km',
+          mapRegionResult: 'Region selection answer',
+          mapRegionLabel: 'Map region answer review',
+          mapRegionSelection:
+            'Student answer: {{answer}} · correct region: {{correct}}',
           score: 'Points for this answer',
           comment: 'Student comment',
           commentPlaceholder: 'Explain the score or what should be improved…',

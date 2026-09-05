@@ -29,14 +29,36 @@ import { StudentLessonReaderPage } from './StudentLessonReaderPage'
 vi.mock('../../maps/components/MapCanvas', () => ({
   MapCanvas: ({
     comparisonPoint,
+    comparisonRegionIds,
     onPointChange,
+    onRegionChange,
+    onRegionsLoad,
     point,
     radiusKm,
+    selectedRegionIds,
   }: {
     comparisonPoint?: { longitude: number; latitude: number } | null
+    comparisonRegionIds?: string[]
     onPointChange?: (point: { longitude: number; latitude: number }) => void
+    onRegionChange?: (region: {
+      id: string
+      isoCode: string
+      name: string
+      nameEn: string
+      nameUk: string
+    }) => void
+    onRegionsLoad?: (
+      regions: Array<{
+        id: string
+        isoCode: string
+        name: string
+        nameEn: string
+        nameUk: string
+      }>,
+    ) => void
     point?: { longitude: number; latitude: number } | null
     radiusKm?: number | null
+    selectedRegionIds?: string[]
   }) => (
     <div
       data-comparison={
@@ -46,6 +68,8 @@ vi.mock('../../maps/components/MapCanvas', () => ({
       }
       data-point={point ? `${point.longitude},${point.latitude}` : undefined}
       data-radius={radiusKm ?? undefined}
+      data-regions={selectedRegionIds?.join(',') || undefined}
+      data-regions-comparison={comparisonRegionIds?.join(',') || undefined}
       data-testid="map-canvas-mock"
     >
       {onPointChange && (
@@ -54,6 +78,47 @@ vi.mock('../../maps/components/MapCanvas', () => ({
           type="button"
         >
           Mark student answer
+        </button>
+      )}
+      {onRegionsLoad && (
+        <button
+          onClick={() =>
+            onRegionsLoad([
+              {
+                id: 'IND',
+                isoCode: 'IND',
+                name: 'India',
+                nameEn: 'India',
+                nameUk: 'Індія',
+              },
+              {
+                id: 'PRI',
+                isoCode: 'PRI',
+                name: 'Puerto Rico',
+                nameEn: 'Puerto Rico',
+                nameUk: 'Пуерто-Рико',
+              },
+            ])
+          }
+          type="button"
+        >
+          Load regions
+        </button>
+      )}
+      {onRegionChange && (
+        <button
+          onClick={() =>
+            onRegionChange({
+              id: 'PRI',
+              isoCode: 'PRI',
+              name: 'Puerto Rico',
+              nameEn: 'Puerto Rico',
+              nameUk: 'Пуерто-Рико',
+            })
+          }
+          type="button"
+        >
+          Choose Puerto Rico
         </button>
       )}
     </div>
@@ -948,6 +1013,122 @@ describe('student lessons', () => {
     expect(resultMap).toHaveAttribute('data-radius', '100')
     expect(resultMap).toHaveAttribute('data-point', '30.5234,50.4501')
     expect(resultMap).toHaveAttribute('data-comparison', '30.5,50.45')
+  })
+
+  it('autosaves MAP_REGION and reveals the correct region only after the final attempt', async () => {
+    const user = userEvent.setup()
+    const savedBodies: unknown[] = []
+    const preset = mapPresetFixture()
+    let test = studentTest({
+      title: 'Country check',
+      description: 'Choose the requested country.',
+      maxAttempts: 1,
+      items: [
+        {
+          id: 'item-1',
+          position: 0,
+          maxPoints: 5,
+          assignmentId: 'assignment-region',
+          assignmentRevisionId: 'revision-region',
+          type: 'MAP_REGION',
+          title: 'Choose a country',
+          prompt: 'Select the requested country on the map.',
+          instructions: null,
+          publicConfig: { initialProjection: 'GLOBE' },
+          mapPreset: preset,
+        },
+      ],
+    })
+    server.use(
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1`, () =>
+        HttpResponse.json({
+          ...studentLesson(),
+          content: 'Read this lesson first.',
+          class: { id: 'class-1', name: 'Grade 9-A' },
+          teacher: { id: 'teacher-1', displayName: 'Olena Koval' },
+        }),
+      ),
+      http.get(`${API_BASE_URL}/classes/me/lessons/lesson-1/tests`, () =>
+        HttpResponse.json([test]),
+      ),
+      http.get(`${API_BASE_URL}/test-releases/release-1`, () =>
+        HttpResponse.json(test),
+      ),
+      http.post(`${API_BASE_URL}/test-releases/release-1/attempts`, () => {
+        const attempt = studentTestAttempt({
+          answers: [studentTestAnswer({ responseData: {} })],
+        })
+        test = { ...test, stateStatus: 'IN_PROGRESS', attempt }
+        return HttpResponse.json(attempt)
+      }),
+      http.put(
+        `${API_BASE_URL}/test-attempts/attempt-1/answers/item-1`,
+        async ({ request }) => {
+          savedBodies.push(await request.json())
+          return HttpResponse.json(test.attempt)
+        },
+      ),
+      http.post(`${API_BASE_URL}/test-attempts/attempt-1/submit`, () => {
+        const attempt = studentTestAttempt({
+          status: 'GRADED',
+          scorePoints: 0,
+          scorePercent: 0,
+          isPassed: false,
+          submittedAt: '2026-08-13T12:00:00.000Z',
+          gradedAt: '2026-08-13T12:00:00.000Z',
+          answers: [
+            studentTestAnswer({
+              status: 'GRADED',
+              responseData: { regionId: 'PRI' },
+              scorePoints: 0,
+              scorePercent: 0,
+              isCorrect: false,
+              solutionFeedback: {
+                correctRegionId: 'IND',
+                matches: false,
+              },
+            }),
+          ],
+        })
+        test = { ...test, stateStatus: 'COMPLETED', attempt }
+        return HttpResponse.json(attempt)
+      }),
+    )
+
+    renderStudentReader('/app/student/lessons/lesson-1')
+    await user.click(await screen.findByRole('button', { name: 'Start' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Country check' })
+    await user.click(within(dialog).getByRole('button', { name: 'Start' }))
+    const activeMap = await within(dialog).findByTestId('map-canvas-mock')
+    expect(activeMap).not.toHaveAttribute('data-regions-comparison')
+    await user.click(
+      within(activeMap).getByRole('button', { name: 'Choose Puerto Rico' }),
+    )
+    await waitFor(
+      () =>
+        expect(savedBodies).toEqual([{ responseData: { regionId: 'PRI' } }]),
+      { timeout: 2_500 },
+    )
+    expect(activeMap).toHaveAttribute('data-regions', 'PRI')
+
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Finish test' }),
+    )
+    await user.click(
+      within(
+        screen.getByRole('dialog', { name: 'Finish this attempt?' }),
+      ).getByRole('button', { name: 'Submit answers' }),
+    )
+
+    await waitFor(() =>
+      expect(within(dialog).getByTestId('map-canvas-mock')).toHaveAttribute(
+        'data-regions-comparison',
+        'IND',
+      ),
+    )
+    const resultMap = within(dialog).getByTestId('map-canvas-mock')
+    expect(resultMap).toHaveAttribute('data-regions', 'PRI')
+    expect(resultMap).toHaveAttribute('data-regions-comparison', 'IND')
   })
 
   it('shows a stable unavailable state for an inaccessible lesson', async () => {

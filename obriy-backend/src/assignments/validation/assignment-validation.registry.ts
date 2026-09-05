@@ -40,6 +40,10 @@ import {
   MAP_POINT_SCHEMA_VERSION,
   mapPointAssignmentValidationDefinition,
 } from './map-point-assignment.schemas';
+import {
+  MAP_REGION_SCHEMA_VERSION,
+  mapRegionAssignmentValidationDefinition,
+} from './map-region-assignment.schemas';
 
 type UnknownAssignmentValidationDefinition = AssignmentValidationDefinition<
   unknown,
@@ -82,6 +86,9 @@ const assignmentValidationRegistry: Readonly<
   }),
   MAP_POINT: Object.freeze({
     [MAP_POINT_SCHEMA_VERSION]: mapPointAssignmentValidationDefinition,
+  }),
+  MAP_REGION: Object.freeze({
+    [MAP_REGION_SCHEMA_VERSION]: mapRegionAssignmentValidationDefinition,
   }),
 });
 

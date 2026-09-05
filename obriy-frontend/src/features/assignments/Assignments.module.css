@@ -2523,6 +2523,20 @@
   border-radius: 14px;
 }
 
+.mapRegionWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: 14px;
+}
+
+.mapRegionWorkspace > :last-child {
+  padding: 14px;
+  background: color-mix(in srgb, var(--panel-solid), var(--gold) 2%);
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+}
+
 .mapPointCoordinates {
   display: flex;
   align-items: center;
@@ -2636,6 +2650,10 @@
 }
 
 @media (max-width: 980px) {
+  .mapRegionWorkspace {
+    grid-template-columns: 1fr;
+  }
+
   .content {
     padding: 28px 24px 50px;
   }

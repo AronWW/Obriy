@@ -25,7 +25,11 @@ import type {
   TeacherTestReviewList,
   TestAttemptStatus,
 } from '../model/test.types'
-import type { MapPoint, MapProjection } from '../../maps/model/map.types'
+import type {
+  MapPoint,
+  MapProjection,
+  MapRegionOption,
+} from '../../maps/model/map.types'
 import styles from '../Tests.module.css'
 
 const MapCanvas = lazy(() =>
@@ -652,6 +656,9 @@ function ObjectiveReviewResponse({
   if (answer.type === 'MAP_POINT') {
     return <MapPointReview answer={answer} />
   }
+  if (answer.type === 'MAP_REGION') {
+    return <MapRegionReview answer={answer} />
+  }
   return (
     <pre className={styles.reviewRawAnswer}>
       {JSON.stringify(answer.responseData, null, 2)}
@@ -720,6 +727,75 @@ function MapPointReview({ answer }: { answer: TeacherTestAnswerReview }) {
           preset={answer.mapPreset}
           projection={projection}
           radiusKm={radiusKm}
+          variant="ASSIGNMENT"
+        />
+      </Suspense>
+    </div>
+  )
+}
+
+function MapRegionReview({ answer }: { answer: TeacherTestAnswerReview }) {
+  const { t } = useTranslation()
+  const [projection, setProjection] = useState<MapProjection>(() =>
+    answer.publicConfig.initialProjection === 'GLOBE' ? 'GLOBE' : 'MERCATOR',
+  )
+  const [regions, setRegions] = useState<MapRegionOption[]>([])
+  const selectedRegionId = stringField(answer.responseData, 'regionId')
+  const correctRegionId = stringField(answer.gradingConfig, 'correctRegionId')
+  const selected = regions.find((region) => region.id === selectedRegionId)
+  const correct = regions.find((region) => region.id === correctRegionId)
+  if (!answer.mapPreset || !correctRegionId) {
+    return (
+      <pre className={styles.reviewRawAnswer}>
+        {JSON.stringify(answer.responseData, null, 2)}
+      </pre>
+    )
+  }
+  return (
+    <div className={styles.mapResult}>
+      <div className={styles.mapAnswerToolbar}>
+        <div>
+          <strong>{t('tests.reviews.mapRegionResult')}</strong>
+          <small>
+            {t('tests.reviews.mapRegionSelection', {
+              answer: selected?.name ?? (selectedRegionId || '—'),
+              correct: correct?.name ?? correctRegionId,
+            })}
+          </small>
+        </div>
+        <div className={styles.mapProjectionToggle} role="group">
+          <button
+            aria-pressed={projection === 'MERCATOR'}
+            onClick={() => setProjection('MERCATOR')}
+            type="button"
+          >
+            <MapIcon size={14} aria-hidden="true" />
+            {t('maps.projection.mercator')}
+          </button>
+          <button
+            aria-pressed={projection === 'GLOBE'}
+            onClick={() => setProjection('GLOBE')}
+            type="button"
+          >
+            <Box size={14} aria-hidden="true" />
+            {t('maps.projection.globe')}
+          </button>
+        </div>
+      </div>
+      <Suspense
+        fallback={
+          <div className={styles.mapAnswerFallback}>
+            {t('maps.sandbox.loadingMap')}
+          </div>
+        }
+      >
+        <MapCanvas
+          comparisonRegionIds={[correctRegionId]}
+          mapLabel={t('tests.reviews.mapRegionLabel')}
+          onRegionsLoad={setRegions}
+          preset={answer.mapPreset}
+          projection={projection}
+          selectedRegionIds={selectedRegionId ? [selectedRegionId] : []}
           variant="ASSIGNMENT"
         />
       </Suspense>

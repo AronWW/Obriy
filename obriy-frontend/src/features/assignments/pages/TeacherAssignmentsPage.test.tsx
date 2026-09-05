@@ -20,10 +20,28 @@ vi.mock('../../maps/components/MapCanvas', () => ({
   MapCanvas: ({
     onPointChange,
     onRadiusChange,
+    onRegionChange,
+    onRegionsLoad,
     radiusKm,
   }: {
     onPointChange?: (point: { longitude: number; latitude: number }) => void
     onRadiusChange?: (radiusKm: number) => void
+    onRegionChange?: (region: {
+      id: string
+      isoCode: string
+      name: string
+      nameEn: string
+      nameUk: string
+    }) => void
+    onRegionsLoad?: (
+      regions: Array<{
+        id: string
+        isoCode: string
+        name: string
+        nameEn: string
+        nameUk: string
+      }>,
+    ) => void
     radiusKm?: number | null
   }) => (
     <div data-radius={radiusKm} data-testid="map-point-canvas">
@@ -37,6 +55,12 @@ vi.mock('../../maps/components/MapCanvas', () => ({
       </button>
       <button onClick={() => onRadiusChange?.(333)} type="button">
         Drag radius edge
+      </button>
+      <button onClick={() => onRegionsLoad?.([mapRegion])} type="button">
+        Load regions
+      </button>
+      <button onClick={() => onRegionChange?.(mapRegion)} type="button">
+        Choose region
       </button>
     </div>
   ),
@@ -93,6 +117,12 @@ describe('teacher assignment workspace', () => {
     expect(
       within(dialog).getByRole('button', { name: /Point on a map/ }),
     ).toBeEnabled()
+    expect(
+      within(dialog).getByRole('button', { name: /Map region/ }),
+    ).toBeEnabled()
+    expect(
+      within(dialog).getByRole('button', { name: /Multiple map regions/ }),
+    ).toBeDisabled()
     expect(within(dialog).queryByText(/soon/i)).not.toBeInTheDocument()
     expect(createCount).toBe(0)
 
@@ -502,6 +532,67 @@ describe('teacher assignment workspace', () => {
       },
     })
   })
+
+  it('creates MAP_REGION after synchronizing localized search and map selection', async () => {
+    const user = userEvent.setup()
+    let receivedBody: unknown
+    server.use(
+      http.get(`${API_BASE_URL}/map-presets`, () =>
+        HttpResponse.json([mapPreset()]),
+      ),
+      http.post(`${API_BASE_URL}/assignments`, async ({ request }) => {
+        receivedBody = await request.json()
+        return HttpResponse.json(mapRegionAssignmentEditor(), { status: 201 })
+      }),
+      http.get(`${API_BASE_URL}/assignments/:assignmentId`, () =>
+        HttpResponse.json(mapRegionAssignmentEditor()),
+      ),
+    )
+
+    renderWorkspace('/app/teacher/tasks/new/map_region')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Title' }),
+      'Find India',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Question or prompt' }),
+      'Choose India on the map.',
+    )
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Geographic dataset' }),
+      mapPreset().id,
+    )
+    const canvas = await screen.findByTestId('map-point-canvas')
+    await user.click(
+      within(canvas).getByRole('button', { name: 'Load regions' }),
+    )
+    await user.type(
+      screen.getByRole('searchbox', { name: 'Region search' }),
+      'Індія',
+    )
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Region list' }),
+      'IND',
+    )
+    await user.click(screen.getByRole('radio', { name: 'Globe' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(receivedBody).toBeDefined())
+    expect(receivedBody).toEqual({
+      type: 'MAP_REGION',
+      defaultMaxPoints: 1,
+      defaultPassingPercent: 100,
+      draft: {
+        title: 'Find India',
+        prompt: 'Choose India on the map.',
+        instructions: null,
+        explanation: null,
+        publicConfig: { initialProjection: 'GLOBE' },
+        gradingConfig: { correctRegionId: 'IND' },
+        mapPresetId: mapPreset().id,
+      },
+    })
+  })
 })
 
 function renderWorkspace(initialEntry: string) {
@@ -707,6 +798,29 @@ function mapPointAssignmentEditor() {
         target: { longitude: 30.5234, latitude: 50.4501 },
         radiusKm: 333,
       },
+      mapPresetId: mapPreset().id,
+    },
+  }
+}
+
+const mapRegion = {
+  id: 'IND',
+  isoCode: 'IND',
+  name: 'India',
+  nameEn: 'India',
+  nameUk: 'Індія',
+}
+
+function mapRegionAssignmentEditor() {
+  return {
+    ...assignmentEditor(),
+    type: 'MAP_REGION',
+    draftRevision: {
+      ...assignmentEditor().draftRevision,
+      title: 'Find India',
+      prompt: 'Choose India on the map.',
+      publicConfig: { initialProjection: 'GLOBE' },
+      gradingConfig: { correctRegionId: 'IND' },
       mapPresetId: mapPreset().id,
     },
   }

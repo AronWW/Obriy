@@ -139,6 +139,14 @@ export interface MapPointGradingConfig {
   radiusKm: number
 }
 
+export interface MapRegionPublicConfig {
+  initialProjection: 'MERCATOR' | 'GLOBE'
+}
+
+export interface MapRegionGradingConfig {
+  correctRegionId: string | null
+}
+
 export interface AssignmentRevisionSummary {
   id: string
   version: number
@@ -221,6 +229,7 @@ export interface AssignmentDraftInput {
     | FillBlanksPublicConfig
     | ImageHotspotPublicConfig
     | MapPointPublicConfig
+    | MapRegionPublicConfig
   gradingConfig:
     | { mode: 'MANUAL' }
     | ChoiceGradingConfig
@@ -230,6 +239,7 @@ export interface AssignmentDraftInput {
     | FillBlanksGradingConfig
     | ImageHotspotGradingConfig
     | MapPointGradingConfig
+    | MapRegionGradingConfig
   mapPresetId?: string | null
 }
 
@@ -266,6 +276,12 @@ export interface ImageHotspotAssignmentDraftInput extends AssignmentDraftInput {
 export interface MapPointAssignmentDraftInput extends AssignmentDraftInput {
   publicConfig: MapPointPublicConfig
   gradingConfig: MapPointGradingConfig
+  mapPresetId: string | null
+}
+
+export interface MapRegionAssignmentDraftInput extends AssignmentDraftInput {
+  publicConfig: MapRegionPublicConfig
+  gradingConfig: MapRegionGradingConfig
   mapPresetId: string | null
 }
 

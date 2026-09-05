@@ -152,7 +152,7 @@ export interface StudentTestAnswer {
   scorePercent: number | null
   isCorrect: boolean | null
   teacherComment: string | null
-  solutionFeedback: MapPointSolutionFeedback | null
+  solutionFeedback: MapSolutionFeedback | null
 }
 
 export interface MapPointSolutionFeedback {
@@ -161,6 +161,14 @@ export interface MapPointSolutionFeedback {
   distanceKm: number | null
   withinRadius: boolean | null
 }
+
+export interface MapRegionSolutionFeedback {
+  correctRegionId: string
+  matches: boolean | null
+}
+
+export type MapSolutionFeedback =
+  MapPointSolutionFeedback | MapRegionSolutionFeedback
 
 export interface StudentTestAttempt {
   id: string

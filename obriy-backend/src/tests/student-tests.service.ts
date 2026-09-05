@@ -24,9 +24,11 @@ import { gradeFillBlanksResponse } from '../assignments/grading/fill-blanks-grad
 import { gradeImageHotspotResponse } from '../assignments/grading/image-hotspot-grading';
 import { gradeMatchingResponse } from '../assignments/grading/matching-grading';
 import { gradeMapPointResponse } from '../assignments/grading/map-point-grading';
+import { gradeMapRegionResponse } from '../assignments/grading/map-region-grading';
 import { gradeOrderingResponse } from '../assignments/grading/ordering-grading';
 import {
   mapPointPublishSolutionSchema,
+  mapRegionPublishSolutionSchema,
   validateAssignmentStudentResponse,
 } from '../assignments/validation';
 import type { AuthUser } from '../common/types/auth-user.type';
@@ -621,7 +623,9 @@ export class StudentTestsService {
                     ? gradeImageHotspotResponse(gradingInput)
                     : assignmentType === AssignmentType.MAP_POINT
                       ? gradeMapPointResponse(gradingInput)
-                      : gradeChoiceResponse(gradingInput);
+                      : assignmentType === AssignmentType.MAP_REGION
+                        ? gradeMapRegionResponse(gradingInput)
+                        : gradeChoiceResponse(gradingInput);
         await transaction.testAnswer.update({
           where: { id: answer.id },
           data: {
@@ -964,6 +968,12 @@ export class StudentTestsService {
         typeof response.latitude === 'number'
       );
     }
+    if (type === AssignmentType.MAP_REGION) {
+      return (
+        typeof response.regionId === 'string' &&
+        response.regionId.trim().length > 0
+      );
+    }
     return false;
   }
 
@@ -987,6 +997,7 @@ export class StudentTestsService {
     if (type === AssignmentType.FILL_BLANKS) return { answers: [] };
     if (type === AssignmentType.IMAGE_HOTSPOT) return {};
     if (type === AssignmentType.MAP_POINT) return {};
+    if (type === AssignmentType.MAP_REGION) return {};
     return {};
   }
 
@@ -1137,10 +1148,20 @@ export class StudentTestsService {
     answer: AttemptRecord['answers'][number],
     reveal: boolean,
   ): Record<string, unknown> | null {
-    if (
-      !reveal ||
-      answer.testItem.assignment.type !== AssignmentType.MAP_POINT
-    ) {
+    if (!reveal) return null;
+    if (answer.testItem.assignment.type === AssignmentType.MAP_REGION) {
+      const parsed = mapRegionPublishSolutionSchema.safeParse(
+        answer.testItem.assignmentRevision.solution?.gradingConfig,
+      );
+      if (!parsed.success) return null;
+      const gradingData = this.toJsonObject(answer.gradingData);
+      return {
+        correctRegionId: parsed.data.correctRegionId,
+        matches:
+          typeof gradingData.matches === 'boolean' ? gradingData.matches : null,
+      };
+    }
+    if (answer.testItem.assignment.type !== AssignmentType.MAP_POINT) {
       return null;
     }
     const parsed = mapPointPublishSolutionSchema.safeParse(

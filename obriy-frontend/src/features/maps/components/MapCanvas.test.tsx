@@ -18,6 +18,7 @@ interface MapMockInstance {
   addLayer: ReturnType<typeof vi.fn>
   queryRenderedFeatures: ReturnType<typeof vi.fn>
   radiusSetData: ReturnType<typeof vi.fn>
+  setFeatureState: ReturnType<typeof vi.fn>
 }
 
 interface MarkerMockInstance {
@@ -229,6 +230,75 @@ describe('MapCanvas', () => {
     expect(maplibreState.instances[0].radiusSetData).toHaveBeenCalled()
   })
 
+  it('loads localized regions and keeps controlled answer and solution states', async () => {
+    const onRegionChange = vi.fn()
+    const onRegionsLoad = vi.fn()
+    server.use(
+      http.get('*/maps/test.geojson', () =>
+        HttpResponse.json(featureCollection()),
+      ),
+    )
+
+    const view = render(
+      <ThemeProvider>
+        <MapCanvas
+          comparisonRegionIds={['region-1']}
+          onRegionChange={onRegionChange}
+          onRegionsLoad={onRegionsLoad}
+          preset={preset}
+          projection="MERCATOR"
+          selectedRegionIds={['region-1']}
+        />
+      </ThemeProvider>,
+    )
+    await waitFor(() => expect(maplibreState.constructor).toHaveBeenCalled())
+    const map = maplibreState.instances[0]
+    act(() => map.handlers.get('load')?.())
+    await waitFor(() =>
+      expect(onRegionsLoad).toHaveBeenCalledWith([
+        expect.objectContaining({
+          id: 'region-1',
+          isoCode: 'UA-30',
+          name: 'Kyiv',
+        }),
+      ]),
+    )
+    await waitFor(() => {
+      expect(map.setFeatureState).toHaveBeenCalledWith(
+        { source: 'obriy-preset-source', id: 'region-1' },
+        { selected: true },
+      )
+      expect(map.setFeatureState).toHaveBeenCalledWith(
+        { source: 'obriy-preset-source', id: 'region-1' },
+        { comparison: true },
+      )
+    })
+
+    map.queryRenderedFeatures.mockReturnValue([
+      {
+        id: 'region-1',
+        properties: {
+          featureId: 'region-1',
+          isoCode: 'UA-30',
+          name: 'Kyiv region',
+          nameEn: 'Kyiv',
+          nameUk: 'Київ',
+        },
+      },
+    ])
+    act(() =>
+      map.handlers.get('click')?.({
+        lngLat: { lng: 30.5, lat: 50.4 },
+        point: { x: 20, y: 30 },
+      }),
+    )
+    expect(onRegionChange).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'region-1', name: 'Kyiv' }),
+    )
+
+    view.unmount()
+  })
+
   it('reports unavailable WebGL before MapLibre initialization', async () => {
     vi.mocked(HTMLCanvasElement.prototype.getContext).mockReturnValue(null)
     server.use(
@@ -292,7 +362,13 @@ function featureCollection() {
     features: [
       {
         type: 'Feature',
-        properties: { featureId: 'region-1', name: 'Kyiv region' },
+        properties: {
+          featureId: 'region-1',
+          isoCode: 'UA-30',
+          name: 'Kyiv region',
+          nameEn: 'Kyiv',
+          nameUk: 'Київ',
+        },
         geometry: {
           type: 'Polygon',
           coordinates: [

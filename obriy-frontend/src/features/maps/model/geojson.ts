@@ -4,6 +4,7 @@ import type {
   MultiPolygon,
   Polygon,
 } from 'geojson'
+import type { MapRegionOption } from './map.types'
 
 export type MapFeatureCollection = FeatureCollection<
   Polygon | MultiPolygon,
@@ -48,6 +49,34 @@ export function parseMapFeatureCollection(
   return value as unknown as MapFeatureCollection
 }
 
+export function mapRegionOptions(
+  collection: MapFeatureCollection,
+  locale: string,
+  idProperty: string,
+): MapRegionOption[] {
+  return collection.features
+    .map((feature) => {
+      const properties = feature.properties
+      const id = stringProperty(properties, idProperty)
+      const sourceName = stringProperty(properties, 'name') || id
+      const nameEn = stringProperty(properties, 'nameEn') || sourceName
+      const nameUk = stringProperty(properties, 'nameUk') || sourceName
+      return {
+        id,
+        isoCode: stringProperty(properties, 'isoCode') || id,
+        name: locale.startsWith('en') ? nameEn : nameUk,
+        nameEn,
+        nameUk,
+      }
+    })
+    .sort((left, right) =>
+      left.name.localeCompare(
+        right.name,
+        locale.startsWith('en') ? 'en' : 'uk',
+      ),
+    )
+}
+
 function validateCoordinates(value: unknown): void {
   if (!Array.isArray(value) || value.length === 0) {
     throw new Error('MAP_GEOJSON_INVALID')
@@ -73,4 +102,12 @@ function validateCoordinates(value: unknown): void {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function stringProperty(
+  properties: GeoJsonProperties,
+  property: string,
+): string {
+  const value = properties?.[property]
+  return typeof value === 'string' ? value : ''
 }

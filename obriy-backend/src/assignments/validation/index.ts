@@ -8,4 +8,5 @@ export * from './categorization-assignment.schemas';
 export * from './fill-blanks-assignment.schemas';
 export * from './image-hotspot-assignment.schemas';
 export * from './map-point-assignment.schemas';
+export * from './map-region-assignment.schemas';
 export * from './written-assignment.schemas';

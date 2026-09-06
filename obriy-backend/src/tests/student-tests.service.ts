@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import {
   AssignmentType,
+  MapPresetSourceType,
   Prisma,
   TestAnswerStatus,
   TestAttemptStatus,
@@ -1081,7 +1082,10 @@ export class StudentTestsService {
                   `${release.id}:${studentId}:${item.id}`,
                 ),
                 mapPreset: item.assignmentRevision.mapPreset
-                  ? toMapPresetDto(item.assignmentRevision.mapPreset)
+                  ? this.toStudentMapPreset(
+                      item.assignmentRevision.mapPreset,
+                      attempt?.id,
+                    )
                   : null,
               }),
           )
@@ -1129,6 +1133,17 @@ export class StudentTestsService {
       submittedAt: attempt.submittedAt,
       gradedAt: attempt.gradedAt,
     });
+  }
+
+  private toStudentMapPreset(
+    preset: Parameters<typeof toMapPresetDto>[0],
+    attemptId?: string,
+  ) {
+    const dto = toMapPresetDto(preset);
+    if (dto.sourceType === MapPresetSourceType.CUSTOM_GEOJSON && attemptId) {
+      dto.geojsonUrl = `${dto.geojsonUrl}?attemptId=${encodeURIComponent(attemptId)}`;
+    }
+    return dto;
   }
 
   private canRevealSolutions(

@@ -10,6 +10,7 @@ import {
   AssignmentStatus,
   AssignmentType,
   Locale,
+  MapPresetSourceType,
   MapPresetStatus,
   Prisma,
   UserRole,
@@ -149,7 +150,11 @@ export class AssignmentsService {
       dto.contentLocale ?? (await this.findPreferredLocale(user.id));
     const assignmentId = await this.prisma.$transaction(async (transaction) => {
       if (this.supportsMapPreset(dto.type) && dto.draft?.mapPresetId) {
-        await this.assertActiveMapPreset(transaction, dto.draft.mapPresetId);
+        await this.assertActiveMapPreset(
+          transaction,
+          dto.draft.mapPresetId,
+          user.id,
+        );
       }
       const assignment = await transaction.assignment.create({
         data: {
@@ -353,7 +358,7 @@ export class AssignmentsService {
         dto.mapPresetId !== undefined &&
         dto.mapPresetId !== null
       ) {
-        await this.assertActiveMapPreset(transaction, dto.mapPresetId);
+        await this.assertActiveMapPreset(transaction, dto.mapPresetId, user.id);
       }
 
       const update = await transaction.assignmentRevision.updateMany({
@@ -571,6 +576,7 @@ export class AssignmentsService {
         transaction,
         assignment.type,
         draft,
+        user.id,
       );
       if (issues.length > 0) {
         throw new ConflictException({
@@ -965,6 +971,7 @@ export class AssignmentsService {
     transaction: Prisma.TransactionClient,
     type: AssignmentType,
     draft: EditableRevisionRecord,
+    teacherId: string,
   ): Promise<AssignmentValidationIssue[]> {
     const issues: AssignmentValidationIssue[] = [];
 
@@ -997,7 +1004,17 @@ export class AssignmentsService {
       });
     } else if (this.supportsMapPreset(type) && draft.mapPresetId) {
       const activePreset = await transaction.mapPreset.findFirst({
-        where: { id: draft.mapPresetId, status: MapPresetStatus.ACTIVE },
+        where: {
+          id: draft.mapPresetId,
+          status: MapPresetStatus.ACTIVE,
+          OR: [
+            { sourceType: MapPresetSourceType.BUILT_IN },
+            {
+              sourceType: MapPresetSourceType.CUSTOM_GEOJSON,
+              createdById: teacherId,
+            },
+          ],
+        },
         select: { id: true },
       });
       if (!activePreset) {
@@ -1027,9 +1044,20 @@ export class AssignmentsService {
   private async assertActiveMapPreset(
     transaction: Prisma.TransactionClient,
     mapPresetId: string,
+    teacherId: string,
   ): Promise<void> {
     const preset = await transaction.mapPreset.findFirst({
-      where: { id: mapPresetId, status: MapPresetStatus.ACTIVE },
+      where: {
+        id: mapPresetId,
+        status: MapPresetStatus.ACTIVE,
+        OR: [
+          { sourceType: MapPresetSourceType.BUILT_IN },
+          {
+            sourceType: MapPresetSourceType.CUSTOM_GEOJSON,
+            createdById: teacherId,
+          },
+        ],
+      },
       select: { id: true },
     });
     if (!preset) {

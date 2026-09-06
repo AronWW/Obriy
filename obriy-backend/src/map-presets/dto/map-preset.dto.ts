@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Locale, MapPresetSourceType } from '@prisma/client';
+import {
+  Locale,
+  MapPresetBaseMapMode,
+  MapPresetSourceType,
+  MapPresetStatus,
+} from '@prisma/client';
 
 export class MapBoundsDto {
   @ApiProperty({ minimum: -180, maximum: 180 })
@@ -42,6 +47,12 @@ export class MapPresetDto {
   @ApiProperty({ enum: MapPresetSourceType })
   sourceType: MapPresetSourceType;
 
+  @ApiProperty({ enum: MapPresetBaseMapMode })
+  baseMapMode: MapPresetBaseMapMode;
+
+  @ApiProperty({ enum: MapPresetStatus })
+  status: MapPresetStatus;
+
   @ApiProperty()
   geojsonUrl: string;
 
@@ -51,6 +62,9 @@ export class MapPresetDto {
   @ApiPropertyOptional({ nullable: true })
   year: number | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  periodLabel: string | null;
+
   @ApiProperty()
   attribution: string;
 
@@ -59,6 +73,21 @@ export class MapPresetDto {
 
   @ApiProperty({ type: MapViewportDto })
   defaultViewport: MapViewportDto;
+
+  @ApiPropertyOptional({ nullable: true })
+  originalFileName: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  fileSizeBytes: number | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  featureCount: number | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  vertexCount: number | null;
+
+  @ApiProperty()
+  geometryLocked: boolean;
 
   constructor(data: MapPresetDto) {
     Object.assign(this, data);

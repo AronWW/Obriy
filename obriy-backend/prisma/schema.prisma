@@ -146,6 +146,11 @@ enum MapPresetStatus {
   ARCHIVED
 }
 
+enum MapPresetBaseMapMode {
+  STANDARD
+  NEUTRAL
+}
+
 model User {
   id              String     @id @default(uuid())
   email           String     @unique
@@ -170,6 +175,7 @@ model User {
   authoredAssignments     Assignment[]             @relation("TeacherAssignments")
   assignmentAttachments   AssignmentAttachment[]   @relation("AssignmentAttachmentUploader")
   createdMapPresets       MapPreset[]              @relation("MapPresetCreator")
+  mapDrafts               MapDraft[]               @relation("MapDraftTeacher")
   authoredTests           Test[]                   @relation("TeacherTests")
   testStates              TestStudentState[]       @relation("StudentTestStates")
   reviewedTestAnswers     TestAnswer[]             @relation("TestAnswerReviewer")
@@ -671,26 +677,60 @@ model TestAnswerReviewEvent {
 }
 
 model MapPreset {
-  id              String              @id @default(uuid())
-  createdById     String?
-  key             String              @unique @db.VarChar(120)
-  name            String              @db.VarChar(160)
-  contentLocale   Locale
-  sourceType      MapPresetSourceType
-  status          MapPresetStatus     @default(ACTIVE)
-  geojsonUrl      String?             @db.VarChar(1000)
-  idProperty      String?             @db.VarChar(100)
-  year            Int?
-  attribution     String              @db.Text
-  bounds          Json?
-  defaultViewport Json?
-  archivedAt      DateTime?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id               String               @id @default(uuid())
+  createdById      String?
+  key              String               @unique @db.VarChar(120)
+  name             String               @db.VarChar(160)
+  contentLocale    Locale
+  sourceType       MapPresetSourceType
+  status           MapPresetStatus      @default(ACTIVE)
+  baseMapMode      MapPresetBaseMapMode @default(STANDARD)
+  geojsonUrl       String?              @db.VarChar(1000)
+  storageKey       String?              @unique @db.VarChar(500)
+  originalFileName String?              @db.VarChar(255)
+  fileSizeBytes    Int?
+  featureCount     Int?
+  vertexCount      Int?
+  idProperty       String?              @db.VarChar(100)
+  year             Int?
+  periodLabel      String?              @db.VarChar(120)
+  attribution      String               @db.Text
+  bounds           Json?
+  defaultViewport  Json?
+  archivedAt       DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 
-  createdBy User?                @relation("MapPresetCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  revisions AssignmentRevision[]
+  createdBy   User?                @relation("MapPresetCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  revisions   AssignmentRevision[]
+  draftCopies MapDraft[]           @relation("MapDraftSourcePreset")
 
   @@index([createdById, status, updatedAt])
   @@index([sourceType, status])
+}
+
+model MapDraft {
+  id               String   @id @default(uuid())
+  teacherId        String
+  sourcePresetId   String?
+  name             String   @db.VarChar(160)
+  contentLocale    Locale
+  periodLabel      String?  @db.VarChar(120)
+  attribution      String   @default("") @db.Text
+  storageKey       String?  @unique @db.VarChar(500)
+  originalFileName String?  @db.VarChar(255)
+  fileSizeBytes    Int?
+  featureCount     Int      @default(0)
+  vertexCount      Int      @default(0)
+  bounds           Json?
+  defaultViewport  Json?
+  editVersion      Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  teacher      User       @relation("MapDraftTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  sourcePreset MapPreset? @relation("MapDraftSourcePreset", fields: [sourcePresetId], references: [id], onDelete: SetNull)
+
+  @@index([teacherId, updatedAt])
+  @@index([sourcePresetId])
 }

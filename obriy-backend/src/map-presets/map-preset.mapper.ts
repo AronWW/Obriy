@@ -12,12 +12,20 @@ export const mapPresetSelect = {
   name: true,
   contentLocale: true,
   sourceType: true,
+  status: true,
+  baseMapMode: true,
   geojsonUrl: true,
+  originalFileName: true,
+  fileSizeBytes: true,
+  featureCount: true,
+  vertexCount: true,
   idProperty: true,
   year: true,
+  periodLabel: true,
   attribution: true,
   bounds: true,
   defaultViewport: true,
+  _count: { select: { revisions: true } },
 } satisfies Prisma.MapPresetSelect;
 
 export type MapPresetRecord = Prisma.MapPresetGetPayload<{
@@ -34,6 +42,7 @@ export function toMapPresetDto(preset: MapPresetRecord): MapPresetDto {
     idProperty: preset.idProperty,
     bounds: readBounds(preset.bounds, preset.key),
     defaultViewport: readViewport(preset.defaultViewport, preset.key),
+    geometryLocked: preset._count.revisions > 0,
   });
 }
 

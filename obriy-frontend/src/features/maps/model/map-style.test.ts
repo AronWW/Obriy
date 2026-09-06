@@ -11,4 +11,13 @@ describe('map styles', () => {
     expect(mapStyleForTheme('night')).toBe(MAP_STYLE_DARK_URL)
     expect(MAP_STYLE_LIGHT_URL).not.toBe(MAP_STYLE_DARK_URL)
   })
+
+  it('uses a neutral background without modern labels or borders', () => {
+    const style = mapStyleForTheme('day', 'NEUTRAL')
+    expect(style).toMatchObject({
+      version: 8,
+      sources: {},
+      layers: [expect.objectContaining({ id: 'neutral-background' })],
+    })
+  })
 })

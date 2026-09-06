@@ -348,12 +348,20 @@ const preset: MapPreset = {
   name: 'Regions of Ukraine',
   contentLocale: 'UK',
   sourceType: 'BUILT_IN',
+  status: 'ACTIVE',
+  baseMapMode: 'STANDARD',
   geojsonUrl: '/maps/test.geojson',
   idProperty: 'featureId',
   year: 2017,
+  periodLabel: null,
   attribution: 'geoBoundaries',
   bounds: { west: 21.8, south: 44.2, east: 40.3, north: 52.5 },
   defaultViewport: { longitude: 31.2, latitude: 48.8, zoom: 4.6 },
+  originalFileName: null,
+  fileSizeBytes: null,
+  featureCount: null,
+  vertexCount: null,
+  geometryLocked: false,
 }
 
 function featureCollection() {

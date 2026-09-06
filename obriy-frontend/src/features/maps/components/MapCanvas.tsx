@@ -15,6 +15,7 @@ import { RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '../../../shared/theme/theme-context'
+import { authorizedFetch } from '../../auth/model/session.service'
 import { mapRegionOptions, parseMapFeatureCollection } from '../model/geojson'
 import {
   clampMapRadius,
@@ -37,6 +38,7 @@ setWorkerUrl(workerUrl)
 const SOURCE_ID = 'obriy-preset-source'
 const FILL_LAYER_ID = 'obriy-preset-fill'
 const LINE_LAYER_ID = 'obriy-preset-line'
+const LABEL_LAYER_ID = 'obriy-preset-label'
 const RADIUS_SOURCE_ID = 'obriy-map-radius-source'
 const RADIUS_FILL_LAYER_ID = 'obriy-map-radius-fill'
 const RADIUS_LINE_LAYER_ID = 'obriy-map-radius-line'
@@ -153,9 +155,13 @@ export function MapCanvas({
   useEffect(() => {
     const abortController = new AbortController()
 
-    void fetch(new URL(preset.geojsonUrl, window.location.origin), {
-      signal: abortController.signal,
-    })
+    const request = preset.sourceType === 'CUSTOM_GEOJSON' &&
+      !preset.geojsonUrl.startsWith('blob:')
+      ? authorizedFetch(preset.geojsonUrl, { signal: abortController.signal })
+      : fetch(new URL(preset.geojsonUrl, window.location.origin), {
+          signal: abortController.signal,
+        })
+    void request
       .then(async (response) => {
         if (!response.ok) throw new Error('MAP_GEOJSON_LOAD_FAILED')
         return response.json() as Promise<unknown>
@@ -174,7 +180,7 @@ export function MapCanvas({
       })
 
     return () => abortController.abort()
-  }, [preset.geojsonUrl, preset.idProperty, snapshotKey])
+  }, [preset.geojsonUrl, preset.idProperty, preset.sourceType, snapshotKey])
 
   useEffect(() => {
     const container = containerRef.current
@@ -188,7 +194,7 @@ export function MapCanvas({
 
     const map = new MapLibreMap({
       container,
-      style: mapStyleForTheme(theme),
+      style: mapStyleForTheme(theme, preset.baseMapMode),
       center: [
         preset.defaultViewport.longitude,
         preset.defaultViewport.latitude,
@@ -273,6 +279,24 @@ export function MapCanvas({
           'line-opacity': 0.78,
         },
       })
+      if (preset.sourceType === 'CUSTOM_GEOJSON') {
+        map.addLayer({
+          id: LABEL_LAYER_ID,
+          type: 'symbol',
+          source: SOURCE_ID,
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': ['interpolate', ['linear'], ['zoom'], 1, 10, 7, 15],
+            'text-max-width': 9,
+            'text-allow-overlap': false,
+          },
+          paint: {
+            'text-color': theme === 'night' ? '#f2e8d1' : '#342a20',
+            'text-halo-color': theme === 'night' ? '#111a22' : '#f6f0e4',
+            'text-halo-width': 1.4,
+          },
+        })
+      }
       map.addSource(RADIUS_SOURCE_ID, {
         type: 'geojson',
         data: emptyFeatureCollection(),

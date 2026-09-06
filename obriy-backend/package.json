@@ -39,6 +39,7 @@
     "class-validator": "^0.15.1",
     "cloudinary": "^2.10.1",
     "cookie-parser": "^1.4.7",
+    "mapshaper": "^0.7.59",
     "nestjs-i18n": "^10.8.5",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
@@ -79,6 +80,10 @@
     "typescript-eslint": "^8.20.0"
   },
   "overrides": {
-    "@hono/node-server": "1.19.15"
+    "@hono/node-server": "1.19.15",
+    "mapshaper": {
+      "adm-zip": "0.6.0",
+      "fflate": "0.8.3"
+    }
   }
 }

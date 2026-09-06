@@ -50,6 +50,11 @@ const TeacherMapSandboxPage = lazy(() =>
     default: module.TeacherMapSandboxPage,
   })),
 )
+const TeacherMapEditorPage = lazy(() =>
+  import('../../features/maps').then((module) => ({
+    default: module.TeacherMapEditorPage,
+  })),
+)
 
 export function AppRouter() {
   return (
@@ -125,6 +130,14 @@ export function AppRouter() {
               element={
                 <Suspense fallback={null}>
                   <TeacherMapSandboxPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="maps/editor/:draftId"
+              element={
+                <Suspense fallback={null}>
+                  <TeacherMapEditorPage />
                 </Suspense>
               }
             />

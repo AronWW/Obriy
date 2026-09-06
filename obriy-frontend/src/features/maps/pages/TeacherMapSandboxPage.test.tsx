@@ -51,6 +51,9 @@ describe('TeacherMapSandboxPage', () => {
   it('switches presets and projections and exposes click inspection', async () => {
     const user = userEvent.setup()
     server.use(
+      http.get(`${API_BASE_URL}/map-presets/mine`, () =>
+        HttpResponse.json([]),
+      ),
       http.get(`${API_BASE_URL}/map-presets`, () =>
         HttpResponse.json(mapPresets()),
       ),
@@ -85,6 +88,9 @@ describe('TeacherMapSandboxPage', () => {
     const user = userEvent.setup()
     let attempts = 0
     server.use(
+      http.get(`${API_BASE_URL}/map-presets/mine`, () =>
+        HttpResponse.json([]),
+      ),
       http.get(`${API_BASE_URL}/map-presets`, () => {
         attempts += 1
         return attempts === 1
@@ -132,11 +138,19 @@ function preset(id: string, key: string, name: string): MapPreset {
     name,
     contentLocale: 'UK',
     sourceType: 'BUILT_IN',
+    status: 'ACTIVE',
+    baseMapMode: 'STANDARD',
     geojsonUrl: `/maps/${key}.geojson`,
     idProperty: 'featureId',
     year: null,
+    periodLabel: null,
     attribution: 'geoBoundaries',
     bounds: { west: -180, south: -85, east: 180, north: 85 },
     defaultViewport: { longitude: 15, latitude: 20, zoom: 1.25 },
+    originalFileName: null,
+    fileSizeBytes: null,
+    featureCount: null,
+    vertexCount: null,
+    geometryLocked: false,
   }
 }

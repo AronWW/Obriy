@@ -28,6 +28,50 @@
   margin-bottom: 24px;
 }
 
+.introWithAction { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.primaryMapAction, .secondaryMapAction { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 14px; color: #fff; font: inherit; font-size: .82rem; font-weight: 800; background: var(--gold); border: 1px solid transparent; border-radius: 10px; cursor: pointer; }
+.primaryMapAction:disabled { cursor: not-allowed; opacity: .5; }
+.secondaryMapAction { color: var(--ink); background: var(--panel-solid); border-color: var(--line); }
+.mapLibraryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+.librarySection, .importPanel, .mapSettings { padding: 17px; background: color-mix(in srgb, var(--panel-solid), transparent 2%); border: 1px solid var(--line); border-radius: 14px; }
+.libraryHeading, .panelHeading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 13px; }
+.libraryHeading h2, .panelHeading h2 { margin: 0; font-family: 'Lora', serif; font-size: 1rem; }
+.libraryHeading p { margin: 4px 0 0; color: var(--ink-soft); font-size: .78rem; }
+.panelHeading > button, .cardActions button { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; color: var(--ink-soft); background: transparent; border: 1px solid var(--line-soft); border-radius: 9px; cursor: pointer; }
+.mapCards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 9px; }
+.mapCard { display: flex; min-width: 0; background: color-mix(in srgb, var(--panel-solid), var(--ink) 2%); border: 1px solid var(--line-soft); border-radius: 11px; }
+.mapCard[data-selected='true'] { border-color: color-mix(in srgb, var(--gold), transparent 25%); box-shadow: inset 3px 0 var(--gold); }
+.mapCardMain { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; padding: 11px; color: var(--ink); text-align: left; background: transparent; border: 0; cursor: pointer; }
+.mapCardMain > span:last-child { display: grid; min-width: 0; gap: 3px; }
+.mapCardMain strong, .mapCardMain small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mapCardMain strong { font-size: .83rem; }
+.mapCardMain small { color: var(--ink-soft); font-size: .7rem; }
+.mapCardIcon { display: inline-flex; color: var(--gold); }
+.cardActions { display: flex; align-items: center; gap: 4px; padding-right: 7px; }
+.cardActions button { width: 29px; height: 29px; }
+.archiveToggle { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); font-size: .72rem; }
+.libraryEmpty { margin: 0; color: var(--ink-soft); font-size: .8rem; }
+.importPanel { margin-bottom: 20px; }
+.importGrid { display: grid; grid-template-columns: minmax(300px, .8fr) minmax(0, 1.2fr); gap: 18px; }
+.importForm, .settingsForm { display: grid; gap: 12px; }
+.fileDrop { display: grid; justify-items: center; gap: 5px; padding: 22px 14px; color: var(--ink); text-align: center; background: color-mix(in srgb, var(--panel-solid), var(--gold) 4%); border: 1px dashed color-mix(in srgb, var(--gold), var(--line) 45%); border-radius: 12px; cursor: pointer; }
+.fileDrop small { color: var(--ink-soft); }
+.fileDrop input, .replaceMapRow input { display: none; }
+.mapFormField { display: grid; gap: 6px; color: var(--ink-soft); font-size: .72rem; font-weight: 750; }
+.mapFormField input, .mapFormField select, .replaceMapRow select { width: 100%; min-height: 40px; padding: 0 11px; color: var(--ink); font: inherit; background: var(--panel-solid); border: 1px solid var(--line); border-radius: 9px; }
+.importStats { display: flex; flex-wrap: wrap; gap: 6px; }
+.importStats span { padding: 5px 8px; color: var(--ink-soft); font-size: .7rem; background: color-mix(in srgb, var(--panel-solid), var(--ink) 4%); border-radius: 7px; }
+.formError { margin: 0; color: #b14f45; font-size: .78rem; }
+.formWarning { margin: 0; color: #a56816; font-size: .78rem; }
+.formActions { display: flex; justify-content: flex-end; gap: 8px; }
+.importPreview { min-height: 430px; overflow: hidden; border: 1px solid var(--line-soft); border-radius: 12px; }
+.importPreview > div { min-height: 430px; border: 0; border-radius: 0; }
+.previewPlaceholder { display: grid; place-content: center; justify-items: center; gap: 10px; padding: 24px; color: var(--ink-soft); text-align: center; background: color-mix(in srgb, var(--panel-solid), var(--ink) 3%); }
+.mapSettings { margin: 16px; }
+.settingsForm { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; }
+.replaceMapRow { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.replaceMapRow select { width: auto; min-width: 180px; }
+
 .intro h1 {
   margin: 5px 0 7px;
   font-family: 'Lora', serif;
@@ -611,6 +655,12 @@
 }
 
 @media (max-width: 980px) {
+  .mapLibraryGrid,
+  .importGrid,
+  .settingsForm {
+    grid-template-columns: 1fr;
+  }
+
   .mapLayout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -640,6 +690,16 @@
 }
 
 @media (max-width: 760px) {
+  .introWithAction,
+  .replaceMapRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .replaceMapRow select {
+    width: 100%;
+  }
+
   .content {
     padding: 24px 16px 40px;
   }
@@ -688,4 +748,56 @@
   .mapSpinner {
     animation-duration: 1.6s;
   }
+}
+
+.blankMapChoice { display: flex; width: 100%; align-items: center; gap: .75rem; padding: .9rem; border: 1px solid color-mix(in srgb, var(--gold) 34%, var(--line-soft)); border-radius: .8rem; background: color-mix(in srgb, var(--gold) 7%, var(--panel-solid)); color: var(--ink); text-align: left; cursor: pointer; }
+.blankMapChoice span { display: grid; gap: .2rem; }
+.blankMapChoice small { color: var(--ink-soft); }
+.importDivider { display: flex; align-items: center; gap: .65rem; color: var(--ink-soft); font-size: .78rem; }
+.importDivider::before, .importDivider::after { height: 1px; flex: 1; background: var(--line-soft); content: ''; }
+.mapEditorPage { display: grid; gap: 1rem; width: min(100%, 1500px); margin: 0 auto; padding: 1rem; }
+.mapEditorHeader { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+.mapEditorHeader h1 { margin: .45rem 0 0; font-family: 'Lora', serif; font-size: clamp(1.45rem, 3vw, 2.2rem); }
+.editorHeaderActions { display: flex; flex-wrap: wrap; gap: .55rem; }
+.editorHeaderActions button, .drawingToolbar button, .combineButton { display: inline-flex; align-items: center; justify-content: center; gap: .42rem; }
+.mapEditorLayout { display: grid; grid-template-columns: minmax(260px, 330px) minmax(0, 1fr); gap: 1rem; min-height: 690px; }
+.editorSidebar, .editorMapColumn { display: grid; align-content: start; gap: .85rem; min-width: 0; }
+.editorMetadata, .regionPanel, .diagnosticsPanel, .drawingCanvasShell, .editorConflict { border: 1px solid var(--line-soft); border-radius: .9rem; background: var(--panel-solid); box-shadow: 0 8px 24px rgb(20 28 38 / 6%); }
+.editorMetadata, .regionPanel { display: grid; gap: .7rem; padding: .85rem; }
+.regionPanelHeading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.regionPanelHeading h2 { margin: 0; font-size: 1rem; }
+.regionPanelHeading span { min-width: 1.8rem; padding: .15rem .45rem; border-radius: 999px; background: color-mix(in srgb, var(--panel-solid), var(--ink) 5%); text-align: center; font-size: .78rem; }
+.regionSearch { display: flex; align-items: center; gap: .45rem; padding: .55rem .65rem; border: 1px solid var(--line-soft); border-radius: .65rem; }
+.regionSearch input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--ink); }
+.regionList { display: grid; gap: .38rem; max-height: 330px; overflow: auto; }
+.regionRow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .45rem; padding: .42rem; border: 1px solid transparent; border-radius: .55rem; }
+.regionRow[data-selected='true'] { border-color: color-mix(in srgb, var(--gold) 45%, var(--line-soft)); background: color-mix(in srgb, var(--gold) 7%, transparent); }
+.regionRow input:not([type='checkbox']) { min-width: 0; padding: .38rem .45rem; border: 0; border-radius: .4rem; background: transparent; color: var(--ink); }
+.regionRow button { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; border: 0; border-radius: .4rem; background: transparent; color: var(--ink-soft); cursor: pointer; }
+.regionRow button:hover { background: rgb(171 59 48 / 10%); color: #ab3b30; }
+.combineButton { padding: .55rem .7rem; border: 1px solid var(--line-soft); border-radius: .6rem; background: color-mix(in srgb, var(--panel-solid), var(--ink) 5%); color: var(--ink); cursor: pointer; }
+.drawingCanvasShell { position: relative; overflow: hidden; }
+.drawingCanvas { min-height: 610px; }
+.drawingToolbar { position: absolute; z-index: 5; top: .75rem; left: .75rem; display: flex; overflow: hidden; border: 1px solid var(--line-soft); border-radius: .65rem; background: color-mix(in srgb, var(--panel-solid) 94%, transparent); box-shadow: 0 5px 18px rgb(20 28 38 / 14%); }
+.drawingToolbar button { min-height: 2.35rem; padding: 0 .65rem; border: 0; border-right: 1px solid var(--line-soft); background: transparent; color: var(--ink); cursor: pointer; }
+.drawingToolbar button[aria-pressed='true'] { background: var(--gold); color: white; }
+.drawingToolbar button:disabled { opacity: .38; cursor: default; }
+.diagnosticsPanel { display: flex; flex-wrap: wrap; gap: .45rem .9rem; padding: .72rem .85rem; color: var(--ink-soft); font-size: .8rem; }
+.diagnosticsPanel strong { color: #ab3b30; }
+.diagnosticsPanel em { color: #a26916; font-style: normal; }
+.saveIndicator { display: flex; align-items: center; gap: .35rem; min-height: 1.2rem; margin: .2rem 0 0; color: var(--ink-soft); font-size: .78rem; }
+.saveIndicator[data-state='ERROR'], .saveIndicator[data-state='CONFLICT'] { color: #ab3b30; }
+.editorConflict { display: flex; align-items: center; gap: .55rem; padding: .75rem .9rem; border-color: rgb(171 59 48 / 40%); color: #ab3b30; }
+.editorConflict span { flex: 1; }
+.spin { animation: map-editor-spin .9s linear infinite; }
+@keyframes map-editor-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 820px) {
+  .mapEditorLayout { grid-template-columns: 1fr; }
+  .mapEditorHeader { display: grid; align-items: start; }
+  .editorSidebar { order: 2; }
+  .editorMapColumn { order: 1; }
+  .drawingCanvas { min-height: 55vh; }
+  .drawingToolbar { right: .65rem; left: .65rem; overflow-x: auto; }
+  .drawingToolbar button { flex: 1 0 auto; }
 }

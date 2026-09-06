@@ -9,6 +9,8 @@ import { AuthService } from '../../src/auth/auth.service';
 import { OAuthStateService } from '../../src/auth/oauth-state.service';
 import { MailService } from '../../src/mail/mail.service';
 import { TestMailService } from './test-mail.service';
+import { MapStorageService } from '../../src/map-presets/map-storage.service';
+import { TestMapStorageService } from './test-map-storage.service';
 
 process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
@@ -32,11 +34,14 @@ export type AuthTestContext = {
 
 export async function createAuthTestContext(): Promise<AuthTestContext> {
   const mail = new TestMailService();
+  const mapStorage = new TestMapStorageService();
   const moduleFixture = await Test.createTestingModule({
     imports: [AppModule],
   })
     .overrideProvider(MailService)
     .useValue(mail)
+    .overrideProvider(MapStorageService)
+    .useValue(mapStorage)
     .compile();
 
   const app = moduleFixture.createNestApplication<INestApplication<App>>();

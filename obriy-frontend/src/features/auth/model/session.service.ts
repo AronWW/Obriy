@@ -3,6 +3,7 @@ import { authApi } from '../api/auth.api'
 import type { AuthResponse } from './auth.types'
 import { hasSessionHint } from './session-hint'
 import { useSessionStore } from './session.store'
+import { API_BASE_URL } from '../../../shared/config/env'
 
 let refreshPromise: Promise<AuthResponse | null> | null = null
 
@@ -81,4 +82,29 @@ export async function authorizedRequest<T>(
       accessToken: refreshedSession.accessToken,
     })
   }
+}
+
+export async function authorizedFetch(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  let accessToken = useSessionStore.getState().accessToken
+  if (!accessToken) accessToken = (await restoreSession())?.accessToken ?? null
+
+  const perform = (token: string | null) => {
+    const headers = new Headers(init.headers)
+    if (token) headers.set('Authorization', `Bearer ${token}`)
+    return fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      credentials: 'include',
+      headers,
+    })
+  }
+
+  let response = await perform(accessToken)
+  if (response.status === 401 && hasSessionHint()) {
+    const refreshed = await refreshSession()
+    if (refreshed) response = await perform(refreshed.accessToken)
+  }
+  return response
 }

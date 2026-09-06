@@ -30,6 +30,7 @@ import { TeacherOrderingAssignmentEditorPage } from './TeacherOrderingAssignment
 import { TeacherInteractiveAssignmentEditorPage } from './TeacherInteractiveAssignmentEditorPage'
 import { TeacherMapPointAssignmentEditorPage } from './TeacherMapPointAssignmentEditorPage'
 import { TeacherMapRegionAssignmentEditorPage } from './TeacherMapRegionAssignmentEditorPage'
+import { TeacherMapMultiRegionAssignmentEditorPage } from './TeacherMapMultiRegionAssignmentEditorPage'
 import type {
   AssignmentEditor,
   AssignmentEditorRevision,
@@ -103,6 +104,9 @@ export function TeacherAssignmentEditorPage() {
   }
   if (type === 'MAP_REGION') {
     return <TeacherMapRegionAssignmentEditorPage />
+  }
+  if (type === 'MAP_MULTI_REGION') {
+    return <TeacherMapMultiRegionAssignmentEditorPage />
   }
 
   return <TeacherWrittenAssignmentEditorPage />

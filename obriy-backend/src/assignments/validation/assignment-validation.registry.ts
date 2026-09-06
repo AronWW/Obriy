@@ -44,6 +44,10 @@ import {
   MAP_REGION_SCHEMA_VERSION,
   mapRegionAssignmentValidationDefinition,
 } from './map-region-assignment.schemas';
+import {
+  MAP_MULTI_REGION_SCHEMA_VERSION,
+  mapMultiRegionAssignmentValidationDefinition,
+} from './map-multi-region-assignment.schemas';
 
 type UnknownAssignmentValidationDefinition = AssignmentValidationDefinition<
   unknown,
@@ -89,6 +93,10 @@ const assignmentValidationRegistry: Readonly<
   }),
   MAP_REGION: Object.freeze({
     [MAP_REGION_SCHEMA_VERSION]: mapRegionAssignmentValidationDefinition,
+  }),
+  MAP_MULTI_REGION: Object.freeze({
+    [MAP_MULTI_REGION_SCHEMA_VERSION]:
+      mapMultiRegionAssignmentValidationDefinition,
   }),
 });
 

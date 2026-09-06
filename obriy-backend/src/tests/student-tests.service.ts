@@ -23,10 +23,12 @@ import { gradeCategorizationResponse } from '../assignments/grading/categorizati
 import { gradeFillBlanksResponse } from '../assignments/grading/fill-blanks-grading';
 import { gradeImageHotspotResponse } from '../assignments/grading/image-hotspot-grading';
 import { gradeMatchingResponse } from '../assignments/grading/matching-grading';
+import { gradeMapMultiRegionResponse } from '../assignments/grading/map-multi-region-grading';
 import { gradeMapPointResponse } from '../assignments/grading/map-point-grading';
 import { gradeMapRegionResponse } from '../assignments/grading/map-region-grading';
 import { gradeOrderingResponse } from '../assignments/grading/ordering-grading';
 import {
+  mapMultiRegionPublishSolutionSchema,
   mapPointPublishSolutionSchema,
   mapRegionPublishSolutionSchema,
   validateAssignmentStudentResponse,
@@ -625,7 +627,9 @@ export class StudentTestsService {
                       ? gradeMapPointResponse(gradingInput)
                       : assignmentType === AssignmentType.MAP_REGION
                         ? gradeMapRegionResponse(gradingInput)
-                        : gradeChoiceResponse(gradingInput);
+                        : assignmentType === AssignmentType.MAP_MULTI_REGION
+                          ? gradeMapMultiRegionResponse(gradingInput)
+                          : gradeChoiceResponse(gradingInput);
         await transaction.testAnswer.update({
           where: { id: answer.id },
           data: {
@@ -974,6 +978,15 @@ export class StudentTestsService {
         response.regionId.trim().length > 0
       );
     }
+    if (type === AssignmentType.MAP_MULTI_REGION) {
+      return (
+        Array.isArray(response.selectedRegionIds) &&
+        this.isRecord(publicConfig) &&
+        typeof publicConfig.requiredSelectionCount === 'number' &&
+        response.selectedRegionIds.length ===
+          publicConfig.requiredSelectionCount
+      );
+    }
     return false;
   }
 
@@ -998,6 +1011,9 @@ export class StudentTestsService {
     if (type === AssignmentType.IMAGE_HOTSPOT) return {};
     if (type === AssignmentType.MAP_POINT) return {};
     if (type === AssignmentType.MAP_REGION) return {};
+    if (type === AssignmentType.MAP_MULTI_REGION) {
+      return { selectedRegionIds: [] };
+    }
     return {};
   }
 
@@ -1149,6 +1165,27 @@ export class StudentTestsService {
     reveal: boolean,
   ): Record<string, unknown> | null {
     if (!reveal) return null;
+    if (answer.testItem.assignment.type === AssignmentType.MAP_MULTI_REGION) {
+      const parsed = mapMultiRegionPublishSolutionSchema.safeParse(
+        answer.testItem.assignmentRevision.solution?.gradingConfig,
+      );
+      if (!parsed.success) return null;
+      const gradingData = this.toJsonObject(answer.gradingData);
+      return {
+        correctRegionIds: parsed.data.correctRegionIds,
+        correctSelectedCount: this.numberOrNull(
+          gradingData.correctSelectedCount,
+        ),
+        incorrectSelectedCount: this.numberOrNull(
+          gradingData.incorrectSelectedCount,
+        ),
+        expectedCorrectCount: this.numberOrNull(
+          gradingData.expectedCorrectCount,
+        ),
+        creditFraction: this.numberOrNull(gradingData.creditFraction),
+        scoringMode: parsed.data.scoringMode,
+      };
+    }
     if (answer.testItem.assignment.type === AssignmentType.MAP_REGION) {
       const parsed = mapRegionPublishSolutionSchema.safeParse(
         answer.testItem.assignmentRevision.solution?.gradingConfig,
@@ -1205,6 +1242,10 @@ export class StudentTestsService {
     value: Prisma.JsonValue | null,
   ): Record<string, unknown> {
     return this.isRecord(value) ? { ...value } : {};
+  }
+
+  private numberOrNull(value: unknown): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
   }
 
   private toStudentPublicConfig(

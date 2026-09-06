@@ -9,4 +9,5 @@ export * from './fill-blanks-assignment.schemas';
 export * from './image-hotspot-assignment.schemas';
 export * from './map-point-assignment.schemas';
 export * from './map-region-assignment.schemas';
+export * from './map-multi-region-assignment.schemas';
 export * from './written-assignment.schemas';

@@ -117,7 +117,7 @@ describe('AssignmentsService boundaries', () => {
   it('rejects an unsupported assignment type before reading or writing data', async () => {
     await expect(
       service.createAssignment(teacher, {
-        type: AssignmentType.MAP_MULTI_REGION,
+        type: 'MAP_PATH' as AssignmentType,
         contentLocale: Locale.UK,
       }),
     ).rejects.toMatchObject({

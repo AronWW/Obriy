@@ -65,7 +65,8 @@ export function AssignmentTypeDialog({
             type === 'FILL_BLANKS' ||
             type === 'IMAGE_HOTSPOT' ||
             type === 'MAP_POINT' ||
-            type === 'MAP_REGION'
+            type === 'MAP_REGION' ||
+            type === 'MAP_MULTI_REGION'
 
           return (
             <button

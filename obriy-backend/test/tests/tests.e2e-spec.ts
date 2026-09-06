@@ -1207,6 +1207,180 @@ describe('Tests module (e2e)', () => {
     });
   });
 
+  it('runs MAP_MULTI_REGION end to end with partial credit and a hidden solution', async () => {
+    const correctRegionIds = ['FRA', 'DEU', 'ITA'];
+    const assignmentResponse = await request(context.app.getHttpServer())
+      .post('/assignments')
+      .set('Authorization', bearer('teacher'))
+      .send({
+        type: AssignmentType.MAP_MULTI_REGION,
+        contentLocale: Locale.UK,
+        defaultMaxPoints: 9,
+        draft: {
+          title: 'Find three countries',
+          prompt: 'Choose France, Germany and Italy.',
+          mapPresetId,
+          publicConfig: {
+            initialProjection: 'MERCATOR',
+            requiredSelectionCount: 3,
+          },
+          gradingConfig: { correctRegionIds, scoringMode: 'PARTIAL' },
+        },
+      })
+      .expect(201);
+    const assignmentId = getStringField(assignmentResponse, 'id');
+    const assignmentDraft = getRecordField(
+      getResponseBody(assignmentResponse),
+      'draftRevision',
+    );
+    await request(context.app.getHttpServer())
+      .post(`/assignments/${assignmentId}/publish`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(assignmentDraft, 'id'),
+        expectedEditVersion: getNumberValue(assignmentDraft, 'editVersion'),
+      })
+      .expect(200);
+
+    const testResponse = await request(context.app.getHttpServer())
+      .post('/tests')
+      .set('Authorization', bearer('teacher'))
+      .send({
+        contentLocale: Locale.UK,
+        title: 'Multiple regions check',
+        maxAttempts: 1,
+      })
+      .expect(201);
+    const testId = getStringField(testResponse, 'id');
+    let testDraft = getRecordField(
+      getResponseBody(testResponse),
+      'draftRevision',
+    );
+    const addResponse = await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/draft/items`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        assignmentId,
+        expectedRevisionId: getStringValue(testDraft, 'id'),
+        expectedEditVersion: getNumberValue(testDraft, 'editVersion'),
+      })
+      .expect(201);
+    testDraft = getRecordField(getResponseBody(addResponse), 'draftRevision');
+    await request(context.app.getHttpServer())
+      .post(`/tests/${testId}/publish`)
+      .set('Authorization', bearer('teacher'))
+      .send({
+        expectedRevisionId: getStringValue(testDraft, 'id'),
+        expectedEditVersion: getNumberValue(testDraft, 'editVersion'),
+      })
+      .expect(200);
+    await request(context.app.getHttpServer())
+      .post(`/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('teacher'))
+      .send({ testId })
+      .expect(201);
+
+    const studentListResponse = await request(context.app.getHttpServer())
+      .get(`/classes/me/lessons/${lessonId}/tests`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const studentTest = getResponseArray(studentListResponse).find(
+      (candidate) => getStringValue(candidate, 'testId') === testId,
+    );
+    if (!studentTest) throw new Error('Expected MAP_MULTI_REGION release');
+    const releaseId = getStringValue(studentTest, 'releaseId');
+    const attemptResponse = await request(context.app.getHttpServer())
+      .post(`/test-releases/${releaseId}/attempts`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const attemptId = getStringField(attemptResponse, 'id');
+    const activeResponse = await request(context.app.getHttpServer())
+      .get(`/test-releases/${releaseId}`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const activeBody = getResponseBody(activeResponse);
+    const mapItem = getRecordArray(activeBody, 'items')[0];
+    if (!mapItem) throw new Error('Expected MAP_MULTI_REGION item');
+    expect(getStringValue(mapItem, 'type')).toBe(
+      AssignmentType.MAP_MULTI_REGION,
+    );
+    expect(getRecordField(mapItem, 'mapPreset')).toEqual(
+      expect.objectContaining({ id: mapPresetId }),
+    );
+    expect(getRecordField(mapItem, 'publicConfig')).toEqual({
+      initialProjection: 'MERCATOR',
+      requiredSelectionCount: 3,
+    });
+    expect(JSON.stringify(activeBody)).not.toContain('correctRegionIds');
+    expect(JSON.stringify(activeBody)).not.toContain('scoringMode');
+
+    const testItemId = getStringValue(mapItem, 'id');
+    const selectedRegionIds = ['FRA', 'DEU', 'ESP'];
+    const saveResponse = await request(context.app.getHttpServer())
+      .put(`/test-attempts/${attemptId}/answers/${testItemId}`)
+      .set('Authorization', bearer('student'))
+      .send({ responseData: { selectedRegionIds } })
+      .expect(200);
+    expect(saveResponse.body).toMatchObject({
+      answers: [
+        expect.objectContaining({
+          testItemId,
+          responseData: { selectedRegionIds },
+          solutionFeedback: null,
+        }),
+      ],
+    });
+    expect(JSON.stringify(saveResponse.body)).not.toContain('ITA');
+
+    const submitResponse = await request(context.app.getHttpServer())
+      .post(`/test-attempts/${attemptId}/submit`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    const answer = getRecordArray(
+      getResponseBody(submitResponse),
+      'answers',
+    )[0];
+    if (!answer) throw new Error('Expected MAP_MULTI_REGION answer');
+    expect(answer).toMatchObject({
+      responseData: { selectedRegionIds },
+      scorePoints: 6,
+      scorePercent: 66.67,
+      isCorrect: false,
+    });
+    expect(getRecordField(answer, 'solutionFeedback')).toEqual({
+      correctRegionIds,
+      correctSelectedCount: 2,
+      incorrectSelectedCount: 1,
+      expectedCorrectCount: 3,
+      creditFraction: 2 / 3,
+      scoringMode: 'PARTIAL',
+    });
+
+    const reviewsResponse = await request(context.app.getHttpServer())
+      .get(`/lessons/${lessonId}/test-attempts`)
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    const review = getRecordArray(
+      getResponseBody(reviewsResponse),
+      'items',
+    ).find((candidate) => getStringValue(candidate, 'attemptId') === attemptId);
+    if (!review) throw new Error('Expected MAP_MULTI_REGION teacher review');
+    const reviewAnswer = getRecordArray(review, 'answers')[0];
+    if (!reviewAnswer)
+      throw new Error('Expected MAP_MULTI_REGION review answer');
+    expect(getRecordField(reviewAnswer, 'gradingConfig')).toEqual({
+      correctRegionIds,
+      scoringMode: 'PARTIAL',
+    });
+    expect(getRecordField(reviewAnswer, 'gradingData')).toEqual({
+      correctSelectedCount: 2,
+      incorrectSelectedCount: 1,
+      expectedCorrectCount: 3,
+      creditFraction: 2 / 3,
+      scoringMode: 'PARTIAL',
+    });
+  });
+
   it('updates a test item to the latest assignment revision in place', async () => {
     const assignmentId = await createAssignment({
       type: AssignmentType.SINGLE_CHOICE,

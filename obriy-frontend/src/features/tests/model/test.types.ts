@@ -167,8 +167,19 @@ export interface MapRegionSolutionFeedback {
   matches: boolean | null
 }
 
+export interface MapMultiRegionSolutionFeedback {
+  correctRegionIds: string[]
+  correctSelectedCount: number | null
+  incorrectSelectedCount: number | null
+  expectedCorrectCount: number | null
+  creditFraction: number | null
+  scoringMode: 'ALL_OR_NOTHING' | 'PARTIAL'
+}
+
 export type MapSolutionFeedback =
-  MapPointSolutionFeedback | MapRegionSolutionFeedback
+  | MapPointSolutionFeedback
+  | MapRegionSolutionFeedback
+  | MapMultiRegionSolutionFeedback
 
 export interface StudentTestAttempt {
   id: string

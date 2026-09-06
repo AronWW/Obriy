@@ -659,6 +659,9 @@ function ObjectiveReviewResponse({
   if (answer.type === 'MAP_REGION') {
     return <MapRegionReview answer={answer} />
   }
+  if (answer.type === 'MAP_MULTI_REGION') {
+    return <MapMultiRegionReview answer={answer} />
+  }
   return (
     <pre className={styles.reviewRawAnswer}>
       {JSON.stringify(answer.responseData, null, 2)}
@@ -796,6 +799,116 @@ function MapRegionReview({ answer }: { answer: TeacherTestAnswerReview }) {
           preset={answer.mapPreset}
           projection={projection}
           selectedRegionIds={selectedRegionId ? [selectedRegionId] : []}
+          variant="ASSIGNMENT"
+        />
+      </Suspense>
+    </div>
+  )
+}
+
+function MapMultiRegionReview({
+  answer,
+}: {
+  answer: TeacherTestAnswerReview
+}) {
+  const { t } = useTranslation()
+  const [projection, setProjection] = useState<MapProjection>(() =>
+    answer.publicConfig.initialProjection === 'GLOBE' ? 'GLOBE' : 'MERCATOR',
+  )
+  const [regions, setRegions] = useState<MapRegionOption[]>([])
+  const selectedRegionIds = stringList(answer.responseData.selectedRegionIds)
+  const correctRegionIds = stringList(answer.gradingConfig.correctRegionIds)
+  const correctSelectedCount = numberField(
+    answer.gradingData,
+    'correctSelectedCount',
+  )
+  const incorrectSelectedCount = numberField(
+    answer.gradingData,
+    'incorrectSelectedCount',
+  )
+  const expectedCorrectCount = numberField(
+    answer.gradingData,
+    'expectedCorrectCount',
+  )
+  const scoringMode = stringField(answer.gradingConfig, 'scoringMode')
+  if (!answer.mapPreset || correctRegionIds.length < 2) {
+    return (
+      <pre className={styles.reviewRawAnswer}>
+        {JSON.stringify(answer.responseData, null, 2)}
+      </pre>
+    )
+  }
+  const names = new Map(regions.map((region) => [region.id, region.name]))
+  return (
+    <div className={styles.mapResult}>
+      <div className={styles.mapAnswerToolbar}>
+        <div>
+          <strong>{t('tests.reviews.mapMultiRegionResult')}</strong>
+          <small>
+            {t('tests.reviews.mapMultiRegionSelection', {
+              correct: correctSelectedCount ?? '—',
+              expected: expectedCorrectCount ?? correctRegionIds.length,
+              incorrect: incorrectSelectedCount ?? '—',
+            })}
+          </small>
+          <small>
+            {t('tests.reviews.mapMultiRegionMode', {
+              mode: t(
+                `assignments.mapMultiRegion.modes.${
+                  scoringMode === 'PARTIAL' ? 'PARTIAL' : 'ALL_OR_NOTHING'
+                }`,
+              ),
+            })}
+          </small>
+        </div>
+        <div className={styles.mapProjectionToggle} role="group">
+          <button
+            aria-pressed={projection === 'MERCATOR'}
+            onClick={() => setProjection('MERCATOR')}
+            type="button"
+          >
+            <MapIcon size={14} aria-hidden="true" />
+            {t('maps.projection.mercator')}
+          </button>
+          <button
+            aria-pressed={projection === 'GLOBE'}
+            onClick={() => setProjection('GLOBE')}
+            type="button"
+          >
+            <Box size={14} aria-hidden="true" />
+            {t('maps.projection.globe')}
+          </button>
+        </div>
+      </div>
+      <div className={styles.mapResultRegionLists}>
+        <p>
+          <strong>{t('tests.reviews.studentAnswer')}</strong>
+          <span>
+            {selectedRegionIds.map((id) => names.get(id) ?? id).join(', ') ||
+              '—'}
+          </span>
+        </p>
+        <p>
+          <strong>{t('assignments.mapMultiRegion.mapTitle')}</strong>
+          <span>
+            {correctRegionIds.map((id) => names.get(id) ?? id).join(', ')}
+          </span>
+        </p>
+      </div>
+      <Suspense
+        fallback={
+          <div className={styles.mapAnswerFallback}>
+            {t('maps.sandbox.loadingMap')}
+          </div>
+        }
+      >
+        <MapCanvas
+          comparisonRegionIds={correctRegionIds}
+          mapLabel={t('tests.reviews.mapMultiRegionLabel')}
+          onRegionsLoad={setRegions}
+          preset={answer.mapPreset}
+          projection={projection}
+          selectedRegionIds={selectedRegionIds}
           variant="ASSIGNMENT"
         />
       </Suspense>

@@ -286,6 +286,144 @@
   font-size: 0.72rem;
 }
 
+.multiRegionPicker {
+  display: grid;
+  min-width: 0;
+  gap: 9px;
+}
+
+.multiRegionPicker > label {
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.multiRegionPickerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.multiRegionPickerHeader > div {
+  display: grid;
+  gap: 2px;
+}
+
+.multiRegionPickerHeader strong {
+  font-size: 0.82rem;
+}
+
+.multiRegionPickerHeader small {
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+
+.multiRegionPickerHeader button {
+  padding: 5px 8px;
+  color: var(--gold);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 750;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.multiRegionPickerHeader button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.multiRegionChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.multiRegionChips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 5px 8px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--gold), transparent 88%);
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 68%);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.multiRegionChips button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multiRegionList {
+  display: grid;
+  max-height: 310px;
+  overflow-y: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+}
+
+.multiRegionList > label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 9px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.multiRegionList > label:last-of-type {
+  border-bottom: 0;
+}
+
+.multiRegionList > label:hover,
+.multiRegionRowSelected {
+  background: color-mix(in srgb, var(--gold), transparent 91%);
+}
+
+.multiRegionList input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold);
+}
+
+.multiRegionList label > span {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.multiRegionList strong {
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+}
+
+.multiRegionList small,
+.multiRegionList > p {
+  color: var(--ink-soft);
+  font-size: 0.69rem;
+}
+
+.multiRegionList > p {
+  margin: 0;
+  padding: 12px;
+}
+
 .mapCanvas :global(.maplibregl-ctrl-group) {
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--line), transparent 10%);

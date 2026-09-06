@@ -147,6 +147,16 @@ export interface MapRegionGradingConfig {
   correctRegionId: string | null
 }
 
+export interface MapMultiRegionPublicConfig {
+  initialProjection: 'MERCATOR' | 'GLOBE'
+  requiredSelectionCount: number
+}
+
+export interface MapMultiRegionGradingConfig {
+  correctRegionIds: string[]
+  scoringMode: 'ALL_OR_NOTHING' | 'PARTIAL'
+}
+
 export interface AssignmentRevisionSummary {
   id: string
   version: number
@@ -230,6 +240,7 @@ export interface AssignmentDraftInput {
     | ImageHotspotPublicConfig
     | MapPointPublicConfig
     | MapRegionPublicConfig
+    | MapMultiRegionPublicConfig
   gradingConfig:
     | { mode: 'MANUAL' }
     | ChoiceGradingConfig
@@ -240,6 +251,7 @@ export interface AssignmentDraftInput {
     | ImageHotspotGradingConfig
     | MapPointGradingConfig
     | MapRegionGradingConfig
+    | MapMultiRegionGradingConfig
   mapPresetId?: string | null
 }
 
@@ -282,6 +294,13 @@ export interface MapPointAssignmentDraftInput extends AssignmentDraftInput {
 export interface MapRegionAssignmentDraftInput extends AssignmentDraftInput {
   publicConfig: MapRegionPublicConfig
   gradingConfig: MapRegionGradingConfig
+  mapPresetId: string | null
+}
+
+export interface MapMultiRegionAssignmentDraftInput
+  extends AssignmentDraftInput {
+  publicConfig: MapMultiRegionPublicConfig
+  gradingConfig: MapMultiRegionGradingConfig
   mapPresetId: string | null
 }
 

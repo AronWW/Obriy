@@ -56,7 +56,7 @@ vi.mock('../../maps/components/MapCanvas', () => ({
       <button onClick={() => onRadiusChange?.(333)} type="button">
         Drag radius edge
       </button>
-      <button onClick={() => onRegionsLoad?.([mapRegion])} type="button">
+      <button onClick={() => onRegionsLoad?.(mapRegions)} type="button">
         Load regions
       </button>
       <button onClick={() => onRegionChange?.(mapRegion)} type="button">
@@ -122,7 +122,7 @@ describe('teacher assignment workspace', () => {
     ).toBeEnabled()
     expect(
       within(dialog).getByRole('button', { name: /Multiple map regions/ }),
-    ).toBeDisabled()
+    ).toBeEnabled()
     expect(within(dialog).queryByText(/soon/i)).not.toBeInTheDocument()
     expect(createCount).toBe(0)
 
@@ -593,6 +593,70 @@ describe('teacher assignment workspace', () => {
       },
     })
   })
+
+  it('creates MAP_MULTI_REGION with synchronized selection and partial scoring', async () => {
+    const user = userEvent.setup()
+    let receivedBody: unknown
+    server.use(
+      http.get(`${API_BASE_URL}/map-presets`, () =>
+        HttpResponse.json([mapPreset()]),
+      ),
+      http.post(`${API_BASE_URL}/assignments`, async ({ request }) => {
+        receivedBody = await request.json()
+        return HttpResponse.json(mapMultiRegionAssignmentEditor(), {
+          status: 201,
+        })
+      }),
+      http.get(`${API_BASE_URL}/assignments/:assignmentId`, () =>
+        HttpResponse.json(mapMultiRegionAssignmentEditor()),
+      ),
+    )
+
+    renderWorkspace('/app/teacher/tasks/new/map_multi_region')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Title' }),
+      'Find two countries',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Question or prompt' }),
+      'Choose India and France.',
+    )
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Geographic dataset' }),
+      mapPreset().id,
+    )
+    const canvas = await screen.findByTestId('map-point-canvas')
+    await user.click(
+      within(canvas).getByRole('button', { name: 'Load regions' }),
+    )
+    await user.click(screen.getByRole('checkbox', { name: /India/ }))
+    await user.click(screen.getByRole('checkbox', { name: /France/ }))
+    expect(screen.getByText('2 of 50')).toBeInTheDocument()
+    await user.click(screen.getByRole('radio', { name: 'Partial credit' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(receivedBody).toBeDefined())
+    expect(receivedBody).toEqual({
+      type: 'MAP_MULTI_REGION',
+      defaultMaxPoints: 1,
+      defaultPassingPercent: 100,
+      draft: {
+        title: 'Find two countries',
+        prompt: 'Choose India and France.',
+        instructions: null,
+        explanation: null,
+        publicConfig: {
+          initialProjection: 'MERCATOR',
+          requiredSelectionCount: 2,
+        },
+        gradingConfig: {
+          correctRegionIds: ['IND', 'FRA'],
+          scoringMode: 'PARTIAL',
+        },
+        mapPresetId: mapPreset().id,
+      },
+    })
+  })
 })
 
 function renderWorkspace(initialEntry: string) {
@@ -811,6 +875,17 @@ const mapRegion = {
   nameUk: 'Індія',
 }
 
+const mapRegions = [
+  mapRegion,
+  {
+    id: 'FRA',
+    isoCode: 'FRA',
+    name: 'France',
+    nameEn: 'France',
+    nameUk: 'Франція',
+  },
+]
+
 function mapRegionAssignmentEditor() {
   return {
     ...assignmentEditor(),
@@ -821,6 +896,27 @@ function mapRegionAssignmentEditor() {
       prompt: 'Choose India on the map.',
       publicConfig: { initialProjection: 'GLOBE' },
       gradingConfig: { correctRegionId: 'IND' },
+      mapPresetId: mapPreset().id,
+    },
+  }
+}
+
+function mapMultiRegionAssignmentEditor() {
+  return {
+    ...assignmentEditor(),
+    type: 'MAP_MULTI_REGION',
+    draftRevision: {
+      ...assignmentEditor().draftRevision,
+      title: 'Find two countries',
+      prompt: 'Choose India and France.',
+      publicConfig: {
+        initialProjection: 'MERCATOR',
+        requiredSelectionCount: 2,
+      },
+      gradingConfig: {
+        correctRegionIds: ['IND', 'FRA'],
+        scoringMode: 'PARTIAL',
+      },
       mapPresetId: mapPreset().id,
     },
   }

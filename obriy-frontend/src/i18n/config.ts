@@ -758,6 +758,10 @@ const resources = {
           choose: 'Оберіть регіон',
           noResults: 'За цим запитом регіонів не знайдено.',
           selected: 'Вибраний регіон',
+          selectedCount: 'Вибрані регіони',
+          selectionCounter: '{{count}} із {{max}}',
+          clear: 'Очистити',
+          removeNamed: 'Зняти вибір із «{{name}}»',
         },
         sandbox: {
           open: 'Лабораторія мап',
@@ -1154,6 +1158,34 @@ const resources = {
             prompt: 'Додайте запитання або умову.',
             preset: 'Оберіть карту.',
             region: 'Оберіть правильний регіон.',
+          },
+        },
+        mapMultiRegion: {
+          newTitle: 'Нове завдання з вибором кількох регіонів',
+          description:
+            'Позначте набір країн або областей, які учень має вибрати.',
+          content: 'Умова завдання',
+          contentHint:
+            'Чітко поясніть, які регіони потрібно знайти на мапі.',
+          mapTitle: 'Правильні регіони',
+          mapHint:
+            'Вибирайте регіони кліками на мапі або у списку. Повторний клік знімає вибір.',
+          mapLabel: 'Редактор правильних регіонів на мапі',
+          scoringTitle: 'Оцінювання',
+          scoringHint:
+            'Визначте, чи зараховувати частину бала за частково правильний набір.',
+          scoringMode: 'Режим нарахування бала',
+          modes: {
+            ALL_OR_NOTHING: 'Усе або нічого',
+            PARTIAL: 'Частковий бал',
+          },
+          readiness: 'Готовність до додавання в тест',
+          ready: 'Завдання готове до публікації.',
+          validation: {
+            title: 'Додайте назву завдання.',
+            prompt: 'Додайте запитання або умову.',
+            preset: 'Оберіть карту.',
+            regions: 'Оберіть щонайменше два правильні регіони.',
           },
         },
         interactive: {
@@ -1602,6 +1634,13 @@ const resources = {
           mapRegionSolutionLabel: 'Результат завдання з вибором регіону',
           mapRegionResult:
             'Ваша відповідь: {{answer}} · правильна: {{correct}}',
+          mapMultiRegionInstruction: 'Оберіть {{count}} регіонів.',
+          mapMultiRegionAnswerLabel: 'Мапа для вибору кількох регіонів учнем',
+          mapMultiRegionSolution: 'Правильні регіони та ваша відповідь',
+          mapMultiRegionSolutionLabel:
+            'Результат завдання з вибором кількох регіонів',
+          mapMultiRegionResult:
+            'Правильно вибрано: {{correct}} із {{expected}} · зайвих: {{incorrect}}',
           previous: 'Назад',
           next: 'Далі',
           submit: 'Завершити тест',
@@ -1685,6 +1724,11 @@ const resources = {
           mapRegionLabel: 'Перевірка вибраного регіону на мапі',
           mapRegionSelection:
             'Відповідь учня: {{answer}} · правильний регіон: {{correct}}',
+          mapMultiRegionResult: 'Відповідь із вибором кількох регіонів',
+          mapMultiRegionLabel: 'Перевірка набору регіонів на мапі',
+          mapMultiRegionSelection:
+            'Правильно вибрано: {{correct}} із {{expected}} · зайвих: {{incorrect}}',
+          mapMultiRegionMode: 'Режим оцінювання: {{mode}}',
           score: 'Бал за цю відповідь',
           comment: 'Коментар учню',
           commentPlaceholder: 'Поясніть оцінку або що потрібно виправити…',
@@ -2764,6 +2808,10 @@ const resources = {
           choose: 'Choose a region',
           noResults: 'No regions match this search.',
           selected: 'Selected region',
+          selectedCount: 'Selected regions',
+          selectionCounter: '{{count}} of {{max}}',
+          clear: 'Clear',
+          removeNamed: 'Remove “{{name}}” from selection',
         },
         sandbox: {
           open: 'Map laboratory',
@@ -3161,6 +3209,34 @@ const resources = {
             prompt: 'Add a question or prompt.',
             preset: 'Choose a map.',
             region: 'Choose the correct region.',
+          },
+        },
+        mapMultiRegion: {
+          newTitle: 'New multiple-region map assignment',
+          description:
+            'Mark the set of countries or regions the student needs to select.',
+          content: 'Assignment content',
+          contentHint:
+            'Explain clearly which regions the student needs to find on the map.',
+          mapTitle: 'Correct regions',
+          mapHint:
+            'Select regions on the map or in the list. Click again to remove one.',
+          mapLabel: 'Correct map regions editor',
+          scoringTitle: 'Scoring',
+          scoringHint:
+            'Choose whether a partially correct set receives partial credit.',
+          scoringMode: 'Scoring mode',
+          modes: {
+            ALL_OR_NOTHING: 'All or nothing',
+            PARTIAL: 'Partial credit',
+          },
+          readiness: 'Ready to add to a test',
+          ready: 'The assignment is ready to publish.',
+          validation: {
+            title: 'Add an assignment title.',
+            prompt: 'Add a question or prompt.',
+            preset: 'Choose a map.',
+            regions: 'Choose at least two correct regions.',
           },
         },
         interactive: {
@@ -3613,6 +3689,12 @@ const resources = {
           mapRegionSolutionLabel: 'Region-on-map assignment result',
           mapRegionResult:
             'Your answer: {{answer}} · correct: {{correct}}',
+          mapMultiRegionInstruction: 'Select {{count}} regions.',
+          mapMultiRegionAnswerLabel: 'Map for selecting multiple regions',
+          mapMultiRegionSolution: 'Correct regions and your answer',
+          mapMultiRegionSolutionLabel: 'Multiple-region assignment result',
+          mapMultiRegionResult:
+            'Correct selections: {{correct}} of {{expected}} · extra: {{incorrect}}',
           previous: 'Back',
           next: 'Next',
           submit: 'Finish test',
@@ -3692,6 +3774,11 @@ const resources = {
           mapRegionLabel: 'Map region answer review',
           mapRegionSelection:
             'Student answer: {{answer}} · correct region: {{correct}}',
+          mapMultiRegionResult: 'Multiple-region selection answer',
+          mapMultiRegionLabel: 'Multiple-region answer review',
+          mapMultiRegionSelection:
+            'Correct selections: {{correct}} of {{expected}} · extra: {{incorrect}}',
+          mapMultiRegionMode: 'Scoring mode: {{mode}}',
           score: 'Points for this answer',
           comment: 'Student comment',
           commentPlaceholder: 'Explain the score or what should be improved…',

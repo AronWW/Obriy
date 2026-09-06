@@ -63,17 +63,6 @@ describe('Assignments (e2e)', () => {
     await request(context.app.getHttpServer())
       .post('/assignments')
       .set('Authorization', bearer('teacher'))
-      .send({ type: AssignmentType.MAP_MULTI_REGION })
-      .expect(400)
-      .expect((response) => {
-        expect(getStringField(response, 'code')).toBe(
-          'ASSIGNMENT_TYPE_NOT_IMPLEMENTED',
-        );
-      });
-
-    await request(context.app.getHttpServer())
-      .post('/assignments')
-      .set('Authorization', bearer('teacher'))
       .send({
         type: AssignmentType.WRITTEN,
         defaultMaxPoints: null,

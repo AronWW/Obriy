@@ -35,6 +35,7 @@ import { AssignmentConfirmDialog } from '../../assignments/components/Assignment
 import { AssignmentDialog } from '../../assignments/components/AssignmentDialog'
 import { assignmentImageUrl } from '../../assignments/api/assignments.api'
 import { MapRegionPicker } from '../../maps/components/MapRegionPicker'
+import { MapMultiRegionPicker } from '../../maps/components/MapMultiRegionPicker'
 import type {
   CategorizationPublicConfig,
   ChoiceOption,
@@ -57,6 +58,7 @@ import {
 import { testQueryKeys } from '../model/test-query-keys'
 import type {
   MapPointSolutionFeedback,
+  MapMultiRegionSolutionFeedback,
   MapRegionSolutionFeedback,
   StudentLessonTest,
   StudentTestAttempt,
@@ -813,6 +815,16 @@ function AnswerField({
       />
     )
   }
+  if (item.type === 'MAP_MULTI_REGION') {
+    return (
+      <MapMultiRegionAnswerField
+        item={item}
+        key={item.id}
+        onChange={onChange}
+        response={response}
+      />
+    )
+  }
   if (item.type !== 'SINGLE_CHOICE' && item.type !== 'MULTIPLE_CHOICE') {
     return (
       <p className={styles.inlineError}>
@@ -944,6 +956,16 @@ function TestResult({
                     item.mapPreset && (
                       <MapRegionResult
                         answerRegionId={asRegionId(answer.responseData)}
+                        feedback={answer.solutionFeedback}
+                        item={item}
+                      />
+                    )}
+                  {item.type === 'MAP_MULTI_REGION' &&
+                    answer.solutionFeedback &&
+                    isMapMultiRegionFeedback(answer.solutionFeedback) &&
+                    item.mapPreset && (
+                      <MapMultiRegionResult
+                        answerRegionIds={asRegionIds(answer.responseData)}
                         feedback={answer.solutionFeedback}
                         item={item}
                       />
@@ -1169,6 +1191,149 @@ function MapRegionResult({
   )
 }
 
+function MapMultiRegionAnswerField({
+  item,
+  onChange,
+  response,
+}: {
+  item: StudentTestItem
+  onChange: (response: ResponseData) => void
+  response: ResponseData
+}) {
+  const { t } = useTranslation()
+  const [projection, setProjection] = useState<MapProjection>(() =>
+    item.publicConfig.initialProjection === 'GLOBE' ? 'GLOBE' : 'MERCATOR',
+  )
+  const [regions, setRegions] = useState<MapRegionOption[]>([])
+  const selectedRegionIds = asRegionIds(response)
+  const requiredSelectionCount = numberField(
+    item.publicConfig,
+    'requiredSelectionCount',
+  )
+  if (!item.mapPreset || requiredSelectionCount === null) {
+    return (
+      <p className={styles.inlineError}>{t('tests.student.mapUnavailable')}</p>
+    )
+  }
+
+  const toggleRegion = (region: MapRegionOption) => {
+    const next = selectedRegionIds.includes(region.id)
+      ? selectedRegionIds.filter((id) => id !== region.id)
+      : selectedRegionIds.length < requiredSelectionCount
+        ? [...selectedRegionIds, region.id]
+        : selectedRegionIds
+    if (next !== selectedRegionIds) onChange({ selectedRegionIds: next })
+  }
+
+  return (
+    <div className={styles.mapAnswer}>
+      <div className={styles.mapAnswerToolbar}>
+        <p>
+          {t('tests.student.mapMultiRegionInstruction', {
+            count: requiredSelectionCount,
+          })}
+        </p>
+        <ProjectionToggle projection={projection} onChange={setProjection} />
+      </div>
+      <div className={styles.mapRegionAnswerLayout}>
+        <Suspense
+          fallback={
+            <div className={styles.mapAnswerFallback}>
+              {t('maps.sandbox.loadingMap')}
+            </div>
+          }
+        >
+          <MapCanvas
+            mapLabel={t('tests.student.mapMultiRegionAnswerLabel')}
+            onRegionChange={toggleRegion}
+            onRegionsLoad={setRegions}
+            preset={item.mapPreset}
+            projection={projection}
+            selectedRegionIds={selectedRegionIds}
+            variant="ASSIGNMENT"
+          />
+        </Suspense>
+        <MapMultiRegionPicker
+          maxSelections={requiredSelectionCount}
+          onClear={() => onChange({ selectedRegionIds: [] })}
+          onToggle={toggleRegion}
+          regions={regions}
+          selectedRegionIds={selectedRegionIds}
+        />
+      </div>
+    </div>
+  )
+}
+
+function MapMultiRegionResult({
+  answerRegionIds,
+  feedback,
+  item,
+}: {
+  answerRegionIds: string[]
+  feedback: MapMultiRegionSolutionFeedback
+  item: StudentTestItem
+}) {
+  const { t } = useTranslation()
+  const [projection, setProjection] = useState<MapProjection>(() =>
+    item.publicConfig.initialProjection === 'GLOBE' ? 'GLOBE' : 'MERCATOR',
+  )
+  const [regions, setRegions] = useState<MapRegionOption[]>([])
+  if (!item.mapPreset) return null
+  const names = new Map(regions.map((region) => [region.id, region.name]))
+  return (
+    <div className={styles.mapResult}>
+      <div className={styles.mapAnswerToolbar}>
+        <div>
+          <strong>{t('tests.student.mapMultiRegionSolution')}</strong>
+          <small>
+            {t('tests.student.mapMultiRegionResult', {
+              correct: feedback.correctSelectedCount ?? '—',
+              expected:
+                feedback.expectedCorrectCount ?? feedback.correctRegionIds.length,
+              incorrect: feedback.incorrectSelectedCount ?? '—',
+            })}
+          </small>
+        </div>
+        <ProjectionToggle projection={projection} onChange={setProjection} />
+      </div>
+      <div className={styles.mapResultRegionLists}>
+        <p>
+          <strong>{t('tests.reviews.studentAnswer')}</strong>
+          <span>
+            {answerRegionIds.map((id) => names.get(id) ?? id).join(', ') || '—'}
+          </span>
+        </p>
+        <p>
+          <strong>{t('assignments.mapMultiRegion.mapTitle')}</strong>
+          <span>
+            {feedback.correctRegionIds
+              .map((id) => names.get(id) ?? id)
+              .join(', ')}
+          </span>
+        </p>
+      </div>
+      <Suspense
+        fallback={
+          <div className={styles.mapAnswerFallback}>
+            {t('maps.sandbox.loadingMap')}
+          </div>
+        }
+      >
+        <MapCanvas
+          comparisonRegionIds={feedback.correctRegionIds}
+          mapLabel={t('tests.student.mapMultiRegionSolutionLabel')}
+          onRegionsLoad={setRegions}
+          preset={item.mapPreset}
+          projection={projection}
+          selectedRegionIds={answerRegionIds}
+          variant="ASSIGNMENT"
+        />
+      </Suspense>
+    </div>
+  )
+}
+
 function ProjectionToggle({
   onChange,
   projection,
@@ -1217,6 +1382,7 @@ function emptyResponse(item: StudentTestItem): ResponseData {
   if (item.type === 'IMAGE_HOTSPOT') return {}
   if (item.type === 'MAP_POINT') return {}
   if (item.type === 'MAP_REGION') return {}
+  if (item.type === 'MAP_MULTI_REGION') return { selectedRegionIds: [] }
   if (item.type === 'SINGLE_CHOICE' || item.type === 'MULTIPLE_CHOICE') {
     return { selectedOptionIds: [] }
   }
@@ -1269,6 +1435,16 @@ function hasAnswer(item: StudentTestItem, response: ResponseData): boolean {
     return asMapPoint(response) !== null
   }
   if (item.type === 'MAP_REGION') return asRegionId(response) !== null
+  if (item.type === 'MAP_MULTI_REGION') {
+    const requiredSelectionCount = numberField(
+      item.publicConfig,
+      'requiredSelectionCount',
+    )
+    return (
+      requiredSelectionCount !== null &&
+      asRegionIds(response).length === requiredSelectionCount
+    )
+  }
   if (item.type === 'SINGLE_CHOICE' || item.type === 'MULTIPLE_CHOICE') {
     return (
       Array.isArray(response.selectedOptionIds) &&
@@ -1297,7 +1473,11 @@ function assignmentIcon(item: StudentTestItem) {
   if (item.type === 'WRITTEN') return <PenLine size={15} />
   if (item.type === 'MATCHING') return <Link2 size={15} />
   if (item.type === 'ORDERING') return <ListOrdered size={15} />
-  if (item.type === 'MAP_POINT' || item.type === 'MAP_REGION') {
+  if (
+    item.type === 'MAP_POINT' ||
+    item.type === 'MAP_REGION' ||
+    item.type === 'MAP_MULTI_REGION'
+  ) {
     return <MapIcon size={15} />
   }
   return <ListChecks size={15} />
@@ -1647,6 +1827,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function numberField(value: unknown, field: string): number | null {
+  if (!isRecord(value)) return null
+  const candidate = value[field]
+  return typeof candidate === 'number' && Number.isFinite(candidate)
+    ? candidate
+    : null
+}
+
 function asMapPoint(value: unknown): MapPoint | null {
   if (!isRecord(value)) return null
   return typeof value.longitude === 'number' &&
@@ -1664,6 +1852,14 @@ function asRegionId(value: unknown): string | null {
     : null
 }
 
+function asRegionIds(value: unknown): string[] {
+  if (!isRecord(value) || !Array.isArray(value.selectedRegionIds)) return []
+  return value.selectedRegionIds.filter(
+    (regionId): regionId is string =>
+      typeof regionId === 'string' && regionId.trim().length > 0,
+  )
+}
+
 function isMapPointFeedback(value: unknown): value is MapPointSolutionFeedback {
   return (
     isRecord(value) &&
@@ -1676,6 +1872,17 @@ function isMapRegionFeedback(
   value: unknown,
 ): value is MapRegionSolutionFeedback {
   return isRecord(value) && typeof value.correctRegionId === 'string'
+}
+
+function isMapMultiRegionFeedback(
+  value: unknown,
+): value is MapMultiRegionSolutionFeedback {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.correctRegionIds) &&
+    value.correctRegionIds.every((regionId) => typeof regionId === 'string') &&
+    (value.scoringMode === 'ALL_OR_NOTHING' || value.scoringMode === 'PARTIAL')
+  )
 }
 
 function studentError(error: Error | null, t: (key: string) => string): string {

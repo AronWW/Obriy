@@ -21,6 +21,7 @@ import {
 import { StudentOverviewPage } from '../../features/student-overview'
 import { StudentProfilePage } from '../../features/student-profile'
 import { TeacherProfilePage } from '../../features/teacher-profile'
+import { TeacherOverviewPage } from '../../features/teacher-overview'
 import {
   TeacherAssignmentEditorPage,
   TeacherAssignmentsPage,
@@ -109,10 +110,7 @@ export function AppRouter() {
         </Route>
         <Route element={<RoleRoute role="TEACHER" />}>
           <Route path="/app/teacher" element={<DesignLabPage />}>
-            <Route
-              index
-              element={<TeacherPlaceholderPage section="overview" />}
-            />
+            <Route index element={<TeacherOverviewPage />} />
             <Route path="classes" element={<TeacherClassesPage />} />
             <Route
               path="classes/:classId"

@@ -138,6 +138,23 @@ test('teacher desktop menu exposes its English placeholder routes', async ({
     localStorage.setItem('obriy-has-session', '1')
   })
   await mockAuthenticatedSession(page, 'TEACHER', 'EN')
+  await page.route('**/teacher/dashboard', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        stats: {
+          classes: { total: 0, studentCount: 0 },
+          lessons: { total: 0, drafts: 0 },
+          assignments: { total: 0, drafts: 0 },
+          tests: { total: 0, drafts: 0 },
+          pendingReviews: 0,
+        },
+        pendingReviews: [],
+        recent: { lessons: [], assignments: [], tests: [] },
+      }),
+    })
+  })
   await page.goto('/app/teacher')
   await page.emulateMedia({ reducedMotion: 'reduce' })
 

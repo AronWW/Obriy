@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
 import { registerWorkspaceNavigationGuard } from '../../../shared/navigation/workspace-navigation-guard'
 import { useSessionStore } from '../../auth/model/session.store'
@@ -55,6 +55,8 @@ export function TeacherLessonEditorPage() {
   const isNew = !routeLessonId
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const reviewAttemptId = searchParams.get('reviewAttempt')
   const queryClient = useQueryClient()
   const profileLocale = useSessionStore(
     (state) => state.user?.profile.preferredLocale ?? 'UK',
@@ -595,7 +597,15 @@ export function TeacherLessonEditorPage() {
                 lessonId={activeLessonId}
                 readOnly={isArchived}
               />
-              <TeacherTestReviews lessonId={activeLessonId} />
+              <TeacherTestReviews
+                initialAttemptId={reviewAttemptId}
+                lessonId={activeLessonId}
+                onInitialAttemptHandled={() => {
+                  const next = new URLSearchParams(searchParams)
+                  next.delete('reviewAttempt')
+                  setSearchParams(next, { replace: true })
+                }}
+              />
             </div>
           )}
         </div>

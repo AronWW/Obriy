@@ -10,4 +10,6 @@ export const testQueryKeys = {
     ['tests', 'student-lesson', lessonId] as const,
   release: (releaseId: string) => ['tests', 'release', releaseId] as const,
   reviews: (lessonId: string) => ['tests', 'reviews', lessonId] as const,
+  review: (lessonId: string, attemptId: string) =>
+    ['tests', 'reviews', lessonId, attemptId] as const,
 }

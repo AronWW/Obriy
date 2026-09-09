@@ -22,6 +22,7 @@ import { LessonsModule } from './lessons/lessons.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { TestsModule } from './tests/tests.module';
 import { MapPresetsModule } from './map-presets/map-presets.module';
+import { TeacherDashboardModule } from './teacher-dashboard/teacher-dashboard.module';
 import { validateEnvironment } from './config/env.validation';
 
 const i18nPath = existsSync(join(__dirname, 'i18n'))
@@ -52,6 +53,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     AssignmentsModule,
     MapPresetsModule,
     TestsModule,
+    TeacherDashboardModule,
   ],
   controllers: [AppController],
   providers: [

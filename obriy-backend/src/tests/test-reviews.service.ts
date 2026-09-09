@@ -155,6 +155,32 @@ export class TestReviewsService {
     });
   }
 
+  async findLessonReview(
+    user: AuthUser,
+    lessonId: string,
+    attemptId: string,
+  ): Promise<TeacherTestAttemptReviewDto> {
+    this.assertTeacher(user);
+    const attempt = await this.prisma.testAttempt.findFirst({
+      where: {
+        id: attemptId,
+        status: { in: reviewableAttemptStatuses },
+        studentState: {
+          release: {
+            lessonId,
+            lesson: { teacherId: user.id },
+            test: { teacherId: user.id },
+          },
+        },
+      },
+      select: teacherAttemptSelect,
+    });
+    if (!attempt) {
+      throw this.attemptNotFound();
+    }
+    return this.toDto(attempt);
+  }
+
   async reviewAnswer(
     user: AuthUser,
     answerId: string,
@@ -591,6 +617,13 @@ export class TestReviewsService {
     return new NotFoundException({
       code: 'LESSON_NOT_FOUND',
       message: 'Lesson not found',
+    });
+  }
+
+  private attemptNotFound(): NotFoundException {
+    return new NotFoundException({
+      code: 'TEST_ATTEMPT_NOT_FOUND',
+      message: 'Test attempt not found',
     });
   }
 

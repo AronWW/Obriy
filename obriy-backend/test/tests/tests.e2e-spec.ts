@@ -377,12 +377,41 @@ describe('Tests module (e2e)', () => {
       }),
     );
 
+    const dashboardResponse = await request(context.app.getHttpServer())
+      .get('/teacher/dashboard')
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    const dashboardBody = getResponseBody(dashboardResponse);
+    expect(
+      getNumberValue(getRecordField(dashboardBody, 'stats'), 'pendingReviews'),
+    ).toBe(1);
+    const dashboardReview = getRecordArray(dashboardBody, 'pendingReviews')[0];
+    expect(dashboardReview).toBeDefined();
+    expect(getStringValue(dashboardReview, 'attemptId')).toBe(attemptId);
+    expect(getStringValue(dashboardReview, 'lessonId')).toBe(lessonId);
+    expect(getNumberValue(dashboardReview, 'pendingReviewCount')).toBe(1);
+    await request(context.app.getHttpServer())
+      .get('/teacher/dashboard')
+      .set('Authorization', bearer('student'))
+      .expect(403);
+
     const reviewsResponse = await request(context.app.getHttpServer())
       .get(`/lessons/${lessonId}/test-attempts`)
       .set('Authorization', bearer('teacher'))
       .expect(200);
     const reviews = getRecordArray(getResponseBody(reviewsResponse), 'items');
     expect(reviews).toHaveLength(1);
+    const exactReviewResponse = await request(context.app.getHttpServer())
+      .get(`/lessons/${lessonId}/test-attempts/${attemptId}`)
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    expect(getResponseBody(exactReviewResponse)).toEqual(
+      expect.objectContaining({ attemptId, pendingReviewCount: 1 }),
+    );
+    await request(context.app.getHttpServer())
+      .get(`/lessons/${lessonId}/test-attempts/${attemptId}`)
+      .set('Authorization', bearer('student'))
+      .expect(403);
     const writtenAnswer = getRecordArray(reviews[0], 'answers').find(
       (answer) => getStringValue(answer, 'type') === AssignmentType.WRITTEN,
     );

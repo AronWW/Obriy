@@ -229,6 +229,15 @@ export function listLessonTestReviews(
   )
 }
 
+export function getLessonTestReview(
+  lessonId: string,
+  attemptId: string,
+): Promise<TeacherTestAttemptReview> {
+  return authorizedRequest<TeacherTestAttemptReview>(
+    `/lessons/${lessonId}/test-attempts/${attemptId}`,
+  )
+}
+
 export function reviewTestAnswer(
   answerId: string,
   input: {

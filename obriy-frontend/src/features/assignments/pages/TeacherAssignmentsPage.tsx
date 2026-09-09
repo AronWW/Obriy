@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
 import {
   archiveAssignment,
@@ -47,12 +47,15 @@ interface PendingAction {
 export function TeacherAssignmentsPage() {
   const { i18n, t } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [status, setStatus] = useState<'ALL' | AssignmentStatus>('ALL')
   const [type, setType] = useState<'ALL' | AssignmentType>('ALL')
-  const [showTypePicker, setShowTypePicker] = useState(false)
+  const [showTypePicker, setShowTypePicker] = useState(
+    () => searchParams.get('create') === '1',
+  )
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
 
   useEffect(() => {

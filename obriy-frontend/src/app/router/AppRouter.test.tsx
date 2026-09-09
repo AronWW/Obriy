@@ -53,6 +53,19 @@ describe('AppRouter auth boundaries', () => {
       http.get(`${API_BASE_URL}/classes/me/lessons`, () =>
         HttpResponse.json([]),
       ),
+      http.get(`${API_BASE_URL}/teacher/dashboard`, () =>
+        HttpResponse.json({
+          stats: {
+            classes: { total: 0, studentCount: 0 },
+            lessons: { total: 0, drafts: 0 },
+            assignments: { total: 0, drafts: 0 },
+            tests: { total: 0, drafts: 0 },
+            pendingReviews: 0,
+          },
+          pendingReviews: [],
+          recent: { lessons: [], assignments: [], tests: [] },
+        }),
+      ),
     )
   })
 

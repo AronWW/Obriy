@@ -36,6 +36,16 @@ export class LessonTestReviewsController {
   ): Promise<TeacherTestReviewListDto> {
     return this.reviewsService.listLessonReviews(user, lessonId, query);
   }
+
+  @ApiOkResponse({ type: TeacherTestAttemptReviewDto })
+  @Get(':attemptId')
+  findOne(
+    @CurrentUser() user: AuthUser,
+    @Param('lessonId') lessonId: string,
+    @Param('attemptId') attemptId: string,
+  ): Promise<TeacherTestAttemptReviewDto> {
+    return this.reviewsService.findLessonReview(user, lessonId, attemptId);
+  }
 }
 
 @UseGuards(JwtAuthGuard)

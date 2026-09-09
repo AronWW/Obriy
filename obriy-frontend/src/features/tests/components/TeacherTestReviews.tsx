@@ -1,6 +1,7 @@
 import {
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
   type InfiniteData,
 } from '@tanstack/react-query'
@@ -17,7 +18,11 @@ import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../../shared/api/api-client'
 import { assignmentImageUrl } from '../../assignments/api/assignments.api'
 import { AssignmentDialog } from '../../assignments/components/AssignmentDialog'
-import { listLessonTestReviews, reviewTestAnswer } from '../api/tests.api'
+import {
+  getLessonTestReview,
+  listLessonTestReviews,
+  reviewTestAnswer,
+} from '../api/tests.api'
 import { testQueryKeys } from '../model/test-query-keys'
 import type {
   TeacherTestAnswerReview,
@@ -41,22 +46,47 @@ const MapCanvas = lazy(() =>
 type ReviewFilter =
   'ALL' | Extract<TestAttemptStatus, 'AWAITING_REVIEW' | 'GRADED' | 'RETURNED'>
 
-export function TeacherTestReviews({ lessonId }: { lessonId: string }) {
+export function TeacherTestReviews({
+  initialAttemptId = null,
+  lessonId,
+  onInitialAttemptHandled,
+}: {
+  initialAttemptId?: string | null
+  lessonId: string
+  onInitialAttemptHandled?: () => void
+}) {
   const { t } = useTranslation()
   const [filter, setFilter] = useState<ReviewFilter>('ALL')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [dismissedInitialId, setDismissedInitialId] = useState<string | null>(
+    null,
+  )
   const query = useInfiniteQuery({
     queryKey: testQueryKeys.reviews(lessonId),
     queryFn: ({ pageParam }) => listLessonTestReviews(lessonId, pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
   })
+  const initialReviewQuery = useQuery({
+    enabled: Boolean(initialAttemptId),
+    queryKey: testQueryKeys.review(lessonId, initialAttemptId ?? ''),
+    queryFn: () => getLessonTestReview(lessonId, initialAttemptId ?? ''),
+    retry: false,
+  })
   const reviews = useMemo(
     () => query.data?.pages.flatMap((page) => page.items) ?? [],
     [query.data],
   )
+  const effectiveSelectedId =
+    selectedId ??
+    (initialReviewQuery.data && initialAttemptId !== dismissedInitialId
+      ? initialAttemptId
+      : null)
   const selected =
-    reviews.find((review) => review.attemptId === selectedId) ?? null
+    reviews.find((review) => review.attemptId === effectiveSelectedId) ??
+    (initialReviewQuery.data?.attemptId === effectiveSelectedId
+      ? initialReviewQuery.data
+      : null)
   const filtered =
     filter === 'ALL'
       ? reviews
@@ -94,6 +124,18 @@ export function TeacherTestReviews({ lessonId }: { lessonId: string }) {
           <button
             className={styles.secondaryButton}
             onClick={() => void query.refetch()}
+            type="button"
+          >
+            {t('tests.common.retry')}
+          </button>
+        </div>
+      )}
+      {initialAttemptId && initialReviewQuery.isError && (
+        <div className={styles.sectionState} role="alert">
+          <p>{t('tests.reviews.loadAttemptError')}</p>
+          <button
+            className={styles.secondaryButton}
+            onClick={() => void initialReviewQuery.refetch()}
             type="button"
           >
             {t('tests.common.retry')}
@@ -159,7 +201,13 @@ export function TeacherTestReviews({ lessonId }: { lessonId: string }) {
       {selected && (
         <ReviewAttemptDialog
           lessonId={lessonId}
-          onClose={() => setSelectedId(null)}
+          onClose={() => {
+            setSelectedId(null)
+            if (selected.attemptId === initialAttemptId) {
+              setDismissedInitialId(initialAttemptId)
+              onInitialAttemptHandled?.()
+            }
+          }}
           review={selected}
         />
       )}
@@ -251,6 +299,10 @@ function ReviewAttemptDialog({
     }: ReviewInput) =>
       reviewTestAnswer(answerId, { decision, scorePoints, teacherComment }),
     onSuccess: (updated) => {
+      queryClient.setQueryData(
+        testQueryKeys.review(lessonId, updated.attemptId),
+        updated,
+      )
       queryClient.setQueryData<InfiniteData<TeacherTestReviewList>>(
         testQueryKeys.reviews(lessonId),
         (current) =>

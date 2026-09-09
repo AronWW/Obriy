@@ -3,7 +3,7 @@ import { ArrowRight, Plus, School, UsersRound, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
 import {
   createTeacherClass,
@@ -19,7 +19,10 @@ import styles from '../ClassesPage.module.css'
 export function TeacherClassesPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const [isCreating, setIsCreating] = useState(false)
+  const [searchParams] = useSearchParams()
+  const [isCreating, setIsCreating] = useState(
+    () => searchParams.get('create') === '1',
+  )
   const [createdInvite, setCreatedInvite] = useState<ClassInvite | null>(null)
   const {
     formState: { errors },

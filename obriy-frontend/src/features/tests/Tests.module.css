@@ -6,7 +6,7 @@
 .content {
   width: min(1280px, 100%);
   margin: 0 auto;
-  padding: 34px 36px 56px;
+  padding: var(--workspace-page-top) 36px 56px;
 }
 
 .intro,
@@ -2043,7 +2043,7 @@
 
 @media (max-width: 900px) {
   .content {
-    padding: 28px 22px 48px;
+    padding: var(--workspace-page-top) 22px 48px;
   }
   .labLayout {
     grid-template-columns: 1fr;
@@ -2073,7 +2073,7 @@
   }
 
   .content {
-    padding: 22px 15px 40px;
+    padding: var(--workspace-page-top) 15px 40px;
   }
   .intro {
     align-items: stretch;

@@ -20,6 +20,13 @@ test('teacher profile remains inside the desktop sidebar shell', async ({
   await expect(
     page.getByRole('textbox', { name: 'Ім’я та прізвище' }),
   ).toHaveValue('Олена Коваль')
+  const sidebar = await page.getByRole('complementary').boundingBox()
+  const document = await page.getByTestId('teacher-profile-document').boundingBox()
+  expect(sidebar).not.toBeNull()
+  expect(document).not.toBeNull()
+  const availableCenter = (sidebar!.x + sidebar!.width + 1440) / 2
+  const documentCenter = document!.x + document!.width / 2
+  expect(Math.abs(documentCenter - availableCenter)).toBeLessThanOrEqual(1)
   await expectNoHorizontalOverflow(page)
 
   await page.screenshot({

@@ -1,6 +1,6 @@
 .page {
   min-height: 100svh;
-  padding: clamp(88px, 9vw, 124px) clamp(22px, 6vw, 82px) 72px;
+  padding: var(--workspace-page-top) clamp(22px, 6vw, 82px) 72px;
 }
 
 .content {
@@ -1282,7 +1282,7 @@
 
 @media (max-width: 760px) {
   .page {
-    padding: 82px 16px 48px;
+    padding: var(--workspace-page-top) 16px 48px;
   }
 
   .intro,

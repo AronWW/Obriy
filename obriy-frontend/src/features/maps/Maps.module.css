@@ -6,7 +6,7 @@
 .content {
   width: min(1380px, 100%);
   margin: 0 auto;
-  padding: 30px 36px 56px;
+  padding: var(--workspace-page-top) 36px 56px;
 }
 
 .backLink {
@@ -84,18 +84,6 @@
   margin: 0;
   color: var(--copy);
   line-height: 1.6;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0;
-  color: var(--gold);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
 }
 
 .workspace {
@@ -701,7 +689,7 @@
   }
 
   .content {
-    padding: 24px 16px 40px;
+    padding: var(--workspace-page-top) 16px 40px;
   }
 
   .backLink {
@@ -755,7 +743,7 @@
 .blankMapChoice small { color: var(--ink-soft); }
 .importDivider { display: flex; align-items: center; gap: .65rem; color: var(--ink-soft); font-size: .78rem; }
 .importDivider::before, .importDivider::after { height: 1px; flex: 1; background: var(--line-soft); content: ''; }
-.mapEditorPage { display: grid; gap: 1rem; width: min(100%, 1500px); margin: 0 auto; padding: 1rem; }
+.mapEditorPage { display: grid; gap: 1rem; width: min(100%, 1500px); margin: 0 auto; padding: var(--workspace-page-top) 1rem 1rem; }
 .mapEditorHeader { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
 .mapEditorHeader h1 { margin: .45rem 0 0; font-family: 'Lora', serif; font-size: clamp(1.45rem, 3vw, 2.2rem); }
 .editorHeaderActions { display: flex; flex-wrap: wrap; gap: .55rem; }
@@ -782,6 +770,13 @@
 .drawingToolbar button { min-height: 2.35rem; padding: 0 .65rem; border: 0; border-right: 1px solid var(--line-soft); background: transparent; color: var(--ink); cursor: pointer; }
 .drawingToolbar button[aria-pressed='true'] { background: var(--gold); color: white; }
 .drawingToolbar button:disabled { opacity: .38; cursor: default; }
+.drawingStatus { position: absolute; z-index: 5; right: .75rem; bottom: .75rem; left: .75rem; display: flex; align-items: center; gap: .55rem; padding: .65rem .75rem; color: var(--ink); background: color-mix(in srgb, var(--panel-solid) 96%, transparent); border: 1px solid var(--line); border-radius: .75rem; box-shadow: 0 7px 22px rgb(20 28 38 / 16%); }
+.drawingStatus p { min-width: 0; flex: 1; margin: 0; color: var(--copy); font-size: .78rem; line-height: 1.4; }
+.drawingStatus > span { flex: 0 0 auto; color: var(--ink-soft); font-size: .75rem; }
+.drawingStatus button { display: inline-flex; min-height: 2.25rem; flex: 0 0 auto; align-items: center; justify-content: center; gap: .35rem; padding: 0 .65rem; color: var(--ink); font: inherit; font-size: .76rem; font-weight: 750; background: transparent; border: 1px solid var(--line-soft); border-radius: .55rem; cursor: pointer; }
+.drawingStatus button:first-of-type { color: #fff; background: var(--gold); border-color: var(--gold); }
+.drawingStatus button:disabled { cursor: not-allowed; opacity: .45; }
+.drawingError { position: absolute; z-index: 6; right: .75rem; bottom: 5.4rem; left: .75rem; margin: 0; padding: .55rem .7rem; color: #ab3b30; font-size: .78rem; background: color-mix(in srgb, var(--panel-solid) 96%, transparent); border: 1px solid rgb(171 59 48 / 42%); border-radius: .6rem; }
 .diagnosticsPanel { display: flex; flex-wrap: wrap; gap: .45rem .9rem; padding: .72rem .85rem; color: var(--ink-soft); font-size: .8rem; }
 .diagnosticsPanel strong { color: #ab3b30; }
 .diagnosticsPanel em { color: #a26916; font-style: normal; }
@@ -790,6 +785,12 @@
 .editorConflict { display: flex; align-items: center; gap: .55rem; padding: .75rem .9rem; border-color: rgb(171 59 48 / 40%); color: #ab3b30; }
 .editorConflict span { flex: 1; }
 .spin { animation: map-editor-spin .9s linear infinite; }
+.editorDialogBackdrop { position: fixed; z-index: 180; inset: 0; display: grid; padding: 1rem; place-items: center; background: rgb(5 15 24 / 55%); backdrop-filter: blur(3px); }
+.editorDialog { display: grid; width: min(100%, 440px); gap: .85rem; padding: 1.1rem; color: var(--ink); background: var(--panel-solid); border: 1px solid var(--line); border-radius: .9rem; box-shadow: 0 20px 55px rgb(0 0 0 / 28%); }
+.editorDialogHeading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.editorDialogHeading h2 { margin: 0; font-family: 'Lora', serif; font-size: 1.2rem; }
+.editorDialogHeading button { display: grid; width: 2.1rem; height: 2.1rem; padding: 0; place-items: center; color: var(--ink-soft); background: transparent; border: 1px solid var(--line-soft); border-radius: .55rem; cursor: pointer; }
+.editorDialog > p { margin: 0; color: var(--ink-soft); font-size: .78rem; line-height: 1.45; }
 @keyframes map-editor-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 820px) {
@@ -800,4 +801,7 @@
   .drawingCanvas { min-height: 55vh; }
   .drawingToolbar { right: .65rem; left: .65rem; overflow-x: auto; }
   .drawingToolbar button { flex: 1 0 auto; }
+  .drawingStatus { align-items: stretch; flex-wrap: wrap; }
+  .drawingStatus p { width: 100%; flex-basis: 100%; }
+  .drawingStatus button { flex: 1 1 auto; }
 }

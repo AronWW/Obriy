@@ -78,10 +78,6 @@ export function TeacherLessonsPage() {
       <div className={styles.content}>
         <header className={styles.intro}>
           <div>
-            <p className={styles.eyebrow}>
-              <BookOpen size={15} aria-hidden="true" />
-              {t('lessons.library.eyebrow')}
-            </p>
             <h1 id="teacher-lessons-title">{t('lessons.library.title')}</h1>
             <p>{t('lessons.library.description')}</p>
           </div>

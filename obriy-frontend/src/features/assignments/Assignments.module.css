@@ -6,7 +6,7 @@
 .content {
   width: min(1280px, 100%);
   margin: 0 auto;
-  padding: 34px 36px 56px;
+  padding: var(--workspace-page-top) 36px 56px;
 }
 
 .intro,
@@ -40,18 +40,6 @@
   margin: 0;
   color: var(--copy);
   line-height: 1.6;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0;
-  color: var(--gold);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
 }
 
 .primaryButton,
@@ -2655,7 +2643,7 @@
   }
 
   .content {
-    padding: 28px 24px 50px;
+    padding: var(--workspace-page-top) 24px 50px;
   }
 
   .typeGrid {
@@ -2687,7 +2675,7 @@
 
 @media (max-width: 760px) {
   .content {
-    padding: 22px 16px 40px;
+    padding: var(--workspace-page-top) 16px 40px;
   }
 
   .intro,

@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Eye,
   ListChecks,
-  PenLine,
   Plus,
   Save,
   Trash2,
@@ -343,10 +342,6 @@ function TeacherWrittenAssignmentEditorPage() {
             <ArrowLeft size={19} aria-hidden="true" />
           </button>
           <div className={styles.editorHeading}>
-            <p className={styles.eyebrow}>
-              <PenLine size={15} aria-hidden="true" />
-              {t('assignments.types.WRITTEN.title')}
-            </p>
             <h1 id="assignment-editor-title">
               {isNew
                 ? t('assignments.editor.createTitle')

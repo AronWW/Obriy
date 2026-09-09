@@ -3,7 +3,6 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
-  Beaker,
   BookOpen,
   CircleDot,
   Link2,
@@ -225,10 +224,6 @@ export function TeacherTestEditorPage() {
             <ArrowLeft size={18} />
           </button>
           <div>
-            <p className={styles.eyebrow}>
-              <Beaker size={15} />
-              {t('tests.editor.eyebrow')}
-            </p>
             <h1>{values.title || t('tests.editor.newTitle')}</h1>
             <p>{t('tests.editor.description')}</p>
           </div>

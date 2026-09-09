@@ -416,7 +416,6 @@ const resources = {
           close: 'Закрити',
         },
         teacher: {
-          eyebrow: 'Навчальний простір',
           title: 'Мої класи',
           description:
             'Створюйте класи, запрошуйте учнів і переглядайте склад кожного класу.',
@@ -432,7 +431,6 @@ const resources = {
           },
           create: {
             action: 'Створити клас',
-            eyebrow: 'Новий клас',
             title: 'Основна інформація',
             name: 'Назва класу',
             namePlaceholder: 'Наприклад, Розмовна англійська',
@@ -443,7 +441,6 @@ const resources = {
           },
           edit: {
             action: 'Редагувати',
-            eyebrow: 'Налаштування класу',
             title: 'Оновити клас',
             description: 'Змініть назву, за якою учні впізнають цей простір.',
             save: 'Зберегти',
@@ -452,7 +449,6 @@ const resources = {
           },
           detail: {
             back: 'До всіх класів',
-            eyebrow: 'Клас учителя',
             notFoundTitle: 'Клас не знайдено',
             notFound:
               'Цей клас не існує або не належить вашому обліковому запису.',
@@ -548,7 +544,6 @@ const resources = {
           EN: 'English',
         },
         library: {
-          eyebrow: 'Бібліотека матеріалів',
           title: 'Мої уроки',
           description:
             'Готуйте матеріали один раз, додавайте їх до своїх класів і керуйте публікацією.',
@@ -610,8 +605,6 @@ const resources = {
           notFoundTitle: 'Урок не знайдено',
           notFoundDescription:
             'Цей урок не існує або не належить вашому обліковому запису.',
-          createEyebrow: 'Нова чернетка',
-          editEyebrow: 'Редактор уроку',
           createTitle: 'Створити урок',
           description:
             'Підготуйте текст і виберіть класи. Чернетки зберігаються автоматично.',
@@ -766,7 +759,6 @@ const resources = {
         sandbox: {
           open: 'Лабораторія мап',
           back: 'Назад до завдань',
-          eyebrow: 'Картографічний інструмент',
           title: 'Лабораторія мап',
           description:
             'Перевіряйте набори геоданих, режими 2D і глобуса та точність вибору територій перед створенням map-завдань.',
@@ -809,7 +801,6 @@ const resources = {
           blankTitle: 'Намалювати карту з нуля',
           blankDescription: 'Відкрити порожній редактор і додати власні регіони.',
           orImport: 'або імпортуйте готовий файл',
-          eyebrow: 'Власний набір геоданих',
           title: 'Додати GeoJSON-карту',
           chooseFile: 'Оберіть .geojson або .json',
           fileHint: 'FeatureCollection із Polygon або MultiPolygon, до 20 МБ',
@@ -854,11 +845,21 @@ const resources = {
           publish: 'Опублікувати карту',
           select: 'Вибір і редагування',
           draw: 'Намалювати полігон',
+          drawingHint: 'Поставте щонайменше три точки контуру. Замкніть його кнопкою або кліком по першій точці.',
+          drawingVertices: 'Точок: {{count}}',
+          finishDrawing: 'Завершити регіон',
+          cancelDrawing: 'Скасувати',
+          invalidDrawing: 'Не вдалося завершити контур. Перевірте кількість точок і відсутність самоперетинів.',
           undo: 'Скасувати дію',
           redo: 'Повторити дію',
           canvasLabel: 'Редактор геометрії карти',
           mapError: 'Не вдалося запустити редактор карти.',
           defaultRegionName: 'Регіон {{number}}',
+          nameNewRegion: 'Назвіть новий регіон',
+          namingHint: 'Якщо закрити це вікно, регіон залишиться зі стандартною назвою.',
+          closeNaming: 'Закрити введення назви',
+          keepDefaultName: 'Залишити стандартну',
+          saveRegionName: 'Зберегти назву',
           regions: 'Регіони',
           search: 'Знайти регіон…',
           regionName: 'Назва регіону',
@@ -896,7 +897,6 @@ const resources = {
           untitled: 'Без назви',
         },
         library: {
-          eyebrow: 'Робочий простір учителя',
           title: 'Завдання',
           description:
             'Створюйте самостійні завдання, а згодом додавайте їх до потрібних уроків.',
@@ -1337,7 +1337,6 @@ const resources = {
           },
         },
         lesson: {
-          eyebrow: 'Практична частина',
           title: 'Завдання уроку',
           description:
             'Додайте самостійні завдання з бібліотеки. Вони не мають фіксованого порядку.',
@@ -1446,7 +1445,6 @@ const resources = {
           },
         },
         reviews: {
-          eyebrow: 'Результати уроку',
           title: 'Відповіді учнів',
           description:
             'Перевіряйте надіслані відповіді, виставляйте бали або повертайте роботу на доопрацювання.',
@@ -1514,7 +1512,6 @@ const resources = {
           delete: 'Видалити',
         },
         library: {
-          eyebrow: 'Лабораторія перевірок',
           title: 'Тести',
           description: 'Складайте окремі завдання у цілісні перевірки знань.',
           create: 'Створити тест',
@@ -1557,7 +1554,6 @@ const resources = {
         editor: {
           loading: 'Завантажуємо тест…',
           error: 'Не вдалося завантажити редактор тесту.',
-          eyebrow: 'Конструктор тесту',
           newTitle: 'Новий тест',
           description:
             'Налаштуйте тест і складіть завдання у потрібному порядку.',
@@ -1616,7 +1612,6 @@ const resources = {
           empty: 'Немає доступних завдань. Спочатку створіть їх у бібліотеці.',
         },
         lesson: {
-          eyebrow: 'Перевірка знань',
           title: 'Тести уроку',
           description:
             'Додайте один або кілька готових тестів. Учень проходитиме кожен тест як окрему цілісну спробу.',
@@ -1768,7 +1763,6 @@ const resources = {
           },
         },
         reviews: {
-          eyebrow: 'Результати уроку',
           title: 'Спроби учнів',
           description:
             'Автоматичні відповіді вже оцінено. Тут потрібно перевірити лише письмові роботи в межах кожної спроби.',
@@ -1908,12 +1902,10 @@ const resources = {
         },
       },
       teacherProfile: {
-        eyebrow: 'Особисті дані',
         title: 'Профіль учителя',
         description:
           'Інформація, яку ви використовуватимете у своєму робочому просторі Obriy.',
         unavailable: 'Дані профілю тимчасово недоступні.',
-        identityLabel: 'Поточний профіль',
         avatarHint: 'Завантаження нового фото додамо окремим наступним кроком.',
         formLegend: 'Основна інформація',
         displayName: 'Ім’я та прізвище',
@@ -2558,7 +2550,6 @@ const resources = {
           close: 'Close',
         },
         teacher: {
-          eyebrow: 'Learning space',
           title: 'My classes',
           description:
             'Create classes, invite students, and view the members of each class.',
@@ -2574,7 +2565,6 @@ const resources = {
           },
           create: {
             action: 'Create class',
-            eyebrow: 'New class',
             title: 'Basic information',
             name: 'Class name',
             namePlaceholder: 'For example, Conversational English',
@@ -2585,7 +2575,6 @@ const resources = {
           },
           edit: {
             action: 'Edit',
-            eyebrow: 'Class settings',
             title: 'Update class',
             description:
               'Change the name students use to recognise this space.',
@@ -2595,7 +2584,6 @@ const resources = {
           },
           detail: {
             back: 'Back to all classes',
-            eyebrow: 'Teacher class',
             notFoundTitle: 'Class not found',
             notFound:
               'This class does not exist or does not belong to your account.',
@@ -2693,7 +2681,6 @@ const resources = {
           EN: 'English',
         },
         library: {
-          eyebrow: 'Material library',
           title: 'My lessons',
           description:
             'Prepare a material once, add it to your classes, and control where it is published.',
@@ -2755,8 +2742,6 @@ const resources = {
           notFoundTitle: 'Lesson not found',
           notFoundDescription:
             'This lesson does not exist or does not belong to your account.',
-          createEyebrow: 'New draft',
-          editEyebrow: 'Lesson editor',
           createTitle: 'Create a lesson',
           description:
             'Prepare the text and choose classes. Drafts save automatically.',
@@ -2910,7 +2895,6 @@ const resources = {
         sandbox: {
           open: 'Map laboratory',
           back: 'Back to assignments',
-          eyebrow: 'Cartography workspace',
           title: 'Map laboratory',
           description:
             'Inspect geographic datasets, switch between 2D and globe views, and verify territory selection before building map assignments.',
@@ -2953,7 +2937,6 @@ const resources = {
           blankTitle: 'Draw a map from scratch',
           blankDescription: 'Open an empty editor and add your own regions.',
           orImport: 'or import an existing file',
-          eyebrow: 'Custom geographic dataset',
           title: 'Add a GeoJSON map',
           chooseFile: 'Choose .geojson or .json',
           fileHint: 'FeatureCollection with Polygon or MultiPolygon, up to 20 MB',
@@ -2998,11 +2981,21 @@ const resources = {
           publish: 'Publish map',
           select: 'Select and edit',
           draw: 'Draw polygon',
+          drawingHint: 'Place at least three boundary points. Close it with the button or by clicking the first point.',
+          drawingVertices: 'Points: {{count}}',
+          finishDrawing: 'Finish region',
+          cancelDrawing: 'Cancel',
+          invalidDrawing: 'The boundary could not be finished. Check the point count and make sure it does not self-intersect.',
           undo: 'Undo',
           redo: 'Redo',
           canvasLabel: 'Map geometry editor',
           mapError: 'Could not start the map editor.',
           defaultRegionName: 'Region {{number}}',
+          nameNewRegion: 'Name the new region',
+          namingHint: 'Closing this window keeps the generated region name.',
+          closeNaming: 'Close region naming',
+          keepDefaultName: 'Keep generated name',
+          saveRegionName: 'Save name',
           regions: 'Regions',
           search: 'Find a region…',
           regionName: 'Region name',
@@ -3040,7 +3033,6 @@ const resources = {
           untitled: 'Untitled',
         },
         library: {
-          eyebrow: 'Teacher workspace',
           title: 'Assignments',
           description:
             'Create standalone assignments and add them to the lessons you need later.',
@@ -3481,7 +3473,6 @@ const resources = {
           },
         },
         lesson: {
-          eyebrow: 'Practice',
           title: 'Lesson assignments',
           description:
             'Add standalone assignments from your library. They have no fixed order.',
@@ -3593,7 +3584,6 @@ const resources = {
           },
         },
         reviews: {
-          eyebrow: 'Lesson results',
           title: 'Student answers',
           description:
             'Review submitted answers, award points, or return work for revision.',
@@ -3661,7 +3651,6 @@ const resources = {
           delete: 'Delete',
         },
         library: {
-          eyebrow: 'Assessment lab',
           title: 'Tests',
           description:
             'Combine standalone assignments into complete assessments.',
@@ -3704,7 +3693,6 @@ const resources = {
         editor: {
           loading: 'Loading the test…',
           error: 'Could not load the test editor.',
-          eyebrow: 'Test builder',
           newTitle: 'New test',
           description:
             'Configure the test and arrange assignments in the required order.',
@@ -3764,7 +3752,6 @@ const resources = {
             'No assignments are available. Create them in the library first.',
         },
         lesson: {
-          eyebrow: 'Knowledge check',
           title: 'Lesson tests',
           description:
             'Add one or more tests. The student completes each test as one complete attempt.',
@@ -3913,7 +3900,6 @@ const resources = {
           },
         },
         reviews: {
-          eyebrow: 'Lesson results',
           title: 'Student attempts',
           description:
             'Objective answers are already graded. Review only written work within each complete attempt.',
@@ -4051,12 +4037,10 @@ const resources = {
         },
       },
       teacherProfile: {
-        eyebrow: 'Personal details',
         title: 'Teacher profile',
         description:
           'Information you will use throughout your Obriy workspace.',
         unavailable: 'Profile information is temporarily unavailable.',
-        identityLabel: 'Current profile',
         avatarHint: 'We will add photo uploads as a separate next step.',
         formLegend: 'Basic information',
         displayName: 'Full name',

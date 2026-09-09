@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   diagnoseMap,
+  drawingSnapshot,
+  provisionalPolygonVertexCount,
   toDrawingFeatures,
   toEditorCollection,
 } from './map-editor-geometry'
@@ -52,6 +54,32 @@ describe('map editor geometry', () => {
     expect(diagnostics.duplicateNames).toEqual(['same'])
     expect(diagnostics.overlapCount).toBe(1)
     expect(diagnostics.selfIntersectionCount).toBe(1)
+  })
+
+  it('keeps provisional Terra Draw geometry out of autosave snapshots', () => {
+    const provisional = {
+      type: 'Feature',
+      id: crypto.randomUUID(),
+      properties: {
+        mode: 'polygon',
+        currentlyDrawing: true,
+        committedCoordinateCount: 3,
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 0],
+          ],
+        ],
+      },
+    }
+
+    expect(provisionalPolygonVertexCount([provisional])).toBe(3)
+    expect(drawingSnapshot([provisional])).toEqual([])
   })
 })
 

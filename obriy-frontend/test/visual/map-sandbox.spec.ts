@@ -224,6 +224,80 @@ test('map editor renders with WebGL on mobile', async ({ page }, testInfo) => {
   })
 })
 
+test('teacher draws, names and cancels regions on a blank map', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await prepareTeacherSession(page, 'day')
+  await page.route('**/map-drafts/blank-draft', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...mapDraft(),
+        id: 'blank-draft',
+        name: 'Blank historical map',
+        geojsonUrl: null,
+        featureCount: 0,
+        vertexCount: 0,
+        bounds: null,
+        defaultViewport: null,
+      }),
+    })
+  })
+
+  await page.goto('/app/teacher/maps/editor/blank-draft')
+  const editor = page.getByRole('application', { name: 'Map geometry editor' })
+  await expect(editor).toBeVisible()
+  await page.getByRole('button', { name: 'Draw polygon' }).click()
+
+  const box = await editor.boundingBox()
+  expect(box).not.toBeNull()
+  const points = [
+    [box!.x + box!.width * 0.28, box!.y + box!.height * 0.35],
+    [box!.x + box!.width * 0.68, box!.y + box!.height * 0.35],
+    [box!.x + box!.width * 0.68, box!.y + box!.height * 0.68],
+    [box!.x + box!.width * 0.28, box!.y + box!.height * 0.68],
+  ]
+  for (const [x, y] of points) await page.mouse.click(x!, y!)
+
+  const finish = page.getByRole('button', { name: 'Finish region' })
+  await expect(finish).toBeEnabled()
+  await finish.click()
+
+  const naming = page.getByRole('dialog', { name: 'Name the new region' })
+  await expect(naming).toBeVisible()
+  const nameInput = naming.getByRole('textbox', { name: 'Region name' })
+  await expect(nameInput).toHaveValue('Region 1')
+  await nameInput.fill('Western Kingdom')
+  await naming.getByRole('button', { name: 'Save name' }).click()
+
+  await expect(
+    page.getByRole('textbox', { name: 'Region name' }),
+  ).toHaveValue('Western Kingdom')
+  await expect(page.getByText(/1 region/)).toBeVisible()
+  const undo = page.getByRole('button', { name: 'Undo' })
+  await expect(undo).toBeEnabled()
+  await undo.click()
+  const redo = page.getByRole('button', { name: 'Redo' })
+  await expect(redo).toBeEnabled()
+  await redo.click()
+  await expect(
+    page.getByRole('textbox', { name: 'Region name' }),
+  ).toHaveValue('Western Kingdom')
+
+  await page.getByRole('button', { name: 'Draw polygon' }).click()
+  await page.mouse.click(box!.x + box!.width * 0.45, box!.y + box!.height * 0.45)
+  await page.mouse.click(box!.x + box!.width * 0.55, box!.y + box!.height * 0.45)
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByText('1 region')).toBeVisible()
+
+  await page.screenshot({
+    path: testInfo.outputPath('custom-map-drawing.png'),
+    fullPage: true,
+  })
+})
+
 async function prepareTeacherSession(page: Page, theme: 'day' | 'night') {
   await page.addInitScript((selectedTheme) => {
     localStorage.setItem('obriy-theme', selectedTheme)

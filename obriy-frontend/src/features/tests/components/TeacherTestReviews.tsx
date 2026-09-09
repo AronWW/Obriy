@@ -76,10 +76,6 @@ export function TeacherTestReviews({ lessonId }: { lessonId: string }) {
     >
       <header className={styles.testReviewsHeader}>
         <div>
-          <p className={styles.eyebrow}>
-            <ClipboardCheck size={15} />
-            {t('tests.reviews.eyebrow')}
-          </p>
           <h2 id="test-reviews-title">{t('tests.reviews.title')}</h2>
           <p>{t('tests.reviews.description')}</p>
         </div>

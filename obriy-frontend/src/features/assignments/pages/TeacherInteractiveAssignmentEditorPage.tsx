@@ -214,7 +214,6 @@ export function TeacherInteractiveAssignmentEditorPage({ type }: { type: Interac
       <header className={styles.editorHeader}>
         <button aria-label={t('assignments.common.back')} className={styles.iconButton} onClick={() => requestLeave('/app/teacher/tasks')} type="button"><ArrowLeft size={18} /></button>
         <div className={styles.editorHeading}>
-          <p className={styles.eyebrow}>{t(`assignments.types.${type}.title`)}</p>
           <h1>{assignmentId ? values.title || t(`assignments.types.${type}.title`) : t('assignments.interactive.newTitle')}</h1>
           <p>{t(`assignments.types.${type}.description`)}</p>
         </div>

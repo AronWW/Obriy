@@ -10,6 +10,7 @@
   --site-header-height: 84px;
   --site-header-logo-top: 12px;
   --site-header-control-top: 21px;
+  --workspace-page-top: clamp(88px, 9vw, 124px);
 
   --duration-fast: 160ms;
   --duration-theme: 680ms;
@@ -27,6 +28,7 @@
     --site-header-height: 72px;
     --site-header-logo-top: 12px;
     --site-header-control-top: 16px;
+    --workspace-page-top: 82px;
   }
 }
 

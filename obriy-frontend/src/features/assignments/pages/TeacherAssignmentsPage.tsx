@@ -113,10 +113,6 @@ export function TeacherAssignmentsPage() {
       <div className={styles.content}>
         <header className={styles.intro}>
           <div>
-            <p className={styles.eyebrow}>
-              <ClipboardList size={15} aria-hidden="true" />
-              {t('assignments.library.eyebrow')}
-            </p>
             <h1 id="assignments-title">{t('assignments.library.title')}</h1>
             <p>{t('assignments.library.description')}</p>
           </div>

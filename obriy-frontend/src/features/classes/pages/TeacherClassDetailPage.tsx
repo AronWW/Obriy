@@ -109,10 +109,6 @@ export function TeacherClassDetailPage() {
             <School size={24} />
           </div>
           <div>
-            <p className={styles.eyebrow}>
-              <School size={15} aria-hidden="true" />
-              {t('classes.teacher.detail.eyebrow')}
-            </p>
             <h1 id="class-detail-title">{classroom.name}</h1>
             <p className={styles.detailMeta}>
               {t('classes.common.students', {
@@ -137,7 +133,6 @@ export function TeacherClassDetailPage() {
           >
             <div className={styles.formHeading}>
               <div>
-                <p>{t('classes.teacher.edit.eyebrow')}</p>
                 <h2 id="edit-class-title">
                   {t('classes.teacher.edit.title')}
                 </h2>

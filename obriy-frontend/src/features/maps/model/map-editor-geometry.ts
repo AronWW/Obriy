@@ -81,9 +81,15 @@ export function drawingSnapshot(
       !Array.isArray(candidate.geometry.coordinates)
     )
       return []
-    const properties = isRecord(candidate.properties)
-      ? candidate.properties
-      : {}
+    const properties = isRecord(candidate.properties) ? candidate.properties : {}
+    if (properties.currentlyDrawing === true) return []
+    if (
+      typeof properties.regionId !== 'string' ||
+      !properties.regionId ||
+      typeof properties.name !== 'string' ||
+      !properties.name
+    )
+      return []
     const id =
       typeof candidate.id === 'string' || typeof candidate.id === 'number'
         ? candidate.id
@@ -94,14 +100,8 @@ export function drawingSnapshot(
         id,
         properties: {
           mode: 'polygon',
-          regionId:
-            typeof properties.regionId === 'string' && properties.regionId
-              ? properties.regionId
-              : createRegionId(),
-          name:
-            typeof properties.name === 'string' && properties.name
-              ? properties.name
-              : 'New region',
+          regionId: properties.regionId,
+          name: properties.name,
         },
         geometry: {
           type: 'Polygon',
@@ -110,6 +110,42 @@ export function drawingSnapshot(
       },
     ]
   })
+}
+
+export function provisionalPolygonVertexCount(
+  value: readonly unknown[],
+): number {
+  const provisional = value.find((candidate) => {
+    if (!isRecord(candidate) || !isRecord(candidate.properties)) return false
+    return candidate.properties.currentlyDrawing === true
+  })
+  if (!isRecord(provisional) || !isRecord(provisional.geometry)) return 0
+  if (
+    provisional.geometry.type !== 'Polygon' ||
+    !Array.isArray(provisional.geometry.coordinates)
+  )
+    return 0
+  const properties = isRecord(provisional.properties)
+    ? provisional.properties
+    : {}
+  const outerRing = provisional.geometry.coordinates[0]
+  if (!Array.isArray(outerRing)) return 0
+  const unique = new Set(
+    outerRing
+      .filter(
+        (coordinate): coordinate is number[] =>
+          Array.isArray(coordinate) &&
+          typeof coordinate[0] === 'number' &&
+          typeof coordinate[1] === 'number',
+      )
+      .map((coordinate) => `${coordinate[0]}:${coordinate[1]}`),
+  )
+  const committedCount =
+    typeof properties.committedCoordinateCount === 'number' &&
+    Number.isFinite(properties.committedCoordinateCount)
+      ? Math.max(0, Math.trunc(properties.committedCoordinateCount))
+      : 0
+  return Math.max(committedCount, unique.size)
 }
 
 export function diagnoseMap(

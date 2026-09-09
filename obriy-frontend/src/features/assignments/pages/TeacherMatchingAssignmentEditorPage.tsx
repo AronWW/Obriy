@@ -253,10 +253,6 @@ export function TeacherMatchingAssignmentEditorPage() {
             <ArrowLeft size={18} />
           </button>
           <div className={styles.editorHeading}>
-            <p className={styles.eyebrow}>
-              <Link2 size={15} />
-              {t('assignments.types.MATCHING.title')}
-            </p>
             <h1>
               {values.title.trim() ||
                 t('assignments.editor.matching.createTitle')}

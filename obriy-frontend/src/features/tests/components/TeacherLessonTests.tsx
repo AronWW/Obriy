@@ -50,10 +50,6 @@ export function TeacherLessonTests({ contentLocale, lessonId, readOnly }: { cont
     <section className={styles.lessonTests} aria-labelledby="lesson-tests-title">
       <header className={styles.lessonTestsHeader}>
         <div>
-          <p className={styles.eyebrow}>
-            <Beaker size={15} aria-hidden="true" />
-            {t('tests.lesson.eyebrow')}
-          </p>
           <h2 id="lesson-tests-title">{t('tests.lesson.title')}</h2>
           <p>{t('tests.lesson.description')}</p>
         </div>

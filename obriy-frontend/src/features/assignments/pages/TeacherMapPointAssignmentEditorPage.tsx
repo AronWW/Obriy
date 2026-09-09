@@ -246,9 +246,6 @@ export function TeacherMapPointAssignmentEditorPage() {
           <ArrowLeft size={18} aria-hidden="true" />
         </button>
         <div className={styles.editorHeading}>
-          <p className={styles.eyebrow}>
-            {t('assignments.types.MAP_POINT.title')}
-          </p>
           <h1>
             {assignmentId
               ? values.title || t('assignments.types.MAP_POINT.title')

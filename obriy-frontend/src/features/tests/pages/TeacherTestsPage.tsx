@@ -1,7 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Archive,
-  Beaker,
   Edit3,
   ListChecks,
   Plus,
@@ -72,10 +71,6 @@ export function TeacherTestsPage() {
       <div className={styles.content}>
         <header className={styles.intro}>
           <div>
-            <p className={styles.eyebrow}>
-              <Beaker size={15} />
-              {t('tests.library.eyebrow')}
-            </p>
             <h1>{t('tests.library.title')}</h1>
             <p>{t('tests.library.description')}</p>
           </div>

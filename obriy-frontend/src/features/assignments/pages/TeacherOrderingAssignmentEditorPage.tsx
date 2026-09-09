@@ -267,10 +267,6 @@ export function TeacherOrderingAssignmentEditorPage() {
             <ArrowLeft size={18} />
           </button>
           <div className={styles.editorHeading}>
-            <p className={styles.eyebrow}>
-              <ListOrdered size={15} />
-              {t('assignments.types.ORDERING.title')}
-            </p>
             <h1>
               {values.title.trim() ||
                 t('assignments.editor.ordering.createTitle')}

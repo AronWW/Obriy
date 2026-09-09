@@ -231,9 +231,6 @@ export function TeacherMapRegionAssignmentEditorPage() {
           <ArrowLeft size={18} aria-hidden="true" />
         </button>
         <div className={styles.editorHeading}>
-          <p className={styles.eyebrow}>
-            {t('assignments.types.MAP_REGION.title')}
-          </p>
           <h1>
             {assignmentId
               ? values.title || t('assignments.types.MAP_REGION.title')

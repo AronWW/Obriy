@@ -17,6 +17,7 @@ export function TeacherPlaceholderPage({
     <WorkspacePlaceholderPage
       namespace="teacherWorkspace"
       section={section}
+      showEyebrow={false}
     />
   )
 }

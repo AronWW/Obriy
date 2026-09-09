@@ -8,6 +8,7 @@ import {
   Save,
   Search,
   Trash2,
+  X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -99,6 +100,10 @@ function LoadedMapEditor({
     'IDLE' | 'SAVING' | 'SAVED' | 'ERROR' | 'CONFLICT'
   >('IDLE')
   const [publishing, setPublishing] = useState(false)
+  const [regionNaming, setRegionNaming] = useState<{
+    id: string
+    name: string
+  } | null>(null)
 
   const diagnostics = useMemo(
     () => diagnoseMap(drawingFeatures),
@@ -154,6 +159,15 @@ function LoadedMapEditor({
     const timeout = window.setTimeout(() => void persist(), 8_000)
     return () => window.clearTimeout(timeout)
   }, [dirty, persist])
+
+  useEffect(() => {
+    if (!regionNaming) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setRegionNaming(null)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [regionNaming])
 
   const handleGeometryChange = useCallback(
     (
@@ -380,12 +394,80 @@ function LoadedMapEditor({
             initialCollection={initialCollection}
             initialViewport={initialDraft.defaultViewport}
             onChange={handleGeometryChange}
+            onRegionCreated={(id, suggestedName) =>
+              setRegionNaming({ id, name: suggestedName })
+            }
             onSelectedRegion={setSelectedRegionId}
             ref={editorRef}
           />
           <DiagnosticsPanel diagnostics={diagnostics} />
         </section>
       </div>
+
+      {regionNaming && (
+        <div
+          className={styles.editorDialogBackdrop}
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setRegionNaming(null)
+          }}
+        >
+          <form
+            aria-labelledby="region-naming-title"
+            aria-modal="true"
+            className={styles.editorDialog}
+            onSubmit={(event) => {
+              event.preventDefault()
+              const nextName = regionNaming.name.trim()
+              if (!nextName) return
+              editorRef.current?.renameRegion(regionNaming.id, nextName)
+              setRegionNaming(null)
+            }}
+            role="dialog"
+          >
+            <div className={styles.editorDialogHeading}>
+              <h2 id="region-naming-title">{t('maps.editor.nameNewRegion')}</h2>
+              <button
+                aria-label={t('maps.editor.closeNaming')}
+                onClick={() => setRegionNaming(null)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <label className={styles.mapFormField}>
+              <span>{t('maps.editor.regionName')}</span>
+              <input
+                autoFocus
+                maxLength={160}
+                onChange={(event) =>
+                  setRegionNaming((current) =>
+                    current ? { ...current, name: event.target.value } : null,
+                  )
+                }
+                onFocus={(event) => event.currentTarget.select()}
+                value={regionNaming.name}
+              />
+            </label>
+            <p>{t('maps.editor.namingHint')}</p>
+            <div className={styles.formActions}>
+              <button
+                className={styles.secondaryMapAction}
+                onClick={() => setRegionNaming(null)}
+                type="button"
+              >
+                {t('maps.editor.keepDefaultName')}
+              </button>
+              <button
+                className={styles.primaryMapAction}
+                disabled={!regionNaming.name.trim()}
+                type="submit"
+              >
+                {t('maps.editor.saveRegionName')}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </main>
   )
 }

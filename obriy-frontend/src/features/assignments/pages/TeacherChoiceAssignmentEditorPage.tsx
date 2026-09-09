@@ -246,10 +246,6 @@ export function TeacherChoiceAssignmentEditorPage() {
             <ArrowLeft size={18} />
           </button>
           <div className={styles.editorHeading}>
-            <p className={styles.eyebrow}>
-              <TypeIcon size={15} />
-              {t(`assignments.types.${type}.title`)}
-            </p>
             <h1>
               {values.title.trim() ||
                 t('assignments.editor.choice.createTitle', {

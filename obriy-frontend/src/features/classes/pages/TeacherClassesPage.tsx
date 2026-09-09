@@ -57,10 +57,6 @@ export function TeacherClassesPage() {
       <div className={styles.content}>
         <header className={styles.intro}>
           <div>
-            <p className={styles.eyebrow}>
-              <School size={15} aria-hidden="true" />
-              {t('classes.teacher.eyebrow')}
-            </p>
             <h1 id="teacher-classes-title">{t('classes.teacher.title')}</h1>
             <p>{t('classes.teacher.description')}</p>
           </div>
@@ -91,7 +87,6 @@ export function TeacherClassesPage() {
           >
             <div className={styles.formHeading}>
               <div>
-                <p>{t('classes.teacher.create.eyebrow')}</p>
                 <h2 id="create-class-title">
                   {t('classes.teacher.create.title')}
                 </h2>

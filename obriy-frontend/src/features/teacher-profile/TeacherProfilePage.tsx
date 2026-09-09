@@ -75,8 +75,7 @@ export function TeacherProfilePage() {
   if (!user) {
     return (
       <section className={styles.page} aria-labelledby="teacher-profile-title">
-        <div className={styles.document}>
-          <p className={styles.eyebrow}>{t('teacherProfile.eyebrow')}</p>
+        <div className={styles.document} data-testid="teacher-profile-document">
           <h1 id="teacher-profile-title">{t('teacherProfile.title')}</h1>
           <p className={styles.unavailable} role="status">
             {t('teacherProfile.unavailable')}
@@ -100,9 +99,8 @@ export function TeacherProfilePage() {
 
   return (
     <section className={styles.page} aria-labelledby="teacher-profile-title">
-      <div className={styles.document}>
+      <div className={styles.document} data-testid="teacher-profile-document">
         <header className={styles.heading}>
-          <p className={styles.eyebrow}>{t('teacherProfile.eyebrow')}</p>
           <h1 id="teacher-profile-title">{t('teacherProfile.title')}</h1>
           <p>{t('teacherProfile.description')}</p>
         </header>
@@ -116,7 +114,6 @@ export function TeacherProfilePage() {
             )}
           </div>
           <div>
-            <p className={styles.identityLabel}>{t('teacherProfile.identityLabel')}</p>
             <p className={styles.identityName}>{displayName}</p>
             <p className={styles.identityHint}>{t('teacherProfile.avatarHint')}</p>
           </div>
@@ -124,7 +121,7 @@ export function TeacherProfilePage() {
 
         <form className={styles.form} noValidate onSubmit={(event) => void onSubmit(event)}>
           <fieldset disabled={saveMutation.isPending}>
-            <legend>{t('teacherProfile.formLegend')}</legend>
+            <legend className={styles.srOnly}>{t('teacherProfile.formLegend')}</legend>
 
             <label className={styles.field} htmlFor="teacher-display-name">
               <span className={styles.fieldLabel}>

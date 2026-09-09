@@ -115,10 +115,6 @@ export function TeacherMapSandboxPage() {
 
         <header className={styles.introWithAction}>
           <div className={styles.intro}>
-            <p className={styles.eyebrow}>
-              <MapIcon size={15} aria-hidden="true" />
-              {t('maps.sandbox.eyebrow')}
-            </p>
             <h1 id="map-sandbox-title">{t('maps.sandbox.title')}</h1>
             <p>{t('maps.sandbox.description')}</p>
           </div>
@@ -379,7 +375,6 @@ function CustomMapCreator({
     <section className={styles.importPanel} aria-labelledby="custom-map-title">
       <div className={styles.panelHeading}>
         <div>
-          <p className={styles.eyebrow}>{t('maps.import.eyebrow')}</p>
           <h2 id="custom-map-title">{t('maps.import.title')}</h2>
         </div>
         <button aria-label={t('maps.import.cancel')} onClick={onCancel} type="button">

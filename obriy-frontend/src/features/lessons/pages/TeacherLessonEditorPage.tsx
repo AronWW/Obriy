@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
-  BookOpen,
   Clock3,
   Eye,
   EyeOff,
@@ -322,12 +321,6 @@ export function TeacherLessonEditorPage() {
 
         <header className={styles.editorHeader}>
           <div>
-            <p className={styles.eyebrow}>
-              <BookOpen size={15} aria-hidden="true" />
-              {isNew
-                ? t('lessons.editor.createEyebrow')
-                : t('lessons.editor.editEyebrow')}
-            </p>
             <h1 id="lesson-editor-title">
               {isNew
                 ? t('lessons.editor.createTitle')

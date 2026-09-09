@@ -19,6 +19,7 @@ import {
   TeacherClassesPage,
 } from '../../features/classes'
 import { StudentOverviewPage } from '../../features/student-overview'
+import { StudentTasksPage } from '../../features/student-workspace'
 import { StudentProfilePage } from '../../features/student-profile'
 import { TeacherProfilePage } from '../../features/teacher-profile'
 import { TeacherOverviewPage } from '../../features/teacher-overview'
@@ -96,10 +97,7 @@ export function AppRouter() {
               path="classmates/:studentId"
               element={<ClassmateProfilePage />}
             />
-            <Route
-              path="tasks"
-              element={<StudentPlaceholderPage section="tasks" />}
-            />
+            <Route path="tasks" element={<StudentTasksPage />} />
             <Route
               path="achievements"
               element={<StudentPlaceholderPage section="achievements" />}

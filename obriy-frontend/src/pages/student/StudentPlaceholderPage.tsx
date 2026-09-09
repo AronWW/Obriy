@@ -15,7 +15,7 @@ export function StudentPlaceholderPage({
 }) {
   return (
     <WorkspacePlaceholderPage
-      namespace="studentWorkspace"
+      namespace="studentPlaceholder"
       section={section}
     />
   )

@@ -7,7 +7,7 @@ export function WorkspacePlaceholderPage({
   section,
   showEyebrow = true,
 }: {
-  namespace: 'studentWorkspace' | 'teacherWorkspace'
+  namespace: 'studentPlaceholder' | 'studentWorkspace' | 'teacherWorkspace'
   section: string
   showEyebrow?: boolean
 }) {

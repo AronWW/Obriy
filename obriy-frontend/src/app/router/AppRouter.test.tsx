@@ -66,6 +66,25 @@ describe('AppRouter auth boundaries', () => {
           recent: { lessons: [], assignments: [], tests: [] },
         }),
       ),
+      http.get(`${API_BASE_URL}/student/dashboard`, () =>
+        HttpResponse.json({
+          class: null,
+          metrics: {
+            requiredReleaseCount: 0,
+            completedCount: 0,
+            completionPercent: null,
+            averagePercent: null,
+            attentionCount: 0,
+            nextDueAt: null,
+          },
+          attention: [],
+          upcoming: [],
+          continueLessons: [],
+        }),
+      ),
+      http.get(`${API_BASE_URL}/student/tasks`, () =>
+        HttpResponse.json({ class: null, items: [], nextCursor: null }),
+      ),
     )
   })
 
@@ -151,7 +170,7 @@ describe('AppRouter auth boundaries', () => {
     })
   })
 
-  it('renders the student menu and opens its placeholder routes', async () => {
+  it('renders the student menu and opens its workspace routes', async () => {
     const user = userEvent.setup()
 
     renderRouter('/app/student')
@@ -160,10 +179,10 @@ describe('AppRouter auth boundaries', () => {
       await screen.findByRole('heading', { name: 'Огляд', level: 1 }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: 'Відкрити профіль' }),
+      await screen.findByRole('link', { name: 'Відкрити профіль' }),
     ).toHaveAttribute('href', '/app/student/profile')
     expect(
-      screen.getByRole('heading', { name: 'Твій прогрес' }),
+      screen.getByRole('heading', { name: 'Спершу приєднайся до класу' }),
     ).toBeInTheDocument()
     expect(screen.queryByText(/XP/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Рівень/i)).not.toBeInTheDocument()

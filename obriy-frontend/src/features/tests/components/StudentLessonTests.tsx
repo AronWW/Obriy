@@ -28,9 +28,10 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/api-client'
 import { registerWorkspaceNavigationGuard } from '../../../shared/navigation/workspace-navigation-guard'
+import { studentWorkspaceQueryKeys } from '../../student-workspace/model/student-workspace-query-keys'
 import { AssignmentConfirmDialog } from '../../assignments/components/AssignmentConfirmDialog'
 import { AssignmentDialog } from '../../assignments/components/AssignmentDialog'
 import { assignmentImageUrl } from '../../assignments/api/assignments.api'
@@ -81,7 +82,14 @@ const MapCanvas = lazy(() =>
 
 export function StudentLessonTests({ lessonId }: { lessonId: string }) {
   const { t } = useTranslation()
-  const [releaseId, setReleaseId] = useState<string | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const releaseId = searchParams.get('test')
+  const setReleaseId = (nextReleaseId: string | null) => {
+    const next = new URLSearchParams(searchParams)
+    if (nextReleaseId) next.set('test', nextReleaseId)
+    else next.delete('test')
+    setSearchParams(next, { replace: true })
+  }
   const query = useQuery({
     queryKey: testQueryKeys.studentLesson(lessonId),
     queryFn: () => listStudentLessonTests(lessonId),
@@ -93,10 +101,6 @@ export function StudentLessonTests({ lessonId }: { lessonId: string }) {
       aria-labelledby="student-tests-title"
     >
       <header className={styles.studentTestsHeader}>
-        <p className={styles.eyebrow}>
-          <Beaker size={15} />
-          {t('tests.student.eyebrow')}
-        </p>
         <h2 id="student-tests-title">{t('tests.student.title')}</h2>
         <p>{t('tests.student.description')}</p>
       </header>
@@ -266,6 +270,9 @@ function StudentTestRunner({
     })
     await queryClient.invalidateQueries({
       queryKey: testQueryKeys.studentLesson(lessonId),
+    })
+    await queryClient.invalidateQueries({
+      queryKey: studentWorkspaceQueryKeys.root,
     })
   }
   const start = useMutation({

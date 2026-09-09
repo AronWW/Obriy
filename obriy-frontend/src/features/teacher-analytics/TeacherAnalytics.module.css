@@ -1,0 +1,826 @@
+.page {
+  min-height: 100%;
+  padding: var(--workspace-page-top) clamp(22px, 4vw, 58px) 72px;
+  color: var(--ink);
+}
+
+.content {
+  width: min(100%, 1240px);
+  margin: 0 auto;
+}
+
+.intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.intro h1,
+.studentHero h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 500;
+  line-height: 1.08;
+}
+
+.intro p,
+.studentHero p {
+  max-width: 720px;
+  margin: 11px 0 0;
+  color: var(--copy);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.classSelect {
+  display: grid;
+  min-width: min(100%, 270px);
+  gap: 7px;
+}
+
+.classSelect > span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.classSelect select,
+.sortField select,
+.searchField input {
+  min-height: 42px;
+  color: var(--ink);
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  font: inherit;
+  font-size: 13px;
+}
+
+.classSelect select,
+.sortField select {
+  padding: 0 34px 0 12px;
+}
+
+.classSelect select:focus,
+.sortField select:focus,
+.searchField input:focus {
+  border-color: var(--archive-blue);
+  outline: 2px solid color-mix(in srgb, var(--archive-blue), transparent 80%);
+  outline-offset: 1px;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.metricCard {
+  display: flex;
+  min-width: 0;
+  min-height: 112px;
+  align-items: center;
+  gap: 12px;
+  padding: 17px;
+  background: var(--panel-solid);
+  border: 1px solid var(--line-soft);
+}
+
+.metricCard[data-accent='true'] {
+  border-color: color-mix(in srgb, var(--gold), var(--line) 55%);
+}
+
+.metricCard > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold), transparent 92%);
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 72%);
+  border-radius: 50%;
+}
+
+.metricCard strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.metricCard p {
+  margin: 6px 0 0;
+  color: var(--copy);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs button {
+  position: relative;
+  min-height: 43px;
+  padding: 0 18px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tabs button::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  content: '';
+  background: transparent;
+}
+
+.tabs .activeTab {
+  color: var(--archive-blue);
+}
+
+.tabs .activeTab::after {
+  background: var(--gold);
+}
+
+.panel,
+.materials,
+.studentResults {
+  margin-top: 16px;
+}
+
+.panel {
+  background: var(--panel-solid);
+  border: 1px solid var(--line-soft);
+}
+
+.panelHeader,
+.materialsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.panelHeader {
+  padding: 19px 20px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.panelHeader h2,
+.materialsHeader h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 600;
+}
+
+.panelHeader p,
+.materialsHeader p {
+  margin: 5px 0 0;
+  color: var(--copy);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.studentTools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.searchField {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchField > svg {
+  position: absolute;
+  left: 12px;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+.searchField input {
+  width: 210px;
+  padding: 0 12px 0 36px;
+}
+
+.directionButton {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--archive-blue);
+  background: transparent;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.tableScroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.studentsTable {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+}
+
+.studentsTable th {
+  padding: 11px 14px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-align: left;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--panel-solid), var(--ink) 2%);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.studentsTable td {
+  padding: 13px 14px;
+  color: var(--copy);
+  font-size: 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.studentsTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.studentsTable tbody tr:hover {
+  background: color-mix(in srgb, var(--gold), transparent 97%);
+}
+
+.studentsTable td > strong,
+.studentsTable td > small {
+  display: block;
+}
+
+.studentsTable td > strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.studentsTable td > small {
+  margin-top: 4px;
+  color: var(--ink-soft);
+}
+
+.studentIdentity {
+  display: flex;
+  min-width: 180px;
+  align-items: center;
+  gap: 10px;
+}
+
+.studentIdentity > span,
+.studentAvatar {
+  display: grid;
+  flex: 0 0 auto;
+  overflow: hidden;
+  place-items: center;
+  color: var(--panel-solid);
+  background: var(--archive-blue-deep);
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.studentIdentity > span {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+}
+
+.studentIdentity img,
+.studentAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.studentIdentity strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.statuses,
+.compactStatuses,
+.testBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.statuses span,
+.compactStatuses span,
+.testBadges span,
+.testTitle > div span {
+  padding: 4px 7px;
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--ink), transparent 95%);
+  border: 1px solid var(--line-soft);
+}
+
+.statuses span[data-status='completed'],
+.compactStatuses span[data-status='completed'] {
+  color: var(--color-success);
+}
+
+.statuses span[data-status='awaitingReview'],
+.compactStatuses span[data-status='awaitingReview'] {
+  color: var(--gold);
+}
+
+.compactStatuses {
+  max-width: 130px;
+}
+
+.rowLink {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--archive-blue);
+  border: 1px solid var(--line-soft);
+  text-decoration: none;
+}
+
+.materials {
+  display: grid;
+  gap: 12px;
+}
+
+.materialsHeader {
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--panel-solid), transparent 4%);
+  border: 1px solid var(--line-soft);
+}
+
+.lessonCard,
+.studentLesson,
+.studentTest {
+  background: var(--panel-solid);
+  border: 1px solid var(--line-soft);
+}
+
+.lessonCard > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 19px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.lessonCard h3,
+.studentLesson > h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.lessonCard > header > div:first-child > span {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.lessonMetrics,
+.testScores {
+  display: flex;
+  gap: 15px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.lessonMetrics strong,
+.testScores strong {
+  color: var(--ink);
+}
+
+.testList {
+  display: grid;
+}
+
+.testRow {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.5fr) minmax(110px, .65fr) minmax(160px, .8fr) minmax(90px, auto);
+  align-items: center;
+  gap: 16px;
+  padding: 14px 19px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.testRow:last-child {
+  border-bottom: 0;
+}
+
+.testTitle > strong {
+  display: block;
+  font-size: 13px;
+}
+
+.testTitle > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+[data-release='ACTIVE'] {
+  color: var(--color-success) !important;
+}
+
+[data-release='SCHEDULED'] {
+  color: var(--archive-blue) !important;
+}
+
+.testDates span,
+.testDates strong {
+  display: block;
+}
+
+.testDates span {
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.testDates strong {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.testScores {
+  display: grid;
+  gap: 5px;
+}
+
+.loading {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.loading span {
+  height: 112px;
+  background: color-mix(in srgb, var(--panel-solid), var(--ink) 3%);
+  border: 1px solid var(--line-soft);
+  animation: analyticsPulse 1.4s ease-in-out infinite;
+}
+
+.loading p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--copy);
+  font-size: 13px;
+}
+
+.errorState,
+.largeEmpty,
+.emptyState {
+  background: var(--panel-solid);
+  border: 1px solid var(--line-soft);
+}
+
+.errorState {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+}
+
+.errorState > div {
+  flex: 1;
+}
+
+.errorState p {
+  margin: 5px 0 0;
+  color: var(--copy);
+  font-size: 12px;
+}
+
+.errorState button,
+.largeEmpty a,
+.reviewAttemptLink {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  color: var(--archive-blue);
+  background: transparent;
+  border: 1px solid var(--line);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.largeEmpty {
+  display: grid;
+  min-height: 300px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 32px;
+  text-align: center;
+}
+
+.largeEmpty > svg {
+  color: var(--gold);
+}
+
+.largeEmpty h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 25px;
+}
+
+.largeEmpty p {
+  max-width: 500px;
+  margin: 0 0 5px;
+  color: var(--copy);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.emptyState {
+  padding: 32px 20px;
+  color: var(--copy);
+  text-align: center;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 20px;
+  color: var(--archive-blue);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.studentHero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.studentHero h1 {
+  font-size: clamp(32px, 4vw, 48px);
+}
+
+.studentAvatar {
+  width: 62px;
+  height: 62px;
+  font-size: 19px;
+}
+
+.studentResults {
+  display: grid;
+  gap: 12px;
+}
+
+.studentLesson > h3 {
+  padding: 16px 19px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.studentTestList {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.studentTest > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.studentTest h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.testBadges {
+  margin-top: 8px;
+}
+
+.studentTestScore {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.studentTestScore strong,
+.studentTestScore span {
+  display: block;
+}
+
+.studentTestScore strong {
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+
+.studentTestScore span {
+  color: var(--ink-soft);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.testFacts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.testFacts > div {
+  padding: 13px 18px;
+  border-right: 1px solid var(--line-soft);
+}
+
+.testFacts > div:last-child {
+  border-right: 0;
+}
+
+.testFacts dt {
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.testFacts dd {
+  margin: 5px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.attemptsBlock {
+  padding: 15px 18px 18px;
+}
+
+.attemptsBlock h5 {
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+
+.attemptList {
+  display: grid;
+  gap: 6px;
+}
+
+.attemptRow {
+  display: grid;
+  grid-template-columns: minmax(105px, .8fr) minmax(105px, .8fr) minmax(110px, .8fr) minmax(210px, 1.4fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: var(--copy);
+  font-size: 11px;
+  background: color-mix(in srgb, var(--panel-solid), var(--ink) 2%);
+  border: 1px solid var(--line-soft);
+}
+
+.attemptNumber {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.attemptDates {
+  display: grid;
+  gap: 3px;
+}
+
+.attemptDates span {
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
+.attemptDates time {
+  color: var(--copy);
+  font-weight: 700;
+}
+
+.reviewAttemptLink {
+  min-height: 32px;
+}
+
+.noReview {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--ink-soft);
+}
+
+.noAttempts {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes analyticsPulse {
+  50% { opacity: .5; }
+}
+
+@media (max-width: 1120px) {
+  .metricsGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .panelHeader { align-items: flex-start; flex-direction: column; }
+  .studentTools { width: 100%; }
+  .searchField { flex: 1; }
+  .searchField input { width: 100%; }
+  .testRow { grid-template-columns: minmax(200px, 1.4fr) minmax(110px, .7fr) minmax(160px, .8fr); }
+  .testRow > .compactStatuses { grid-column: 1 / -1; max-width: none; }
+}
+
+@media (max-width: 760px) {
+  .page { padding: var(--workspace-page-top) 14px 42px; }
+  .intro { align-items: stretch; flex-direction: column; }
+  .classSelect { width: 100%; min-width: 0; }
+  .metricsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metricCard { min-height: 94px; padding: 13px; }
+  .metricCard:last-child { grid-column: 1 / -1; }
+  .studentTools { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .searchField { grid-column: 1 / -1; }
+  .sortField select { width: 100%; }
+  .lessonCard > header { align-items: flex-start; flex-direction: column; }
+  .testRow { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .testTitle { grid-column: 1 / -1; }
+  .testRow > .compactStatuses { grid-column: 1 / -1; }
+  .studentHero { align-items: flex-start; }
+  .testFacts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .testFacts > div:nth-child(2) { border-right: 0; }
+  .testFacts > div:nth-child(-n + 2) { border-bottom: 1px solid var(--line-soft); }
+  .attemptRow { grid-template-columns: 1fr auto; }
+  .attemptRow > *:nth-child(3), .attemptRow > *:nth-child(4) { justify-self: start; }
+  .attemptRow > *:last-child { grid-column: 2; grid-row: 1 / span 2; }
+  .errorState { align-items: stretch; flex-direction: column; }
+}
+
+@media (max-width: 430px) {
+  .metricsGrid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metricCard { align-items: flex-start; flex-direction: column; }
+  .studentTest > header { flex-direction: column; }
+  .studentTestScore { text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading span { animation: none; }
+}

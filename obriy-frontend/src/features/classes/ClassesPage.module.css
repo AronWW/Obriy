@@ -387,8 +387,20 @@
   flex: 1;
 }
 
-.detailHero > button {
+.detailHero > button,
+.detailActions {
   flex: 0 0 auto;
+}
+
+.detailActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.detailActions .secondaryButton {
+  text-decoration: none;
 }
 
 .detailGrid {
@@ -651,6 +663,11 @@
   }
 
   .detailHero > button {
+    width: 100%;
+  }
+
+  .detailActions,
+  .detailActions .secondaryButton {
     width: 100%;
   }
 }

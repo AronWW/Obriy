@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Edit3, Save, School, UsersRound, X } from 'lucide-react'
+import { ArrowLeft, BarChart3, Edit3, Save, School, UsersRound, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -116,14 +116,23 @@ export function TeacherClassDetailPage() {
               })}
             </p>
           </div>
-          <button
-            className={styles.secondaryButton}
-            type="button"
-            onClick={openEditor}
-          >
-            <Edit3 size={16} aria-hidden="true" />
-            {t('classes.teacher.edit.action')}
-          </button>
+          <div className={styles.detailActions}>
+            <Link
+              className={styles.secondaryButton}
+              to={`/app/teacher/analytics?classId=${classroom.id}&tab=students`}
+            >
+              <BarChart3 size={16} aria-hidden="true" />
+              {t('classes.teacher.detail.analytics')}
+            </Link>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={openEditor}
+            >
+              <Edit3 size={16} aria-hidden="true" />
+              {t('classes.teacher.edit.action')}
+            </button>
+          </div>
         </header>
 
         {isEditing && (

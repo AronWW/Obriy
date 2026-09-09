@@ -23,6 +23,10 @@ import { StudentProfilePage } from '../../features/student-profile'
 import { TeacherProfilePage } from '../../features/teacher-profile'
 import { TeacherOverviewPage } from '../../features/teacher-overview'
 import {
+  TeacherAnalyticsPage,
+  TeacherStudentAnalyticsPage,
+} from '../../features/teacher-analytics'
+import {
   TeacherAssignmentEditorPage,
   TeacherAssignmentsPage,
 } from '../../features/assignments'
@@ -43,7 +47,6 @@ import { RoleSelectionPage } from '../../pages/auth/RoleSelectionPage'
 import { VerifyEmailPage } from '../../pages/auth/VerifyEmailPage'
 import { DesignLabPage } from '../../pages/design-lab/DesignLabPage'
 import { HomePage } from '../../pages/home/HomePage'
-import { TeacherPlaceholderPage } from '../../pages/teacher/TeacherPlaceholderPage'
 import { StudentPlaceholderPage } from '../../pages/student/StudentPlaceholderPage'
 
 const TeacherMapSandboxPage = lazy(() =>
@@ -153,9 +156,10 @@ export function AppRouter() {
               path="tests/:testId/edit"
               element={<TeacherTestEditorPage />}
             />
+            <Route path="analytics" element={<TeacherAnalyticsPage />} />
             <Route
-              path="analytics"
-              element={<TeacherPlaceholderPage section="analytics" />}
+              path="analytics/classes/:classId/students/:studentId"
+              element={<TeacherStudentAnalyticsPage />}
             />
             <Route path="profile" element={<TeacherProfilePage />} />
           </Route>

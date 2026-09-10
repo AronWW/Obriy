@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowDown, ArrowUp, Beaker, Edit3, Plus, RefreshCw, Search, Unlink } from 'lucide-react'
+import { ArrowDown, ArrowUp, Beaker, Edit3, Plus, RefreshCw, Search, Settings2, Unlink } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -17,12 +17,14 @@ import {
 import { testQueryKeys } from '../model/test-query-keys'
 import type { LessonTest, TestEditor, TestSummary } from '../model/test.types'
 import styles from '../Tests.module.css'
+import { TeacherTestReleaseDialog } from './TeacherTestReleaseDialog'
 
 export function TeacherLessonTests({ contentLocale, lessonId, readOnly }: { contentLocale: TestEditor['contentLocale']; lessonId: string; readOnly: boolean }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [unlinkTarget, setUnlinkTarget] = useState<LessonTest | null>(null)
+  const [releaseTarget, setReleaseTarget] = useState<LessonTest | null>(null)
   const query = useQuery({
     queryKey: testQueryKeys.lesson(lessonId),
     queryFn: () => listLessonTests(lessonId),
@@ -37,8 +39,11 @@ export function TeacherLessonTests({ contentLocale, lessonId, readOnly }: { cont
       if (input.type === 'update') return updateLessonTestVersion(lessonId, input.testId)
       return reorderLessonTests(lessonId, input.testIds)
     },
-    onSuccess: (_result, input) => {
-      if (input.type === 'link') setPickerOpen(false)
+    onSuccess: (result, input) => {
+      if (input.type === 'link') {
+        setPickerOpen(false)
+        if (result && !Array.isArray(result)) setReleaseTarget(result)
+      }
       if (input.type === 'unlink') setUnlinkTarget(null)
       void queryClient.invalidateQueries({ queryKey: testQueryKeys.lesson(lessonId) })
       void queryClient.invalidateQueries({ queryKey: testQueryKeys.lists })
@@ -93,9 +98,7 @@ export function TeacherLessonTests({ contentLocale, lessonId, readOnly }: { cont
                 <h3>{link.title}</h3>
                 <p>{link.description || t('tests.library.noDescription')}</p>
                 <small>
-                  {link.activeReleaseCount > 0
-                    ? t('tests.lesson.activeClasses', { count: link.activeReleaseCount })
-                    : t('tests.lesson.notReleased')}
+                  {lessonReleaseSummary(link, t)}
                 </small>
               </div>
               <div className={styles.lessonTestActions}>
@@ -112,6 +115,11 @@ export function TeacherLessonTests({ contentLocale, lessonId, readOnly }: { cont
                 {link.hasUpdate && !readOnly && (
                   <button aria-label={t('tests.lesson.updateVersion')} disabled={action.isPending} onClick={() => action.mutate({ type: 'update', testId: link.testId })} type="button">
                     <RefreshCw size={15} />
+                  </button>
+                )}
+                {!readOnly && (
+                  <button aria-label={t('tests.releases.open')} disabled={action.isPending} onClick={() => setReleaseTarget(link)} type="button">
+                    <Settings2 size={15} />
                   </button>
                 )}
                 <Link aria-label={t('tests.actions.edit')} to={`/app/teacher/tests/${link.testId}/edit`}><Edit3 size={15} /></Link>
@@ -150,6 +158,14 @@ export function TeacherLessonTests({ contentLocale, lessonId, readOnly }: { cont
           title={t('tests.lesson.unlinkTitle')}
         />
       )}
+      {releaseTarget && (
+        <TeacherTestReleaseDialog
+          lessonId={lessonId}
+          onClose={() => setReleaseTarget(null)}
+          testId={releaseTarget.testId}
+          title={releaseTarget.title}
+        />
+      )}
     </section>
   )
 }
@@ -165,6 +181,17 @@ function move(links: LessonTest[], index: number, direction: -1 | 1): string[] {
   const target = index + direction
   ;[next[index], next[target]] = [next[target], next[index]]
   return next.map((link) => link.testId)
+}
+
+function lessonReleaseSummary(link: LessonTest, t: (key: string, options?: Record<string, unknown>) => string): string {
+  if (link.activeReleaseCount > 0) return t('tests.lesson.activeClasses', { count: link.activeReleaseCount })
+  const draftCount = link.releaseStatuses.filter((status) => status === 'DRAFT').length
+  if (draftCount > 0) return t('tests.lesson.draftClasses', { count: draftCount })
+  const scheduledCount = link.releaseStatuses.filter((status) => status === 'SCHEDULED').length
+  if (scheduledCount > 0) return t('tests.lesson.scheduledClasses', { count: scheduledCount })
+  const closedCount = link.releaseStatuses.filter((status) => status === 'CLOSED').length
+  if (closedCount > 0) return t('tests.lesson.closedClasses', { count: closedCount })
+  return t('tests.lesson.notReleased')
 }
 
 function LessonTestPicker({ contentLocale, error, linkedIds, onClose, onSelect, pending }: {

@@ -303,6 +303,7 @@ describe('Tests module (e2e)', () => {
       .set('Authorization', bearer('teacher'))
       .send({ published: true })
       .expect(200);
+    await publishRelease(testId);
 
     const studentListResponse = await request(context.app.getHttpServer())
       .get(`/classes/me/lessons/${lessonId}/tests`)
@@ -349,6 +350,32 @@ describe('Tests module (e2e)', () => {
     const itemByType = new Map(
       studentItems.map((item) => [getStringValue(item, 'type'), item] as const),
     );
+    const closedReleaseResponse = await request(context.app.getHttpServer())
+      .post(`/test-releases/${releaseId}/close`)
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    expect(getResponseBody(closedReleaseResponse)).toEqual(
+      expect.objectContaining({ status: 'CLOSED' }),
+    );
+    await saveAnswer(
+      attemptId,
+      getStringValue(itemByType.get(AssignmentType.WRITTEN)!, 'id'),
+      { text: 'Saved while the release is closed.', attachmentIds: [] },
+    );
+    const resumedClosedAttempt = await request(context.app.getHttpServer())
+      .post(`/test-releases/${releaseId}/attempts`)
+      .set('Authorization', bearer('student'))
+      .expect(200);
+    expect(getStringField(resumedClosedAttempt, 'id')).toBe(attemptId);
+    await request(context.app.getHttpServer())
+      .post(`/test-releases/${releaseId}/reopen`)
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    await request(context.app.getHttpServer())
+      .patch(`/test-releases/${releaseId}`)
+      .set('Authorization', bearer('student'))
+      .send({ xpReward: 999 })
+      .expect(403);
     await saveAnswer(
       attemptId,
       getStringValue(itemByType.get(AssignmentType.WRITTEN)!, 'id'),
@@ -719,6 +746,7 @@ describe('Tests module (e2e)', () => {
       .set('Authorization', bearer('teacher'))
       .send({ testId })
       .expect(201);
+    await publishRelease(testId);
 
     const studentListResponse = await request(context.app.getHttpServer())
       .get(`/classes/me/lessons/${lessonId}/tests`)
@@ -842,6 +870,7 @@ describe('Tests module (e2e)', () => {
       .set('Authorization', bearer('teacher'))
       .send({ testId })
       .expect(201);
+    await publishRelease(testId);
 
     const studentListResponse = await request(context.app.getHttpServer())
       .get(`/classes/me/lessons/${lessonId}/tests`)
@@ -968,6 +997,7 @@ describe('Tests module (e2e)', () => {
       .set('Authorization', bearer('teacher'))
       .send({ testId })
       .expect(201);
+    await publishRelease(testId);
 
     const studentListResponse = await request(context.app.getHttpServer())
       .get(`/classes/me/lessons/${lessonId}/tests`)
@@ -1162,6 +1192,7 @@ describe('Tests module (e2e)', () => {
       .set('Authorization', bearer('teacher'))
       .send({ testId })
       .expect(201);
+    await publishRelease(testId);
 
     const studentListResponse = await request(context.app.getHttpServer())
       .get(`/classes/me/lessons/${lessonId}/tests`)
@@ -1308,6 +1339,7 @@ describe('Tests module (e2e)', () => {
       .set('Authorization', bearer('teacher'))
       .send({ testId })
       .expect(201);
+    await publishRelease(testId);
 
     const studentListResponse = await request(context.app.getHttpServer())
       .get(`/classes/me/lessons/${lessonId}/tests`)
@@ -1575,6 +1607,29 @@ describe('Tests module (e2e)', () => {
       })
       .expect(201);
     return getStringField(response, 'id');
+  }
+
+  async function publishRelease(testId: string): Promise<string> {
+    const listResponse = await request(context.app.getHttpServer())
+      .get(`/lessons/${lessonId}/tests/${testId}/releases`)
+      .set('Authorization', bearer('teacher'))
+      .expect(200);
+    const draft = getResponseArray(listResponse).find(
+      (release) => release.status === 'DRAFT',
+    );
+    if (!draft) throw new Error('Expected a draft test release');
+    const releaseId = getStringValue(draft, 'id');
+    await request(context.app.getHttpServer())
+      .patch(`/lessons/${lessonId}/tests/${testId}/releases/bulk`)
+      .set('Authorization', bearer('teacher'))
+      .send({ releaseIds: [releaseId], settings: { xpReward: 100 } })
+      .expect(200);
+    await request(context.app.getHttpServer())
+      .post(`/lessons/${lessonId}/tests/${testId}/releases/publish`)
+      .set('Authorization', bearer('teacher'))
+      .send({ releaseIds: [releaseId] })
+      .expect(200);
+    return releaseId;
   }
 
   async function saveAnswer(

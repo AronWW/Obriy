@@ -6,6 +6,8 @@ export const testQueryKeys = {
   list: (filters: TestFilters) => ['tests', 'list', filters] as const,
   detail: (testId: string) => ['tests', 'detail', testId] as const,
   lesson: (lessonId: string) => ['tests', 'lesson', lessonId] as const,
+  lessonReleases: (lessonId: string, testId: string) =>
+    ['tests', 'lesson', lessonId, testId, 'releases'] as const,
   studentLesson: (lessonId: string) =>
     ['tests', 'student-lesson', lessonId] as const,
   release: (releaseId: string) => ['tests', 'release', releaseId] as const,

@@ -803,7 +803,6 @@ export class LessonsService {
       select: { testId: true },
     });
     const releasedTestIds = new Set(existing.map((release) => release.testId));
-    const publishedAt = new Date();
     const releaseData = links
       .filter((link) => !releasedTestIds.has(link.testId))
       .map((link) => ({
@@ -811,7 +810,7 @@ export class LessonsService {
         testRevisionId: link.testRevisionId,
         classId,
         lessonId,
-        status: TestReleaseStatus.ACTIVE,
+        status: TestReleaseStatus.DRAFT,
         maxPoints: link.revision.items.reduce(
           (sum, item) => sum + Number(item.maxPoints),
           0,
@@ -821,7 +820,7 @@ export class LessonsService {
         timeLimitSeconds: link.revision.timeLimitSeconds,
         maxAttempts: link.revision.maxAttempts,
         scorePolicy: link.revision.scorePolicy,
-        publishedAt,
+        xpReward: 100,
       }));
     if (releaseData.length === 0) {
       return;

@@ -4,6 +4,7 @@ import type {
   LessonTest,
   StudentLessonTest,
   StudentTestAttempt,
+  TeacherTestRelease,
   TeacherTestAttemptReview,
   TeacherTestReviewList,
   TestDraftVersionInput,
@@ -11,6 +12,7 @@ import type {
   TestFilters,
   TestListResponse,
   UpdateTestDraftInput,
+  UpdateTestReleaseSettingsInput,
 } from '../model/test.types'
 
 export function listTests(
@@ -173,6 +175,75 @@ export function unlinkLessonTest(
   return authorizedRequest<void>(`/lessons/${lessonId}/tests/${testId}`, {
     method: 'DELETE',
   })
+}
+
+export function listTeacherTestReleases(
+  lessonId: string,
+  testId: string,
+): Promise<TeacherTestRelease[]> {
+  return authorizedRequest<TeacherTestRelease[]>(
+    `/lessons/${lessonId}/tests/${testId}/releases`,
+  )
+}
+
+export function updateTeacherTestRelease(
+  releaseId: string,
+  settings: UpdateTestReleaseSettingsInput,
+): Promise<TeacherTestRelease> {
+  return authorizedRequest<TeacherTestRelease>(`/test-releases/${releaseId}`, {
+    method: 'PATCH',
+    body: settings,
+  })
+}
+
+export function updateTeacherTestReleases(
+  lessonId: string,
+  testId: string,
+  releaseIds: string[],
+  settings: UpdateTestReleaseSettingsInput,
+): Promise<TeacherTestRelease[]> {
+  return authorizedRequest<TeacherTestRelease[]>(
+    `/lessons/${lessonId}/tests/${testId}/releases/bulk`,
+    { method: 'PATCH', body: { releaseIds, settings } },
+  )
+}
+
+export function publishTeacherTestRelease(
+  releaseId: string,
+): Promise<TeacherTestRelease> {
+  return authorizedRequest<TeacherTestRelease>(
+    `/test-releases/${releaseId}/publish`,
+    { method: 'POST' },
+  )
+}
+
+export function publishTeacherTestReleases(
+  lessonId: string,
+  testId: string,
+  releaseIds: string[],
+): Promise<TeacherTestRelease[]> {
+  return authorizedRequest<TeacherTestRelease[]>(
+    `/lessons/${lessonId}/tests/${testId}/releases/publish`,
+    { method: 'POST', body: { releaseIds } },
+  )
+}
+
+export function closeTeacherTestRelease(
+  releaseId: string,
+): Promise<TeacherTestRelease> {
+  return authorizedRequest<TeacherTestRelease>(
+    `/test-releases/${releaseId}/close`,
+    { method: 'POST' },
+  )
+}
+
+export function reopenTeacherTestRelease(
+  releaseId: string,
+): Promise<TeacherTestRelease> {
+  return authorizedRequest<TeacherTestRelease>(
+    `/test-releases/${releaseId}/reopen`,
+    { method: 'POST' },
+  )
 }
 
 export function listStudentLessonTests(

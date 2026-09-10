@@ -8,6 +8,7 @@ import {
 import {
   Prisma,
   TestAttemptStatus,
+  TestLatePolicy,
   TestReleaseStatus,
   TestRevisionStatus,
   UserRole,
@@ -22,6 +23,25 @@ const openReleaseStatuses: TestReleaseStatus[] = [
   TestReleaseStatus.SCHEDULED,
   TestReleaseStatus.ACTIVE,
 ];
+
+const currentReleaseStatuses: TestReleaseStatus[] = [
+  ...openReleaseStatuses,
+  TestReleaseStatus.CLOSED,
+];
+
+type ReleaseSettingsTemplate = {
+  classId: string;
+  status: TestReleaseStatus;
+  isRequired: boolean;
+  availableFrom: Date | null;
+  dueAt: Date | null;
+  maxAttempts: number | null;
+  latePolicy: TestLatePolicy;
+  latePenaltyPercent: Prisma.Decimal | null;
+  xpReward: number;
+  publishedAt: Date | null;
+  closedAt: Date | null;
+};
 
 const lessonTestSelect = {
   id: true,
@@ -76,7 +96,11 @@ export class LessonTestsService {
       select: lessonTestSelect,
     });
     const releases = await this.prisma.testRelease.findMany({
-      where: { lessonId, testId: { in: links.map((link) => link.testId) } },
+      where: {
+        lessonId,
+        testId: { in: links.map((link) => link.testId) },
+        status: { in: currentReleaseStatuses },
+      },
       select: { testId: true, status: true },
     });
     const statuses = new Map<string, TestReleaseStatus[]>();
@@ -181,7 +205,27 @@ export class LessonTestsService {
           testId,
           revisionId,
         );
-        await this.archiveOpenReleases(transaction, lessonId, testId);
+        const releaseTemplates = await transaction.testRelease.findMany({
+          where: {
+            lessonId,
+            testId,
+            status: { in: currentReleaseStatuses },
+          },
+          select: {
+            classId: true,
+            status: true,
+            isRequired: true,
+            availableFrom: true,
+            dueAt: true,
+            maxAttempts: true,
+            latePolicy: true,
+            latePenaltyPercent: true,
+            xpReward: true,
+            publishedAt: true,
+            closedAt: true,
+          },
+        });
+        await this.archiveCurrentReleases(transaction, lessonId, testId);
         await transaction.lessonTest.update({
           where: { id: link.id },
           data: { testRevisionId: revisionId },
@@ -191,6 +235,7 @@ export class LessonTestsService {
           lessonId,
           testId,
           revision,
+          releaseTemplates,
         );
       });
     }
@@ -327,6 +372,7 @@ export class LessonTestsService {
     revision: Awaited<
       ReturnType<LessonTestsService['findOwnedPublishedRevision']>
     >,
+    templates: ReleaseSettingsTemplate[] = [],
   ): Promise<void> {
     const classLinks = await transaction.classLesson.findMany({
       where: { lessonId, publishedAt: { not: null } },
@@ -339,21 +385,52 @@ export class LessonTestsService {
       (sum, item) => sum + Number(item.maxPoints),
       0,
     );
+    const templateByClass = new Map(
+      templates.map((template) => [template.classId, template] as const),
+    );
     await transaction.testRelease.createMany({
-      data: classLinks.map((classLink) => ({
-        testId,
-        testRevisionId: revision.id,
+      data: classLinks.map((classLink) => {
+        const template = templateByClass.get(classLink.classId);
+        return {
+          testId,
+          testRevisionId: revision.id,
+          lessonId,
+          classId: classLink.classId,
+          status: template?.status ?? TestReleaseStatus.DRAFT,
+          maxPoints,
+          passingPercent: revision.passingPercent,
+          isRequired: template?.isRequired ?? true,
+          availableFrom: template?.availableFrom ?? null,
+          dueAt: template?.dueAt ?? null,
+          timeLimitSeconds: revision.timeLimitSeconds,
+          maxAttempts: template ? template.maxAttempts : revision.maxAttempts,
+          scorePolicy: revision.scorePolicy,
+          latePolicy: template?.latePolicy ?? TestLatePolicy.DISALLOW,
+          latePenaltyPercent: template?.latePenaltyPercent ?? null,
+          xpReward: template?.xpReward ?? 100,
+          publishedAt: template?.publishedAt ?? null,
+          closedAt: template?.closedAt ?? null,
+        };
+      }),
+    });
+  }
+
+  private async archiveCurrentReleases(
+    transaction: Prisma.TransactionClient,
+    lessonId: string,
+    testId: string,
+  ): Promise<void> {
+    await transaction.testRelease.updateMany({
+      where: {
         lessonId,
-        classId: classLink.classId,
-        status: TestReleaseStatus.ACTIVE,
-        maxPoints,
-        passingPercent: revision.passingPercent,
-        isRequired: true,
-        timeLimitSeconds: revision.timeLimitSeconds,
-        maxAttempts: revision.maxAttempts,
-        scorePolicy: revision.scorePolicy,
-        publishedAt: classLink.publishedAt ?? new Date(),
-      })),
+        testId,
+        status: { in: openReleaseStatuses },
+      },
+      data: { status: TestReleaseStatus.ARCHIVED, closedAt: new Date() },
+    });
+    await transaction.testRelease.updateMany({
+      where: { lessonId, testId, status: TestReleaseStatus.CLOSED },
+      data: { status: TestReleaseStatus.ARCHIVED },
     });
   }
 
@@ -414,7 +491,11 @@ export class LessonTestsService {
       throw this.linkNotFound();
     }
     const releases = await this.prisma.testRelease.findMany({
-      where: { lessonId, testId },
+      where: {
+        lessonId,
+        testId,
+        status: { in: currentReleaseStatuses },
+      },
       select: { status: true },
     });
     return this.toDto(

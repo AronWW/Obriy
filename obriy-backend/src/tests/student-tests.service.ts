@@ -47,6 +47,7 @@ import {
   StudentTestItemDto,
 } from './dto/student-test.dto';
 import { TestAttemptScoringService } from './test-attempt-scoring.service';
+import { TestReleaseLifecycleService } from './test-release-lifecycle.service';
 
 const studentReleaseSelect = {
   id: true,
@@ -205,6 +206,7 @@ export class StudentTestsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly attemptScoring: TestAttemptScoringService,
+    private readonly releaseLifecycle: TestReleaseLifecycleService,
   ) {}
 
   async listLessonTests(
@@ -223,13 +225,29 @@ export class StudentTestsService {
     if (!lessonAccess) {
       throw this.lessonNotFound();
     }
+    await this.releaseLifecycle.synchronizeLessonClass(
+      lessonId,
+      lessonAccess.classId,
+    );
     const now = new Date();
     const releases = await this.prisma.testRelease.findMany({
       where: {
         lessonId,
         classId: lessonAccess.classId,
-        status: TestReleaseStatus.ACTIVE,
-        OR: [{ availableFrom: null }, { availableFrom: { lte: now } }],
+        OR: [
+          {
+            status: TestReleaseStatus.ACTIVE,
+            AND: [
+              {
+                OR: [{ availableFrom: null }, { availableFrom: { lte: now } }],
+              },
+            ],
+          },
+          {
+            status: TestReleaseStatus.CLOSED,
+            studentStates: { some: { studentId: user.id } },
+          },
+        ],
       },
       select: studentReleaseSelect,
     });
@@ -285,6 +303,7 @@ export class StudentTestsService {
     releaseId: string,
   ): Promise<StudentLessonTestDto> {
     this.assertStudent(user);
+    await this.releaseLifecycle.synchronizeRelease(releaseId);
     const release = await this.findAccessibleRelease(
       this.prisma,
       user.id,
@@ -318,6 +337,7 @@ export class StudentTestsService {
     releaseId: string,
   ): Promise<StudentTestAttemptDto> {
     this.assertStudent(user);
+    await this.releaseLifecycle.synchronizeRelease(releaseId);
     const result = await this.prisma.$transaction(async (transaction) => {
       await this.lockRelease(transaction, releaseId);
       const release = await this.findAccessibleRelease(
@@ -360,7 +380,6 @@ export class StudentTestsService {
       if (current) {
         if (
           !this.isAttemptExpired(current.expiresAt) &&
-          !this.isClosedByDeadline(release) &&
           (release.status === TestReleaseStatus.ACTIVE ||
             release.status === TestReleaseStatus.CLOSED)
         ) {
@@ -477,16 +496,6 @@ export class StudentTestsService {
         );
         return { kind: 'expired' as const };
       }
-      if (this.isClosedByDeadline(attempt.studentState.release)) {
-        await this.markAttemptExpired(
-          transaction,
-          attempt.id,
-          attempt.studentState.id,
-          attempt.studentState.bestPercent,
-          attempt.studentState.release,
-        );
-        return { kind: 'closed' as const };
-      }
       this.assertAttemptEditable(attempt);
       const answer = attempt.answers.find(
         (candidate) => candidate.testItem.id === testItemId,
@@ -516,9 +525,6 @@ export class StudentTestsService {
     });
     if (result.kind === 'expired') {
       throw this.timeExpired();
-    }
-    if (result.kind === 'closed') {
-      throw this.testClosed();
     }
     return result.attempt;
   }
@@ -560,16 +566,6 @@ export class StudentTestsService {
           attempt.studentState.release,
         );
         return { kind: 'expired' as const };
-      }
-      if (this.isClosedByDeadline(attempt.studentState.release)) {
-        await this.markAttemptExpired(
-          transaction,
-          attempt.id,
-          attempt.studentState.id,
-          attempt.studentState.bestPercent,
-          attempt.studentState.release,
-        );
-        return { kind: 'closed' as const };
       }
       this.assertAttemptEditable(attempt);
       const submittedAt = new Date();
@@ -694,9 +690,6 @@ export class StudentTestsService {
     });
     if (result.kind === 'expired') {
       throw this.timeExpired();
-    }
-    if (result.kind === 'closed') {
-      throw this.testClosed();
     }
     return result.attempt;
   }
@@ -1242,6 +1235,7 @@ export class StudentTestsService {
   ): TestStudentStatus {
     const status = persisted ?? TestStudentStatus.NOT_STARTED;
     if (
+      status !== TestStudentStatus.IN_PROGRESS &&
       status !== TestStudentStatus.AWAITING_REVIEW &&
       status !== TestStudentStatus.COMPLETED &&
       release.dueAt &&
@@ -1481,13 +1475,6 @@ export class StudentTestsService {
     return new ConflictException({
       code: 'TEST_TIME_EXPIRED',
       message: 'The time limit for this attempt has expired',
-    });
-  }
-
-  private testClosed(): ConflictException {
-    return new ConflictException({
-      code: 'TEST_CLOSED',
-      message: 'This test no longer accepts responses',
     });
   }
 }

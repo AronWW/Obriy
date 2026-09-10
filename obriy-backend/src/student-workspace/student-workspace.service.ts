@@ -12,6 +12,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../common/types/auth-user.type';
+import { TestReleaseLifecycleService } from '../tests/test-release-lifecycle.service';
 import {
   StudentAttentionReason,
   StudentContinueLessonDto,
@@ -85,7 +86,10 @@ interface RankedWork {
 
 @Injectable()
 export class StudentWorkspaceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly releaseLifecycle: TestReleaseLifecycleService,
+  ) {}
 
   async getDashboard(user: AuthUser): Promise<StudentDashboardDto> {
     this.assertStudent(user);
@@ -223,6 +227,7 @@ export class StudentWorkspaceService {
       return { classroom: null, releases: [] as WorkspaceRelease[] };
     }
     const classId = student.studentClass.id;
+    await this.releaseLifecycle.synchronizeClass(classId);
     const releases = await this.prisma.testRelease.findMany({
       where: {
         classId,
@@ -398,6 +403,9 @@ export class StudentWorkspaceService {
     now: Date,
   ): TestStudentStatus {
     const status = persisted ?? TestStudentStatus.NOT_STARTED;
+    if (status === TestStudentStatus.IN_PROGRESS) {
+      return status;
+    }
     if (
       status === TestStudentStatus.COMPLETED ||
       status === TestStudentStatus.AWAITING_REVIEW ||

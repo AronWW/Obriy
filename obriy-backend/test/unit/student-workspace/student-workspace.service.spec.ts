@@ -9,6 +9,7 @@ import {
 import type { PrismaService } from '../../../prisma/prisma.service';
 import type { AuthUser } from '../../../src/common/types/auth-user.type';
 import { StudentWorkspaceService } from '../../../src/student-workspace/student-workspace.service';
+import type { TestReleaseLifecycleService } from '../../../src/tests/test-release-lifecycle.service';
 import {
   StudentTasksRequiredFilter,
   StudentTasksStatusFilter,
@@ -21,7 +22,10 @@ describe('StudentWorkspaceService', () => {
     user: { findUnique: userFindUnique },
     testRelease: { findMany: releaseFindMany },
   } as unknown as PrismaService;
-  const service = new StudentWorkspaceService(prisma);
+  const releaseLifecycle = {
+    synchronizeClass: jest.fn().mockResolvedValue(undefined),
+  } as unknown as TestReleaseLifecycleService;
+  const service = new StudentWorkspaceService(prisma, releaseLifecycle);
   const student: AuthUser = {
     id: 'student-1',
     email: 'student@example.com',

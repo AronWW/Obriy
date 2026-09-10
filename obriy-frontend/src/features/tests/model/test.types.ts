@@ -8,6 +8,7 @@ import type { MapPoint, MapPreset } from '../../maps/model/map.types'
 export type TestStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 export type TestRevisionStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 export type TestScorePolicy = 'BEST' | 'LATEST'
+export type TestLatePolicy = 'DISALLOW' | 'ALLOW' | 'ALLOW_WITH_PENALTY'
 
 export interface TestItem {
   id: string
@@ -122,6 +123,37 @@ export interface LessonTest {
 
 export type TestReleaseStatus =
   'DRAFT' | 'SCHEDULED' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED'
+
+export interface TeacherTestRelease {
+  id: string
+  lessonId: string
+  testId: string
+  testRevisionId: string
+  class: { id: string; name: string }
+  status: TestReleaseStatus
+  isRequired: boolean
+  availableFrom: string | null
+  dueAt: string | null
+  maxAttempts: number | null
+  latePolicy: TestLatePolicy
+  latePenaltyPercent: number | null
+  xpReward: number
+  attemptCount: number
+  inProgressCount: number
+  publishedAt: string | null
+  closedAt: string | null
+  updatedAt: string
+}
+
+export interface UpdateTestReleaseSettingsInput {
+  isRequired?: boolean
+  availableFrom?: string | null
+  dueAt?: string | null
+  maxAttempts?: number | null
+  latePolicy?: TestLatePolicy
+  latePenaltyPercent?: number | null
+  xpReward?: number
+}
 
 export type TestStudentStatus =
   | 'NOT_STARTED'

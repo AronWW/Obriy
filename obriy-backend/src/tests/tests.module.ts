@@ -14,6 +14,12 @@ import {
   TestAnswerReviewsController,
 } from './test-reviews.controller';
 import { TestReviewsService } from './test-reviews.service';
+import {
+  TeacherLessonTestReleasesController,
+  TeacherTestReleasesController,
+} from './teacher-test-releases.controller';
+import { TeacherTestReleasesService } from './teacher-test-releases.service';
+import { TestReleaseLifecycleService } from './test-release-lifecycle.service';
 import { TestsController } from './tests.controller';
 import { TestsService } from './tests.service';
 
@@ -22,6 +28,8 @@ import { TestsService } from './tests.service';
   controllers: [
     TestsController,
     LessonTestsController,
+    TeacherLessonTestReleasesController,
+    TeacherTestReleasesController,
     StudentLessonTestsController,
     StudentTestReleasesController,
     StudentTestAttemptsController,
@@ -34,7 +42,9 @@ import { TestsService } from './tests.service';
     StudentTestsService,
     TestAttemptScoringService,
     TestReviewsService,
+    TeacherTestReleasesService,
+    TestReleaseLifecycleService,
   ],
-  exports: [TestsService, LessonTestsService],
+  exports: [TestsService, LessonTestsService, TestReleaseLifecycleService],
 })
 export class TestsModule {}

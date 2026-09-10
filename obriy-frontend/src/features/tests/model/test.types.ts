@@ -4,6 +4,7 @@ import type {
   ContentLocale,
 } from '../../assignments/model/assignment.types'
 import type { MapPoint, MapPreset } from '../../maps/model/map.types'
+import type { GamificationReward } from '../../gamification/model/gamification.types'
 
 export type TestStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 export type TestRevisionStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
@@ -227,6 +228,7 @@ export interface StudentTestAttempt {
   expiresAt: string | null
   submittedAt: string | null
   gradedAt: string | null
+  gamificationReward?: GamificationReward | null
 }
 
 export interface StudentTestItem {

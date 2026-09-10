@@ -8,6 +8,10 @@ import { StudentWorkRow } from '../student-workspace/components/StudentWorkRow'
 import { studentWorkspaceQueryKeys } from '../student-workspace/model/student-workspace-query-keys'
 import type { StudentWorkItem } from '../student-workspace/model/student-workspace.types'
 import styles from '../student-workspace/StudentWorkspace.module.css'
+import { getMyGamification } from '../gamification/api/gamification.api'
+import { GamificationProgressCard } from '../gamification'
+import { gamificationQueryKeys } from '../gamification/model/gamification-query-keys'
+import type { GamificationProgress } from '../gamification/model/gamification.types'
 
 export function StudentOverviewPage() {
   const { i18n, t } = useTranslation()
@@ -15,6 +19,11 @@ export function StudentOverviewPage() {
   const query = useQuery({
     queryKey: studentWorkspaceQueryKeys.dashboard(),
     queryFn: getStudentDashboard,
+    enabled: Boolean(user),
+  })
+  const gamificationQuery = useQuery({
+    queryKey: gamificationQueryKeys.me(),
+    queryFn: getMyGamification,
     enabled: Boolean(user),
   })
 
@@ -61,6 +70,7 @@ export function StudentOverviewPage() {
               avatarUrl={user.profile.avatarUrl}
               displayName={user.profile.displayName}
               grade={grade}
+              progress={gamificationQuery.data?.progress}
             />
             <StatePanel
               actionLabel={t('studentWorkspace.noClass.action')}
@@ -78,6 +88,7 @@ export function StudentOverviewPage() {
                 className={dashboard.class.name}
                 displayName={user.profile.displayName}
                 grade={grade}
+                progress={gamificationQuery.data?.progress}
               />
               <div className={styles.metrics} aria-label={t('studentWorkspace.metrics.label')}>
                 <Metric
@@ -167,11 +178,13 @@ function ProfilePanel({
   className,
   displayName,
   grade,
+  progress,
 }: {
   avatarUrl: string | null
   className?: string
   displayName: string
   grade: string
+  progress?: GamificationProgress
 }) {
   const { t } = useTranslation()
   const initials = displayName
@@ -193,6 +206,7 @@ function ProfilePanel({
         <UserRound size={16} aria-hidden="true" />
         {t('studentWorkspace.profile.open')}
       </Link>
+      {progress && <GamificationProgressCard compact progress={progress} />}
     </article>
   )
 }

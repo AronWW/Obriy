@@ -8,14 +8,21 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import profileStyles from '../../student-profile/StudentProfilePage.module.css'
 import { getClassmateProfile } from '../api/classes.api'
 import styles from '../ClassesPage.module.css'
+import {
+  BadgeCollectionDialog,
+  BadgeShowcase,
+  GamificationProgressCard,
+} from '../../gamification'
 
 export function ClassmateProfilePage() {
   const { t } = useTranslation()
   const { studentId = '' } = useParams()
+  const [collectionOpen, setCollectionOpen] = useState(false)
   const profileQuery = useQuery({
     queryKey: ['classes', 'student', 'classmates', studentId],
     queryFn: () => getClassmateProfile(studentId),
@@ -92,6 +99,8 @@ export function ClassmateProfilePage() {
           </div>
         </header>
 
+        <GamificationProgressCard progress={profile.gamification.progress} />
+
         <div className={profileStyles.profileBody}>
           <main className={profileStyles.mainColumn}>
             <section className={profileStyles.profileSection}>
@@ -121,19 +130,7 @@ export function ClassmateProfilePage() {
                   <p>{t('studentProfile.showcase.description')}</p>
                 </div>
               </div>
-              <div
-                className={profileStyles.badgeShowcase}
-                aria-label={t('studentProfile.showcase.label')}
-              >
-                {[0, 1, 2].map((slot) => (
-                  <span className={profileStyles.badgeSlot} key={slot}>
-                    <Award size={24} aria-hidden="true" />
-                  </span>
-                ))}
-              </div>
-              <p className={profileStyles.emptyCopy}>
-                {t('studentProfile.showcase.empty')}
-              </p>
+              <BadgeShowcase badges={profile.gamification.showcase} />
             </section>
 
             <section className={profileStyles.profileSection}>
@@ -144,10 +141,18 @@ export function ClassmateProfilePage() {
                   <p>{t('studentProfile.collection.description')}</p>
                 </div>
               </div>
-              <div className={profileStyles.collectionEmpty}>
-                <Award size={30} aria-hidden="true" />
-                <p>{t('studentProfile.collection.empty')}</p>
-              </div>
+              <button
+                className={profileStyles.collectionAction}
+                onClick={() => setCollectionOpen(true)}
+                type="button"
+              >
+                <Award size={20} aria-hidden="true" />
+                {profile.gamification.badges.length
+                  ? t('gamification.badges.openCollection', {
+                      count: profile.gamification.badges.length,
+                    })
+                  : t('studentProfile.collection.empty')}
+              </button>
             </section>
           </main>
 
@@ -174,6 +179,12 @@ export function ClassmateProfilePage() {
             </section>
           </div>
         </div>
+        {collectionOpen && (
+          <BadgeCollectionDialog
+            badges={profile.gamification.badges}
+            onClose={() => setCollectionOpen(false)}
+          />
+        )}
       </div>
     </section>
   )

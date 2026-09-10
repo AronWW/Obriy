@@ -11,12 +11,6 @@ import { LinkedChildDto } from './dto/linked-child.dto';
 import { PrivateProfileDto, PublicProfileDto } from './dto/profile.dto';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 
-const publicGamificationPlaceholder = {
-  level: 1,
-  xp: 0,
-  rank: null,
-};
-
 type UserWithProfile = Awaited<ReturnType<UsersService['findUserWithProfile']>>;
 
 @Injectable()
@@ -135,7 +129,11 @@ export class UsersService {
     });
   }
 
-  toPublicProfile(user: NonNullable<UserWithProfile>): PublicProfileDto {
+  toPublicProfile(
+    user: NonNullable<UserWithProfile>,
+    gamification: { level: number; totalXp: number },
+    rank: number | null = null,
+  ): PublicProfileDto {
     if (!user.profile) {
       throw new NotFoundException('Profile not found');
     }
@@ -144,7 +142,9 @@ export class UsersService {
       id: user.id,
       displayName: user.profile.displayName,
       avatarUrl: user.profile.avatarUrl,
-      ...publicGamificationPlaceholder,
+      level: gamification.level,
+      xp: gamification.totalXp,
+      rank,
     });
   }
 }

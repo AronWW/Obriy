@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { GamificationProfileDto } from '../../gamification/dto/gamification.dto';
 
 export class ClassSummaryDto {
   @ApiProperty()
@@ -88,8 +89,12 @@ export class ClassmateProfileDto extends ClassMemberDto {
   @ApiPropertyOptional({ nullable: true })
   bio: string | null;
 
+  @ApiProperty({ type: GamificationProfileDto })
+  gamification: GamificationProfileDto;
+
   constructor(data: ClassmateProfileDto) {
     super(data);
     this.bio = data.bio;
+    this.gamification = data.gamification;
   }
 }

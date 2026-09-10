@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Award,
   Brush,
@@ -22,6 +22,16 @@ import {
 } from './api/student-profile.api'
 import styles from './StudentProfilePage.module.css'
 import { StudentGuardiansSection } from '../parent-links/components/StudentGuardiansSection'
+import {
+  BadgeCollectionDialog,
+  BadgeShowcase,
+  GamificationProgressCard,
+} from '../gamification'
+import {
+  getMyGamification,
+  updateBadgeShowcase,
+} from '../gamification/api/gamification.api'
+import { gamificationQueryKeys } from '../gamification/model/gamification-query-keys'
 
 type StudentProfileFormValues = UpdateStudentProfileInput
 
@@ -30,6 +40,10 @@ export function StudentProfilePage() {
   const user = useSessionStore((state) => state.user)
   const updateUser = useSessionStore((state) => state.updateUser)
   const [isEditing, setIsEditing] = useState(false)
+  const [badgeDialog, setBadgeDialog] = useState<'showcase' | 'collection' | null>(
+    null,
+  )
+  const queryClient = useQueryClient()
   const {
     formState: { errors, isDirty },
     handleSubmit,
@@ -60,6 +74,18 @@ export function StudentProfilePage() {
         displayName: updatedUser.profile.displayName,
       })
       setIsEditing(false)
+    },
+  })
+  const gamificationQuery = useQuery({
+    queryKey: gamificationQueryKeys.me(),
+    queryFn: getMyGamification,
+    enabled: Boolean(user),
+  })
+  const showcaseMutation = useMutation({
+    mutationFn: updateBadgeShowcase,
+    onSuccess: (profile) => {
+      queryClient.setQueryData(gamificationQueryKeys.me(), profile)
+      setBadgeDialog(null)
     },
   })
 
@@ -145,6 +171,10 @@ export function StudentProfilePage() {
             <Check size={17} aria-hidden="true" />
             {t('studentProfile.saved')}
           </p>
+        )}
+
+        {gamificationQuery.data && (
+          <GamificationProgressCard progress={gamificationQuery.data.progress} />
         )}
 
         {isEditing && (
@@ -302,19 +332,15 @@ export function StudentProfilePage() {
                   <p>{t('studentProfile.showcase.description')}</p>
                 </div>
               </div>
-              <div
-                className={styles.badgeShowcase}
-                aria-label={t('studentProfile.showcase.label')}
+              <BadgeShowcase badges={gamificationQuery.data?.showcase ?? []} />
+              <button
+                className={styles.collectionAction}
+                disabled={!gamificationQuery.data?.badges.length}
+                onClick={() => setBadgeDialog('showcase')}
+                type="button"
               >
-                {[0, 1, 2].map((slot) => (
-                  <span className={styles.badgeSlot} key={slot}>
-                    <Award size={24} aria-hidden="true" />
-                  </span>
-                ))}
-              </div>
-              <p className={styles.emptyCopy}>
-                {t('studentProfile.showcase.empty')}
-              </p>
+                {t('gamification.badges.customizeShowcase')}
+              </button>
             </section>
 
             <section className={styles.profileSection}>
@@ -325,10 +351,18 @@ export function StudentProfilePage() {
                   <p>{t('studentProfile.collection.description')}</p>
                 </div>
               </div>
-              <div className={styles.collectionEmpty}>
-                <Award size={30} aria-hidden="true" />
-                <p>{t('studentProfile.collection.empty')}</p>
-              </div>
+              <button
+                className={styles.collectionAction}
+                onClick={() => setBadgeDialog('collection')}
+                type="button"
+              >
+                <Award size={20} aria-hidden="true" />
+                {gamificationQuery.data?.badges.length
+                  ? t('gamification.badges.openCollection', {
+                      count: gamificationQuery.data.badges.length,
+                    })
+                  : t('studentProfile.collection.empty')}
+              </button>
             </section>
 
             <StudentGuardiansSection />
@@ -354,6 +388,19 @@ export function StudentProfilePage() {
             </section>
           </div>
         </div>
+        {badgeDialog && gamificationQuery.data && (
+          <BadgeCollectionDialog
+            badges={gamificationQuery.data.badges}
+            isSaving={showcaseMutation.isPending}
+            onClose={() => setBadgeDialog(null)}
+            onSave={
+              badgeDialog === 'showcase'
+                ? (badgeIds) => showcaseMutation.mutate(badgeIds)
+                : undefined
+            }
+            selectedIds={gamificationQuery.data.showcase.map((badge) => badge.id)}
+          />
+        )}
       </div>
     </section>
   )

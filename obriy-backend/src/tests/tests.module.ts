@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AssignmentsModule } from '../assignments/assignments.module';
+import { GamificationModule } from '../gamification/gamification.module';
 import { LessonTestsController } from './lesson-tests.controller';
 import { LessonTestsService } from './lesson-tests.service';
 import {
@@ -24,7 +25,7 @@ import { TestsController } from './tests.controller';
 import { TestsService } from './tests.service';
 
 @Module({
-  imports: [AssignmentsModule],
+  imports: [AssignmentsModule, GamificationModule],
   controllers: [
     TestsController,
     LessonTestsController,

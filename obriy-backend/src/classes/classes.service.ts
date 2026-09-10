@@ -19,13 +19,17 @@ import {
 } from './dto/class.dto';
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
+import { GamificationService } from '../gamification/gamification.service';
 
 const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const INVITE_LENGTH = 8;
 
 @Injectable()
 export class ClassesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gamification: GamificationService,
+  ) {}
 
   async createClass(
     user: AuthUser,
@@ -286,12 +290,17 @@ export class ClassesService {
       });
     }
 
+    const gamification = await this.gamification.getPublicProfile(
+      classmate.id,
+      user.id,
+    );
     return new ClassmateProfileDto({
       id: classmate.id,
       displayName: classmate.profile.displayName,
       avatarUrl: classmate.profile.avatarUrl,
       gradeLevel: classmate.profile.gradeLevel,
       bio: classmate.profile.bio,
+      gamification,
     });
   }
 

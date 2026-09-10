@@ -151,6 +151,15 @@ enum MapPresetBaseMapMode {
   NEUTRAL
 }
 
+enum XPSourceType {
+  TEST_RELEASE_PASS
+}
+
+enum BadgeCriteriaType {
+  PASSED_TEST_COUNT
+  PERFECT_SCORE_COUNT
+}
+
 model User {
   id              String     @id @default(uuid())
   email           String     @unique
@@ -180,6 +189,8 @@ model User {
   testStates              TestStudentState[]       @relation("StudentTestStates")
   reviewedTestAnswers     TestAnswer[]             @relation("TestAnswerReviewer")
   testAnswerReviewEvents  TestAnswerReviewEvent[]  @relation("TestAnswerReviewEventReviewer")
+  xpLedger                XPLedger[]               @relation("StudentXPLedger")
+  earnedBadges            UserBadge[]              @relation("StudentBadges")
   studentClassId          String?
   studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
 
@@ -562,6 +573,7 @@ model TestRelease {
   class         Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
   lesson        Lesson?            @relation(fields: [lessonId], references: [id], onDelete: SetNull)
   studentStates TestStudentState[]
+  xpLedger      XPLedger[]
 
   @@index([testId, status, createdAt])
   @@index([testRevisionId])
@@ -619,12 +631,88 @@ model TestAttempt {
   studentState TestStudentState @relation(fields: [studentStateId], references: [id], onDelete: Cascade)
   testRevision TestRevision     @relation(fields: [testRevisionId], references: [id], onDelete: Restrict)
   answers      TestAnswer[]
+  xpLedger     XPLedger[]
+  badgeUnlocks UserBadge[]      @relation("BadgeUnlockAttempt")
 
   @@unique([studentStateId, attemptNumber])
   @@unique([studentStateId, clientAttemptId])
   @@unique([id, testRevisionId])
   @@index([testRevisionId, status])
   @@index([status, submittedAt])
+}
+
+model XPLedger {
+  id            String       @id @default(uuid())
+  studentId     String
+  sourceType    XPSourceType
+  sourceKey     String       @db.VarChar(160)
+  releaseId     String?
+  attemptId     String?
+  amount        Int
+  totalXpBefore Int
+  totalXpAfter  Int
+  seenAt        DateTime?
+  createdAt     DateTime     @default(now())
+
+  student User         @relation("StudentXPLedger", fields: [studentId], references: [id], onDelete: Cascade)
+  release TestRelease? @relation(fields: [releaseId], references: [id], onDelete: SetNull)
+  attempt TestAttempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, sourceType, sourceKey])
+  @@index([studentId, createdAt])
+  @@index([studentId, seenAt])
+  @@index([releaseId])
+  @@index([attemptId])
+}
+
+model Badge {
+  id            String            @id @default(uuid())
+  key           String            @unique @db.VarChar(80)
+  iconKey       String            @db.VarChar(80)
+  criteriaType  BadgeCriteriaType
+  criteriaValue Int
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  translations BadgeTranslation[]
+  awards       UserBadge[]
+
+  @@index([isActive, criteriaType])
+}
+
+model BadgeTranslation {
+  id          String @id @default(uuid())
+  badgeId     String
+  locale      Locale
+  name        String @db.VarChar(120)
+  description String @db.VarChar(300)
+
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([badgeId, locale])
+  @@index([locale])
+}
+
+model UserBadge {
+  id               String    @id @default(uuid())
+  studentId        String
+  badgeId          String
+  sourceAttemptId  String?
+  showcasePosition Int?
+  seenAt           DateTime?
+  earnedAt         DateTime  @default(now())
+
+  student       User         @relation("StudentBadges", fields: [studentId], references: [id], onDelete: Cascade)
+  badge         Badge        @relation(fields: [badgeId], references: [id], onDelete: Restrict)
+  sourceAttempt TestAttempt? @relation("BadgeUnlockAttempt", fields: [sourceAttemptId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, badgeId])
+  @@unique([studentId, showcasePosition])
+  @@index([studentId, earnedAt])
+  @@index([studentId, seenAt])
+  @@index([badgeId])
+  @@index([sourceAttemptId])
 }
 
 model TestAnswer {

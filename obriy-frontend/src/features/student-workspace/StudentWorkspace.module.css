@@ -106,6 +106,10 @@
   text-decoration: none;
 }
 
+.profilePanel > section {
+  grid-column: 1 / -1;
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

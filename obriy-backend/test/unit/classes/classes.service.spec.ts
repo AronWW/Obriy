@@ -3,6 +3,7 @@ import { UserRole, UserStatus } from '@prisma/client';
 import type { PrismaService } from '../../../prisma/prisma.service';
 import type { AuthUser } from '../../../src/common/types/auth-user.type';
 import { ClassesService } from '../../../src/classes/classes.service';
+import type { GamificationService } from '../../../src/gamification/gamification.service';
 
 describe('ClassesService access boundaries', () => {
   const userFindUnique = jest.fn();
@@ -23,7 +24,7 @@ describe('ClassesService access boundaries', () => {
       findUnique: classFindUnique,
     },
   } as unknown as PrismaService;
-  const service = new ClassesService(prisma);
+  const service = new ClassesService(prisma, {} as GamificationService);
   const student: AuthUser = {
     id: 'student-1',
     email: 'student@example.com',

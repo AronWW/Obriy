@@ -462,6 +462,26 @@
   line-height: 1.55;
 }
 
+.collectionAction {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 0 15px;
+  color: var(--ink);
+  cursor: pointer;
+  background: color-mix(in srgb, var(--panel-deep), transparent 38%);
+  border: 1px solid var(--line);
+  font-family: var(--font-display);
+}
+
+.collectionAction:disabled {
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+
 .appearanceSection > svg,
 .visibilitySection > svg {
   margin-bottom: 12px;

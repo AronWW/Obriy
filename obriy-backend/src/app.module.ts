@@ -25,6 +25,7 @@ import { MapPresetsModule } from './map-presets/map-presets.module';
 import { TeacherDashboardModule } from './teacher-dashboard/teacher-dashboard.module';
 import { TeacherAnalyticsModule } from './teacher-analytics/teacher-analytics.module';
 import { StudentWorkspaceModule } from './student-workspace/student-workspace.module';
+import { GamificationModule } from './gamification/gamification.module';
 import { validateEnvironment } from './config/env.validation';
 
 const i18nPath = existsSync(join(__dirname, 'i18n'))
@@ -58,6 +59,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     TeacherDashboardModule,
     TeacherAnalyticsModule,
     StudentWorkspaceModule,
+    GamificationModule,
   ],
   controllers: [AppController],
   providers: [

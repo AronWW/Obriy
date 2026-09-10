@@ -435,6 +435,18 @@ describe('AppRouter auth boundaries', () => {
           avatarUrl: null,
           gradeLevel: 8,
           bio: 'Люблю досліджувати історію Київської Русі.',
+          gamification: {
+            progress: {
+              totalXp: 700,
+              level: 2,
+              levelStartXp: 500,
+              nextLevelXp: 1500,
+              xpIntoLevel: 200,
+              xpForNextLevel: 1000,
+            },
+            showcase: [],
+            badges: [],
+          },
         }),
       ),
     )
@@ -455,8 +467,8 @@ describe('AppRouter auth boundaries', () => {
     expect(
       screen.getByText('Люблю досліджувати історію Київської Русі.'),
     ).toBeInTheDocument()
-    expect(screen.queryByText(/XP/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Рівень/i)).not.toBeInTheDocument()
+    expect(screen.getByText('700 XP')).toBeInTheDocument()
+    expect(screen.getByText('Рівень')).toBeInTheDocument()
   })
 
   it('lets a student join with a teacher code and refreshes the class view', async () => {

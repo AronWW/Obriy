@@ -1,0 +1,6 @@
+export { BadgeCollectionDialog } from './components/BadgeCollectionDialog'
+export { BadgeIcon } from './components/BadgeIcon'
+export { BadgeShowcase } from './components/BadgeShowcase'
+export { GamificationProgressCard } from './components/GamificationProgressCard'
+export { GamificationRewardNotifier } from './components/GamificationRewardNotifier'
+export { TestGamificationReward } from './components/TestGamificationReward'

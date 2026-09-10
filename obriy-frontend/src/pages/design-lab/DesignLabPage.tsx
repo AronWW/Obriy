@@ -19,6 +19,7 @@ import { useState, type ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useSessionStore } from '../../features/auth/model/session.store'
+import { GamificationRewardNotifier } from '../../features/gamification'
 import { ObriyBackground } from '../../shared/backgrounds/ObriyBackground'
 import { BrandLogo } from '../../shared/brand/BrandLogo'
 import { requestWorkspaceNavigation } from '../../shared/navigation/workspace-navigation-guard'
@@ -218,6 +219,7 @@ export function DesignLabPage() {
         <main className={styles.emptyPage} id="overview">
           <Outlet />
         </main>
+        {role === 'STUDENT' && <GamificationRewardNotifier />}
       </div>
     </div>
   )

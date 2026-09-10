@@ -159,10 +159,23 @@ describe('Classes (e2e)', () => {
           avatarUrl: null,
           gradeLevel: 8,
           bio: null,
+          gamification: {
+            progress: {
+              totalXp: 0,
+              level: 1,
+              levelStartXp: 0,
+              nextLevelXp: 500,
+              xpIntoLevel: 0,
+              xpForNextLevel: 500,
+            },
+            showcase: [],
+            badges: [],
+          },
         });
         expect(response.body).not.toHaveProperty('email');
-        expect(response.body).not.toHaveProperty('xp');
-        expect(response.body).not.toHaveProperty('level');
+        const gamification = getNestedRecord(response.body, ['gamification']);
+        expect(gamification).not.toHaveProperty('history');
+        expect(gamification).not.toHaveProperty('testResults');
       });
 
     await request(context.app.getHttpServer())
@@ -238,4 +251,23 @@ function getNestedString(value: unknown, path: string[]): string {
   }
 
   return current;
+}
+
+function getNestedRecord(
+  value: unknown,
+  path: string[],
+): Record<string, unknown> {
+  let current = value;
+
+  for (const part of path) {
+    if (typeof current !== 'object' || current === null) {
+      throw new Error(`Expected ${path.join('.')} to be an object`);
+    }
+    current = (current as Record<string, unknown>)[part];
+  }
+
+  if (typeof current !== 'object' || current === null) {
+    throw new Error(`Expected ${path.join('.')} to be an object`);
+  }
+  return current as Record<string, unknown>;
 }

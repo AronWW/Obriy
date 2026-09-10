@@ -47,6 +47,7 @@ import {
   StudentTestItemDto,
 } from './dto/student-test.dto';
 import { TestAttemptScoringService } from './test-attempt-scoring.service';
+import type { GamificationRewardDto } from '../gamification/dto/gamification.dto';
 import { TestReleaseLifecycleService } from './test-release-lifecycle.service';
 
 const studentReleaseSelect = {
@@ -569,6 +570,7 @@ export class StudentTestsService {
       }
       this.assertAttemptEditable(attempt);
       const submittedAt = new Date();
+      let gamificationReward: GamificationRewardDto | null = null;
       const isLate = Boolean(
         attempt.studentState.release.dueAt &&
         attempt.studentState.release.dueAt < submittedAt,
@@ -670,22 +672,24 @@ export class StudentTestsService {
           where: { id: attempt.id },
           data: { submittedAt, isLate },
         });
-        await this.attemptScoring.finalize(
+        gamificationReward = await this.attemptScoring.finalize(
           transaction,
           attempt.id,
           submittedAt,
         );
       }
+      const attemptDto = await this.findAttemptDto(
+        transaction,
+        attemptId,
+        this.noRetryRemains(
+          attempt.studentState.release,
+          attempt.studentState.attemptCount,
+        ),
+      );
+      attemptDto.gamificationReward = gamificationReward;
       return {
         kind: 'attempt' as const,
-        attempt: await this.findAttemptDto(
-          transaction,
-          attemptId,
-          this.noRetryRemains(
-            attempt.studentState.release,
-            attempt.studentState.attemptCount,
-          ),
-        ),
+        attempt: attemptDto,
       };
     });
     if (result.kind === 'expired') {
@@ -1125,6 +1129,7 @@ export class StudentTestsService {
       expiresAt: attempt.expiresAt,
       submittedAt: attempt.submittedAt,
       gradedAt: attempt.gradedAt,
+      gamificationReward: null,
     });
   }
 

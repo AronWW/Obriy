@@ -33,8 +33,10 @@ export interface ClassMember {
 
 export interface ClassmateProfile extends ClassMember {
   bio: string | null
+  gamification: GamificationProfile
 }
 
 export interface CreateClassInput {
   name: string
 }
+import type { GamificationProfile } from '../../gamification/model/gamification.types'

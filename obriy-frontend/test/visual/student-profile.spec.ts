@@ -23,8 +23,8 @@ test('student profile presents a public-looking desktop showcase', async ({
   await expect(
     page.getByRole('heading', { name: 'Колекція досягнень' }),
   ).toBeVisible()
-  await expect(page.getByText(/XP/i)).toHaveCount(0)
-  await expect(page.getByText(/Рівень/i)).toHaveCount(0)
+  await expect(page.getByText('500 XP')).toBeVisible()
+  await expect(page.getByText(/Рівень/i)).toBeVisible()
   await expectNoHorizontalOverflow(page)
 
   await page.screenshot({
@@ -37,23 +37,21 @@ test('student profile settings remain usable on mobile', async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await prepareStudentSession(page, 'night', null)
+  await prepareStudentSession(page, 'night', null, 'en')
 
   await page.goto('/app/student/profile')
   await page.emulateMedia({ reducedMotion: 'reduce' })
 
-  await page
-    .getByRole('button', { name: 'Налаштувати профіль' })
-    .click()
+  await page.getByRole('button', { name: 'Customize profile' }).click()
 
   await expect(
-    page.getByRole('heading', { name: 'Оновити профіль' }),
+    page.getByRole('heading', { name: 'Update profile' }),
   ).toBeVisible()
   await expect(
-    page.getByRole('textbox', { name: 'Ім’я у профілі' }),
+    page.getByRole('textbox', { name: 'Profile name' }),
   ).toHaveValue('Арія Косміна')
   await expect(
-    page.getByRole('textbox', { name: 'Коротко про себе' }),
+    page.getByRole('textbox', { name: 'About you' }),
   ).toBeVisible()
   await expectNoHorizontalOverflow(page)
 
@@ -67,12 +65,13 @@ async function prepareStudentSession(
   page: Page,
   theme: 'day' | 'night',
   bio: string | null,
+  language: 'en' | 'uk' = 'uk',
 ) {
-  await page.addInitScript((selectedTheme) => {
+  await page.addInitScript(({ selectedLanguage, selectedTheme }) => {
     localStorage.setItem('obriy-theme', selectedTheme)
-    localStorage.setItem('obriy-language', 'uk')
+    localStorage.setItem('obriy-language', selectedLanguage)
     localStorage.setItem('obriy-has-session', '1')
-  }, theme)
+  }, { selectedLanguage: language, selectedTheme: theme })
 
   await page.route('**/auth/refresh', async (route) => {
     await route.fulfill({
@@ -121,6 +120,43 @@ async function prepareStudentSession(
       body: 'null',
     })
   })
+
+  await page.route('**/gamification/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        progress: {
+          totalXp: 500,
+          level: 2,
+          levelStartXp: 500,
+          nextLevelXp: 1500,
+          xpIntoLevel: 0,
+          xpForNextLevel: 1000,
+        },
+        showcase: [badgeFixture],
+        badges: [badgeFixture],
+      }),
+    })
+  })
+
+  await page.route('**/gamification/me/rewards/unseen', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ xp: [], badges: [] }),
+    })
+  })
+}
+
+const badgeFixture = {
+  id: '11111111-1111-4111-8111-111111111111',
+  key: 'FIRST_STEP',
+  iconKey: 'footprints',
+  name: 'Перший крок',
+  description: 'Успішно складено перший тест.',
+  earnedAt: '2026-09-10T12:00:00.000Z',
+  showcasePosition: 1,
 }
 
 async function expectNoHorizontalOverflow(page: Page) {

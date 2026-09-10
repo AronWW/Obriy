@@ -71,6 +71,12 @@ import type {
   MapRegionOption,
 } from '../../maps/model/map.types'
 import styles from '../Tests.module.css'
+import {
+  acknowledgeGamificationRewards,
+} from '../../gamification/api/gamification.api'
+import { gamificationQueryKeys } from '../../gamification/model/gamification-query-keys'
+import type { GamificationReward } from '../../gamification/model/gamification.types'
+import { TestGamificationReward } from '../../gamification'
 
 type ResponseData = Record<string, unknown>
 
@@ -231,6 +237,8 @@ function StudentTestRunner({
   const [confirmSubmit, setConfirmSubmit] = useState(false)
   const [closing, setClosing] = useState(false)
   const [closeError, setCloseError] = useState<Error | null>(null)
+  const [gamificationReward, setGamificationReward] =
+    useState<GamificationReward | null>(null)
   const hydratedAttempt = useRef<string | null>(null)
   const refreshedExpiredAttempt = useRef<string | null>(null)
   const saveQueue = useRef<Promise<void>>(Promise.resolve())
@@ -325,6 +333,19 @@ function StudentTestRunner({
     },
     onSuccess: (next) => {
       setConfirmSubmit(false)
+      setGamificationReward(next.gamificationReward ?? null)
+      if (next.gamificationReward) {
+        void acknowledgeGamificationRewards({
+          xpLedgerIds: next.gamificationReward.xp
+            ? [next.gamificationReward.xp.id]
+            : [],
+          userBadgeIds: next.gamificationReward.badges.map((item) => item.id),
+        }).then(() => {
+          void queryClient.invalidateQueries({
+            queryKey: gamificationQueryKeys.root,
+          })
+        })
+      }
       queryClient.setQueryData<StudentLessonTest>(
         testQueryKeys.release(releaseId),
         (current) => (current ? { ...current, attempt: next } : current),
@@ -457,7 +478,11 @@ function StudentTestRunner({
         <p className={styles.runnerState}>{t('tests.student.loadTestError')}</p>
       )}
       {release && !editable && !canStart(release) && (
-        <TestResult attempt={attempt} release={release} />
+        <TestResult
+          attempt={attempt}
+          release={release}
+          reward={gamificationReward ?? attempt?.gamificationReward ?? null}
+        />
       )}
       {release && !editable && canStart(release) && (
         <div className={styles.testStart}>
@@ -478,7 +503,12 @@ function StudentTestRunner({
             </span>
           </div>
           {attempt && (
-            <TestResult attempt={attempt} compact release={release} />
+            <TestResult
+              attempt={attempt}
+              compact
+              release={release}
+              reward={gamificationReward ?? attempt.gamificationReward ?? null}
+            />
           )}
           <button
             className={styles.primaryButton}
@@ -638,6 +668,7 @@ function StudentTestRunner({
   )
 
   function seedAttempt(next: StudentTestAttempt) {
+    setGamificationReward(null)
     const nextDrafts = Object.fromEntries(
       next.answers.map((answer) => {
         const item = release?.items.find(
@@ -887,10 +918,12 @@ function TestResult({
   attempt,
   compact = false,
   release,
+  reward,
 }: {
   attempt: StudentTestAttempt | null
   compact?: boolean
   release: StudentLessonTest
+  reward: GamificationReward | null
 }) {
   const { t } = useTranslation()
   if (!attempt) return null
@@ -925,6 +958,7 @@ function TestResult({
               : t('tests.student.notPassed', { count: release.passingPercent })}
           </small>
         )}
+        {reward && <TestGamificationReward reward={reward} />}
       </div>
       {(!compact || attempt.status === 'RETURNED') && (
         <div className={styles.studentResultAnswers}>

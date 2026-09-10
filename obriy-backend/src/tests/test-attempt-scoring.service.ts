@@ -7,14 +7,18 @@ import {
   TestScorePolicy,
   TestStudentStatus,
 } from '@prisma/client';
+import { GamificationService } from '../gamification/gamification.service';
+import type { GamificationRewardDto } from '../gamification/dto/gamification.dto';
 
 @Injectable()
 export class TestAttemptScoringService {
+  constructor(private readonly gamification: GamificationService) {}
+
   async finalize(
     transaction: Prisma.TransactionClient,
     attemptId: string,
     gradedAt = new Date(),
-  ): Promise<void> {
+  ): Promise<GamificationRewardDto | null> {
     const attempt = await transaction.testAttempt.findUnique({
       where: { id: attemptId },
       select: {
@@ -122,6 +126,12 @@ export class TestAttemptScoringService {
         lastActivityAt: gradedAt,
       },
     });
+    return isPassed
+      ? this.gamification.awardFinalizedAttempt(transaction, {
+          attemptId: attempt.id,
+          awardedAt: gradedAt,
+        })
+      : null;
   }
 }
 

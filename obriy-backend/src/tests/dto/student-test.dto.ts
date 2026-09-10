@@ -7,6 +7,7 @@ import {
 } from '@prisma/client';
 import { IsObject } from 'class-validator';
 import { MapPresetDto } from '../../map-presets/dto/map-preset.dto';
+import { GamificationRewardDto } from '../../gamification/dto/gamification.dto';
 
 export class SaveTestAnswerDto {
   @ApiProperty({ type: 'object', additionalProperties: true })
@@ -94,6 +95,9 @@ export class StudentTestAttemptDto {
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   gradedAt: Date | null;
+
+  @ApiPropertyOptional({ type: GamificationRewardDto, nullable: true })
+  gamificationReward: GamificationRewardDto | null;
 
   constructor(data: StudentTestAttemptDto) {
     Object.assign(this, data);

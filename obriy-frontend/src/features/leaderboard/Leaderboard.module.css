@@ -1,0 +1,484 @@
+.page {
+  min-height: 100%;
+  padding: var(--workspace-page-top) clamp(18px, 4vw, 58px) 72px;
+  color: var(--ink);
+}
+
+.content {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 24px;
+}
+
+.pageHeader > span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold), transparent 91%);
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 66%);
+  border-radius: 50%;
+}
+
+.pageHeader h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 55px);
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.pageHeader p,
+.boardHeader p,
+.listHeading p {
+  margin: 7px 0 0;
+  color: var(--copy);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.board {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  margin-top: 16px;
+}
+
+.boardHeader,
+.listHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.boardHeader {
+  min-height: 78px;
+  padding: 16px 18px;
+  background: var(--panel-solid);
+  border: 1px solid var(--line-soft);
+}
+
+.boardHeader h2,
+.topSection h3,
+.selfPanel h3,
+.listHeading h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.boardHeader h2 {
+  font-size: 22px;
+}
+
+.periodSwitch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 3px;
+  background: color-mix(in srgb, var(--ink), transparent 95%);
+  border: 1px solid var(--line-soft);
+}
+
+.periodSwitch button {
+  min-height: 36px;
+  padding: 0 13px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.periodSwitch button[aria-pressed='true'] {
+  color: var(--panel-solid);
+  background: var(--archive-blue-deep);
+}
+
+.topSection,
+.selfPanel,
+.listSection {
+  min-width: 0;
+}
+
+.topSection h3,
+.selfPanel h3 {
+  margin-bottom: 10px;
+  font-size: 19px;
+}
+
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.topCard {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 190px;
+  align-content: center;
+  justify-items: center;
+  padding: 22px 14px 16px;
+  color: var(--ink);
+  text-align: center;
+  text-decoration: none;
+  background: var(--panel-solid);
+  border: 1px solid var(--line-soft);
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+
+.topCard:hover {
+  border-color: color-mix(in srgb, var(--gold), var(--line) 48%);
+  transform: translateY(-2px);
+}
+
+.topCard[data-rank='1'] {
+  border-color: color-mix(in srgb, var(--gold), var(--line) 40%);
+}
+
+.topCard[data-current='true'],
+.rankRow[data-current='true'] {
+  background: color-mix(in srgb, var(--archive-blue), var(--panel-solid) 94%);
+  border-color: color-mix(in srgb, var(--archive-blue), var(--line) 45%);
+}
+
+.rankSeal {
+  position: absolute;
+  top: 11px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.avatar {
+  display: grid;
+  width: 47px;
+  height: 47px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  place-items: center;
+  color: var(--panel-solid);
+  background: var(--archive-blue-deep);
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.topCard .avatar {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 9px;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.topCard > strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topCard > small {
+  margin-top: 3px;
+  color: var(--archive-blue);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.topCard > b {
+  margin-top: 8px;
+  color: var(--gold-strong);
+  font-size: 13px;
+}
+
+.badges {
+  display: inline-flex;
+  min-width: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.badges > span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  color: var(--gold-strong);
+  background: color-mix(in srgb, var(--gold), transparent 91%);
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 72%);
+  border-radius: 50%;
+}
+
+.topCard .badges {
+  margin-top: 10px;
+}
+
+.emptyBadge {
+  color: var(--ink-soft);
+  opacity: .4;
+}
+
+.selfPanel {
+  padding: 14px;
+  background: color-mix(in srgb, var(--archive-blue), transparent 96%);
+  border: 1px solid color-mix(in srgb, var(--archive-blue), var(--line) 60%);
+}
+
+.listSection {
+  background: var(--panel-solid);
+  border: 1px solid var(--line-soft);
+}
+
+.listHeading {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.listHeading h3 {
+  font-size: 20px;
+}
+
+.listHeading > span {
+  color: var(--archive-blue);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.rankingList {
+  display: grid;
+}
+
+.rankRow {
+  display: grid;
+  grid-template-columns: 42px 47px minmax(160px, 1fr) auto minmax(112px, auto);
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.rankRow:last-child {
+  border-bottom: 0;
+}
+
+.rankRow:hover {
+  background: color-mix(in srgb, var(--gold), transparent 97%);
+}
+
+.rankNumber {
+  color: var(--gold-strong);
+  font-family: var(--font-display);
+  font-size: 22px;
+  text-align: center;
+}
+
+.studentCopy,
+.xpCopy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.studentCopy > strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studentCopy > strong small {
+  margin-left: 7px;
+  color: var(--archive-blue);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.studentCopy > span,
+.xpCopy small {
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.xpCopy {
+  justify-items: end;
+  text-align: right;
+}
+
+.xpCopy strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.loadMore,
+.statePanel button,
+.statePanel a {
+  min-height: 40px;
+  padding: 0 16px;
+  color: var(--panel-solid);
+  background: var(--archive-blue-deep);
+  border: 1px solid var(--archive-blue-deep);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.loadMore {
+  justify-self: center;
+}
+
+.loadMore:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.statePanel,
+.loading {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  padding: 28px;
+  color: var(--copy);
+  text-align: center;
+  background: var(--panel-solid);
+  border: 1px solid var(--line-soft);
+}
+
+.statePanel > svg {
+  color: var(--gold);
+}
+
+.statePanel h3,
+.statePanel p,
+.loading p {
+  margin: 0;
+}
+
+.statePanel h3 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+.statePanel p {
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.loading {
+  grid-template-columns: repeat(3, 9px);
+}
+
+.loading span {
+  width: 8px;
+  height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+.loading span:nth-child(2) { animation-delay: 150ms; }
+.loading span:nth-child(3) { animation-delay: 300ms; }
+.loading p { grid-column: 1 / -1; }
+
+@keyframes pulse {
+  to { opacity: .3; transform: translateY(-3px); }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding-right: 14px;
+    padding-bottom: 48px;
+    padding-left: 14px;
+  }
+
+  .boardHeader,
+  .listHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .periodSwitch {
+    width: 100%;
+  }
+
+  .periodSwitch button {
+    flex: 1;
+  }
+
+  .podium {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .topCard {
+    min-height: 174px;
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+
+  .topCard .avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .topCard .badges {
+    gap: 2px;
+  }
+
+  .topCard .badges > span:nth-child(n + 3) {
+    display: none;
+  }
+
+  .rankRow {
+    grid-template-columns: 29px 40px minmax(0, 1fr) auto;
+    gap: 9px;
+    padding: 11px 10px;
+  }
+
+  .rankRow .avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .rankRow .badges {
+    display: none;
+  }
+
+  .xpCopy {
+    min-width: 76px;
+  }
+}

@@ -21,6 +21,7 @@ import {
 import { StudentOverviewPage } from '../../features/student-overview'
 import { StudentTasksPage } from '../../features/student-workspace'
 import { StudentProfilePage } from '../../features/student-profile'
+import { StudentLeaderboardPage } from '../../features/leaderboard'
 import { TeacherProfilePage } from '../../features/teacher-profile'
 import { TeacherOverviewPage } from '../../features/teacher-overview'
 import {
@@ -104,7 +105,7 @@ export function AppRouter() {
             />
             <Route
               path="leaderboard"
-              element={<StudentPlaceholderPage section="leaderboard" />}
+              element={<StudentLeaderboardPage />}
             />
             <Route path="profile" element={<StudentProfilePage />} />
           </Route>

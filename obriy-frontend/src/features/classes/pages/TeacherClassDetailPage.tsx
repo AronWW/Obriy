@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, BarChart3, Edit3, Save, School, UsersRound, X } from 'lucide-react'
+import { ArrowLeft, BarChart3, Edit3, Save, School, Trophy, UsersRound, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -117,6 +117,13 @@ export function TeacherClassDetailPage() {
             </p>
           </div>
           <div className={styles.detailActions}>
+            <Link
+              className={styles.secondaryButton}
+              to={`/app/teacher/analytics?classId=${classroom.id}&tab=leaderboard`}
+            >
+              <Trophy size={16} aria-hidden="true" />
+              {t('classes.teacher.detail.leaderboard')}
+            </Link>
             <Link
               className={styles.secondaryButton}
               to={`/app/teacher/analytics?classId=${classroom.id}&tab=students`}

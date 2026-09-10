@@ -14,6 +14,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { listTeacherClasses } from '../../classes/api/classes.api'
+import { TeacherLeaderboardTab } from '../../leaderboard'
 import { getTeacherClassAnalytics } from '../api/teacher-analytics.api'
 import { teacherAnalyticsQueryKeys } from '../model/teacher-analytics-query-keys'
 import {
@@ -26,7 +27,7 @@ import type {
 } from '../model/teacher-analytics.types'
 import styles from '../TeacherAnalytics.module.css'
 
-type AnalyticsTab = 'students' | 'materials'
+type AnalyticsTab = 'students' | 'materials' | 'leaderboard'
 type StudentSort = 'name' | 'completion' | 'average' | 'activity'
 
 export function TeacherAnalyticsPage() {
@@ -44,8 +45,11 @@ export function TeacherAnalyticsPage() {
     classesQuery.data?.some(({ id }) => id === requestedClassId)
       ? requestedClassId
       : (classesQuery.data?.[0]?.id ?? '')
+  const requestedTab = searchParams.get('tab')
   const tab: AnalyticsTab =
-    searchParams.get('tab') === 'materials' ? 'materials' : 'students'
+    requestedTab === 'materials' || requestedTab === 'leaderboard'
+      ? requestedTab
+      : 'students'
   const analyticsQuery = useQuery({
     queryKey: teacherAnalyticsQueryKeys.class(selectedClassId),
     queryFn: () => getTeacherClassAnalytics(selectedClassId),
@@ -156,7 +160,7 @@ export function TeacherAnalyticsPage() {
             </section>
 
             <div className={styles.tabs} role="tablist" aria-label={t('teacherAnalytics.tabs.label')}>
-              {(['students', 'materials'] as const).map((value) => (
+              {(['students', 'materials', 'leaderboard'] as const).map((value) => (
                 <button
                   aria-selected={tab === value}
                   className={tab === value ? styles.activeTab : undefined}
@@ -182,8 +186,10 @@ export function TeacherAnalyticsPage() {
                 students={visibleStudents}
                 totalStudents={analyticsQuery.data.students.length}
               />
-            ) : (
+            ) : tab === 'materials' ? (
               <MaterialsTab lessons={analyticsQuery.data.lessons} />
+            ) : (
+              <TeacherLeaderboardTab classId={selectedClassId} />
             )}
           </>
         )}

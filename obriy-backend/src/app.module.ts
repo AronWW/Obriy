@@ -26,6 +26,7 @@ import { TeacherDashboardModule } from './teacher-dashboard/teacher-dashboard.mo
 import { TeacherAnalyticsModule } from './teacher-analytics/teacher-analytics.module';
 import { StudentWorkspaceModule } from './student-workspace/student-workspace.module';
 import { GamificationModule } from './gamification/gamification.module';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { validateEnvironment } from './config/env.validation';
 
 const i18nPath = existsSync(join(__dirname, 'i18n'))
@@ -60,6 +61,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     TeacherAnalyticsModule,
     StudentWorkspaceModule,
     GamificationModule,
+    LeaderboardModule,
   ],
   controllers: [AppController],
   providers: [

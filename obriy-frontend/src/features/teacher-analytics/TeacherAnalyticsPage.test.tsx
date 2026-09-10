@@ -26,6 +26,9 @@ describe('Teacher analytics pages', () => {
       http.get(`${API_BASE_URL}/teacher/analytics/classes/class-2`, () =>
         HttpResponse.json(classAnalyticsFixture),
       ),
+      http.get(`${API_BASE_URL}/teacher/leaderboard/classes/class-2`, () =>
+        HttpResponse.json(teacherLeaderboardFixture),
+      ),
     )
     renderAnalytics('/app/teacher/analytics?classId=class-2&tab=students')
 
@@ -40,6 +43,13 @@ describe('Teacher analytics pages', () => {
     await user.click(screen.getByRole('tab', { name: 'Materials' }))
     expect(await screen.findByText('Source analysis')).toBeInTheDocument()
     expect(screen.getByText('Optional')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('tab', { name: 'Leaderboard' }))
+    expect(await screen.findByRole('heading', { name: 'Class leaders' })).toBeInTheDocument()
+    expect(screen.getAllByRole('link', { name: /Marta Ivaniuk/ })[0]).toHaveAttribute(
+      'href',
+      '/app/teacher/analytics/classes/class-2/students/student-1',
+    )
   })
 
   it('searches students and shows the no-result state', async () => {
@@ -112,6 +122,14 @@ const classesFixture = [
 ]
 
 const statusCounts = { notStarted: 0, inProgress: 0, awaitingReview: 1, needsRevision: 0, completed: 1, expired: 0 }
+
+const teacherLeaderboardFixture = {
+  class: { id: 'class-2', name: 'History club', studentCount: 1 },
+  period: { type: 'WEEK', startAt: '2026-09-06T21:00:00.000Z', endAt: '2026-09-13T21:00:00.000Z' },
+  entries: [{ id: 'student-1', displayName: 'Marta Ivaniuk', avatarUrl: null, rank: 1, periodXp: 100, totalXp: 100, level: 1, showcase: [], lastXpAt: '2026-09-09T10:00:00.000Z', isCurrentUser: false }],
+  selfEntry: null,
+  nextCursor: null,
+}
 
 const classAnalyticsFixture: TeacherClassAnalytics = {
   class: { id: 'class-2', name: 'History club' },

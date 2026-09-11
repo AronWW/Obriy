@@ -160,6 +160,18 @@ enum BadgeCriteriaType {
   PERFECT_SCORE_COUNT
 }
 
+enum NotificationType {
+  TEST_ASSIGNED
+  TEST_AVAILABLE
+  TEST_DUE_SOON
+  TEST_OVERDUE
+  TEST_REVIEW_REQUIRED
+  TEST_GRADED
+  TEST_NEEDS_REVISION
+  BADGE_UNLOCKED
+  LEVEL_UP
+}
+
 model User {
   id              String     @id @default(uuid())
   email           String     @unique
@@ -191,6 +203,8 @@ model User {
   testAnswerReviewEvents  TestAnswerReviewEvent[]  @relation("TestAnswerReviewEventReviewer")
   xpLedger                XPLedger[]               @relation("StudentXPLedger")
   earnedBadges            UserBadge[]              @relation("StudentBadges")
+  receivedNotifications   Notification[]           @relation("NotificationRecipient")
+  subjectNotifications    Notification[]           @relation("NotificationSubjectStudent")
   studentClassId          String?
   studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
 
@@ -713,6 +727,25 @@ model UserBadge {
   @@index([studentId, seenAt])
   @@index([badgeId])
   @@index([sourceAttemptId])
+}
+
+model Notification {
+  id               String           @id @default(uuid())
+  recipientId      String
+  subjectStudentId String?
+  type             NotificationType
+  payload          Json
+  deduplicationKey String           @db.VarChar(180)
+  readAt           DateTime?
+  createdAt        DateTime         @default(now())
+
+  recipient      User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  subjectStudent User? @relation("NotificationSubjectStudent", fields: [subjectStudentId], references: [id], onDelete: SetNull)
+
+  @@unique([recipientId, deduplicationKey])
+  @@index([recipientId, readAt, createdAt])
+  @@index([recipientId, createdAt, id])
+  @@index([subjectStudentId])
 }
 
 model TestAnswer {

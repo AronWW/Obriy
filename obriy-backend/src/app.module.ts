@@ -27,6 +27,8 @@ import { TeacherAnalyticsModule } from './teacher-analytics/teacher-analytics.mo
 import { StudentWorkspaceModule } from './student-workspace/student-workspace.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { validateEnvironment } from './config/env.validation';
 
 const i18nPath = existsSync(join(__dirname, 'i18n'))
@@ -38,6 +40,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnvironment }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     I18nModule.forRoot({
       fallbackLanguage: 'uk',
       loader: I18nJsonLoader,
@@ -62,6 +65,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     StudentWorkspaceModule,
     GamificationModule,
     LeaderboardModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

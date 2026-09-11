@@ -4,7 +4,9 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   Prisma,
   TestLatePolicy,
@@ -14,6 +16,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../common/types/auth-user.type';
+import { notificationEvents } from '../notifications/notifications.events';
 import {
   TeacherTestReleaseClassDto,
   TeacherTestReleaseDto,
@@ -60,7 +63,10 @@ type ReleaseClient = PrismaService | Prisma.TransactionClient;
 
 @Injectable()
 export class TeacherTestReleasesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly events?: EventEmitter2,
+  ) {}
 
   async list(
     user: AuthUser,
@@ -141,7 +147,7 @@ export class TeacherTestReleasesService {
     releaseId: string,
   ): Promise<TeacherTestReleaseDto> {
     this.assertTeacher(user);
-    return this.prisma.$transaction(async (transaction) => {
+    const published = await this.prisma.$transaction(async (transaction) => {
       await this.lockReleases(transaction, [releaseId]);
       const release = await this.findOwnedRelease(
         transaction,
@@ -161,6 +167,10 @@ export class TeacherTestReleasesService {
       });
       return this.findDto(transaction, user.id, release.id);
     });
+    this.events?.emit(notificationEvents.releasePublished, {
+      releaseId: published.id,
+    });
+    return published;
   }
 
   async publishMany(
@@ -170,7 +180,7 @@ export class TeacherTestReleasesService {
     releaseIds: string[],
   ): Promise<TeacherTestReleaseDto[]> {
     this.assertTeacher(user);
-    return this.prisma.$transaction(async (transaction) => {
+    const published = await this.prisma.$transaction(async (transaction) => {
       await this.assertOwnedLink(transaction, user.id, lessonId, testId);
       await this.lockReleases(transaction, releaseIds);
       const releases = await transaction.testRelease.findMany({
@@ -209,6 +219,12 @@ export class TeacherTestReleasesService {
       });
       return updated.map((release) => this.toDto(release));
     });
+    for (const release of published) {
+      this.events?.emit(notificationEvents.releasePublished, {
+        releaseId: release.id,
+      });
+    }
+    return published;
   }
 
   async close(

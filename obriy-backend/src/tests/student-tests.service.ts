@@ -4,7 +4,9 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   AssignmentType,
   MapPresetSourceType,
@@ -35,6 +37,7 @@ import {
   validateAssignmentStudentResponse,
 } from '../assignments/validation';
 import type { AuthUser } from '../common/types/auth-user.type';
+import { notificationEvents } from '../notifications/notifications.events';
 import {
   mapPresetSelect,
   toMapPresetDto,
@@ -208,6 +211,7 @@ export class StudentTestsService {
     private readonly prisma: PrismaService,
     private readonly attemptScoring: TestAttemptScoringService,
     private readonly releaseLifecycle: TestReleaseLifecycleService,
+    @Optional() private readonly events?: EventEmitter2,
   ) {}
 
   async listLessonTests(
@@ -694,6 +698,14 @@ export class StudentTestsService {
     });
     if (result.kind === 'expired') {
       throw this.timeExpired();
+    }
+    if (result.attempt.status === TestAttemptStatus.AWAITING_REVIEW) {
+      this.events?.emit(notificationEvents.reviewRequired, { attemptId });
+    } else if (result.attempt.status === TestAttemptStatus.GRADED) {
+      this.events?.emit(notificationEvents.attemptFinalized, {
+        attemptId,
+        reward: result.attempt.gamificationReward,
+      });
     }
     return result.attempt;
   }

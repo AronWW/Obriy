@@ -1,13 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { TestLatePolicy, TestReleaseStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { notificationEvents } from '../notifications/notifications.events';
 
 @Injectable()
 export class TestReleaseLifecycleService {
   private readonly logger = new Logger(TestReleaseLifecycleService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly events?: EventEmitter2,
+  ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
   async synchronize(): Promise<void> {
@@ -40,6 +45,16 @@ export class TestReleaseLifecycleService {
     classId?: string;
   }): Promise<{ activated: number; closed: number }> {
     const now = new Date();
+    const activating = this.events
+      ? await this.prisma.testRelease.findMany({
+          where: {
+            ...scope,
+            status: TestReleaseStatus.SCHEDULED,
+            availableFrom: { lte: now },
+          },
+          select: { id: true },
+        })
+      : [];
     const [activated, closed] = await this.prisma.$transaction([
       this.prisma.testRelease.updateMany({
         where: {
@@ -59,6 +74,11 @@ export class TestReleaseLifecycleService {
         data: { status: TestReleaseStatus.CLOSED, closedAt: now },
       }),
     ]);
+    for (const release of activating) {
+      this.events?.emit(notificationEvents.releaseAvailable, {
+        releaseId: release.id,
+      });
+    }
     return { activated: activated.count, closed: closed.count };
   }
 }

@@ -4,11 +4,13 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../common/types/auth-user.type';
+import { NotificationsService } from '../notifications/notifications.service';
 import { LinkedChildDto } from '../users/dto/linked-child.dto';
 import {
   ActiveParentInvitationDto,
@@ -22,7 +24,10 @@ const MAX_GUARDIANS_PER_CHILD = 4;
 
 @Injectable()
 export class ParentLinksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly notifications?: NotificationsService,
+  ) {}
 
   async listMyGuardians(user: AuthUser): Promise<LinkedGuardianDto[]> {
     this.assertRole(user, UserRole.STUDENT);
@@ -263,6 +268,10 @@ export class ParentLinksService {
         message: 'Parent link not found',
       });
     }
+    await this.notifications?.deleteParentSubjectNotifications(
+      parentId,
+      user.id,
+    );
   }
 
   async unlinkChild(user: AuthUser, childId: string): Promise<void> {
@@ -277,6 +286,10 @@ export class ParentLinksService {
         message: 'Child link not found',
       });
     }
+    await this.notifications?.deleteParentSubjectNotifications(
+      user.id,
+      childId,
+    );
   }
 
   private async findValidInvitation(token: string) {

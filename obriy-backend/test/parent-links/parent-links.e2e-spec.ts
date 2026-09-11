@@ -1,5 +1,5 @@
 import { JwtService } from '@nestjs/jwt';
-import { UserRole, UserStatus } from '@prisma/client';
+import { NotificationType, UserRole, UserStatus } from '@prisma/client';
 import request from 'supertest';
 import {
   AuthTestContext,
@@ -114,10 +114,28 @@ describe('Parent links (e2e)', () => {
       .send({ token: replacementInvitation })
       .expect(201);
 
+    await context.prisma.notification.create({
+      data: {
+        recipientId: ids.secondParent,
+        subjectStudentId: ids.student,
+        type: NotificationType.TEST_ASSIGNED,
+        deduplicationKey: `unlink-cleanup:${stamp}`,
+        payload: { releaseId: 'release-for-unlink-test' },
+      },
+    });
+
     await request(context.app.getHttpServer())
       .delete(`/parent-links/children/${ids.student}`)
       .set('Authorization', `Bearer ${tokens.secondParent}`)
       .expect(204);
+    expect(
+      await context.prisma.notification.count({
+        where: {
+          recipientId: ids.secondParent,
+          subjectStudentId: ids.student,
+        },
+      }),
+    ).toBe(0);
 
     await request(context.app.getHttpServer())
       .delete(`/parent-links/guardians/${ids.parent}`)

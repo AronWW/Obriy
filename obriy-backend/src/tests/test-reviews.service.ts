@@ -4,7 +4,9 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   AssignmentType,
   Prisma,
@@ -16,6 +18,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../common/types/auth-user.type';
+import { notificationEvents } from '../notifications/notifications.events';
 import {
   mapPresetSelect,
   toMapPresetDto,
@@ -113,6 +116,7 @@ export class TestReviewsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly attemptScoring: TestAttemptScoringService,
+    @Optional() private readonly events?: EventEmitter2,
   ) {}
 
   async listLessonReviews(
@@ -188,7 +192,7 @@ export class TestReviewsService {
   ): Promise<TeacherTestAttemptReviewDto> {
     this.assertTeacher(user);
     this.validateReviewInput(dto);
-    return this.prisma.$transaction(async (transaction) => {
+    const reviewed = await this.prisma.$transaction(async (transaction) => {
       const owned = await transaction.testAnswer.findFirst({
         where: {
           id: answerId,
@@ -394,6 +398,15 @@ export class TestReviewsService {
       }
       return this.toDto(reviewed);
     });
+    if (
+      reviewed.status === TestAttemptStatus.GRADED ||
+      reviewed.status === TestAttemptStatus.RETURNED
+    ) {
+      this.events?.emit(notificationEvents.attemptFinalized, {
+        attemptId: reviewed.attemptId,
+      });
+    }
+    return reviewed;
   }
 
   private validateReviewInput(dto: ReviewTestAnswerDto): void {

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { logoutSession } from '../../features/auth/model/session.service'
 import { useSessionStore } from '../../features/auth/model/session.store'
+import { NotificationCenter } from '../../features/notifications'
 import { useTheme } from '../theme/theme-context'
 import styles from './GlobalControls.module.css'
 
@@ -35,6 +36,7 @@ export function GlobalControls() {
 
   return (
     <div className={styles.controls} aria-label={t('global.controls')}>
+      {status === 'authenticated' && <NotificationCenter />}
       <button
         className={styles.button}
         type="button"

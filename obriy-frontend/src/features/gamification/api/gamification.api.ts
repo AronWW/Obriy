@@ -1,11 +1,18 @@
 import { authorizedRequest } from '../../auth/model/session.service'
 import type {
   GamificationProfile,
+  StudentAchievements,
   UnseenGamificationRewards,
 } from '../model/gamification.types'
 
 export function getMyGamification(): Promise<GamificationProfile> {
   return authorizedRequest<GamificationProfile>('/gamification/me')
+}
+
+export function getMyAchievements(): Promise<StudentAchievements> {
+  return authorizedRequest<StudentAchievements>(
+    '/gamification/me/achievements',
+  )
 }
 
 export function updateBadgeShowcase(

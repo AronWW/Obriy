@@ -466,6 +466,49 @@ const resources = {
           close: 'Закрити повідомлення',
         },
       },
+      achievements: {
+        title: 'Досягнення',
+        description: 'Ваш рівень, вибрані нагороди та шлях до наступних відзнак.',
+        summary: {
+          label: 'Підсумок досягнень',
+          value: '{{earned}} із {{total}}',
+          caption: 'нагород отримано',
+        },
+        showcase: {
+          title: 'Вітрина нагород',
+          description: 'Три відзнаки, які бачать ваші однокласники.',
+          action: 'Налаштувати вітрину',
+        },
+        collection: {
+          title: 'Колекція',
+          description: 'Отримані нагороди та прогрес до наступних.',
+        },
+        filters: {
+          label: 'Фільтр колекції',
+          ALL: 'Усі',
+          EARNED: 'Отримані',
+          LOCKED: 'Заблоковані',
+        },
+        badge: {
+          earned: 'Нагороду отримано',
+          locked: 'Нагороду ще не отримано',
+          earnedAt: 'Отримано {{date}}',
+          progress: 'Прогрес',
+          progressLabel: 'Прогрес до нагороди «{{name}}»',
+        },
+        states: {
+          loading: 'Завантажуємо досягнення…',
+          error: 'Не вдалося завантажити досягнення.',
+          retry: 'Спробувати ще раз',
+          noBadges: 'Колекція нагород поки порожня.',
+          noMatches: 'У цьому розділі поки немає нагород.',
+        },
+        overview: {
+          title: 'Останні досягнення',
+          action: 'Усі досягнення',
+          empty: 'Перші нагороди ще попереду.',
+        },
+      },
       leaderboard: {
         title: 'Рейтинг класу',
         description: 'Спільний поступ класу за заробленим XP.',
@@ -3007,6 +3050,49 @@ const resources = {
           badges_many: '{{count}} new awards!',
           badges_other: '{{count}} new awards!',
           close: 'Close notification',
+        },
+      },
+      achievements: {
+        title: 'Achievements',
+        description: 'Your level, featured rewards, and progress toward the next badges.',
+        summary: {
+          label: 'Achievement summary',
+          value: '{{earned}} of {{total}}',
+          caption: 'rewards earned',
+        },
+        showcase: {
+          title: 'Badge showcase',
+          description: 'The three rewards your classmates can see.',
+          action: 'Customize showcase',
+        },
+        collection: {
+          title: 'Collection',
+          description: 'Earned rewards and progress toward the next ones.',
+        },
+        filters: {
+          label: 'Collection filter',
+          ALL: 'All',
+          EARNED: 'Earned',
+          LOCKED: 'Locked',
+        },
+        badge: {
+          earned: 'Reward earned',
+          locked: 'Reward not earned yet',
+          earnedAt: 'Earned {{date}}',
+          progress: 'Progress',
+          progressLabel: 'Progress toward {{name}}',
+        },
+        states: {
+          loading: 'Loading achievements…',
+          error: 'Could not load achievements.',
+          retry: 'Try again',
+          noBadges: 'The reward collection is empty.',
+          noMatches: 'There are no rewards in this section yet.',
+        },
+        overview: {
+          title: 'Recent achievements',
+          action: 'All achievements',
+          empty: 'Your first rewards are still ahead.',
         },
       },
       leaderboard: {

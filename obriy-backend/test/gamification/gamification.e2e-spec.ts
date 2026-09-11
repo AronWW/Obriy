@@ -1,5 +1,11 @@
 import { JwtService } from '@nestjs/jwt';
-import { UserRole, UserStatus, XPSourceType } from '@prisma/client';
+import {
+  BadgeCriteriaType,
+  Locale,
+  UserRole,
+  UserStatus,
+  XPSourceType,
+} from '@prisma/client';
 import request from 'supertest';
 import { seedBadges } from '../../prisma/seed-badges';
 import {
@@ -97,6 +103,36 @@ describe('Gamification (e2e)', () => {
       });
 
     await request(context.app.getHttpServer())
+      .get('/gamification/me/achievements')
+      .set('Authorization', bearer('student'))
+      .expect(200)
+      .expect((response) => {
+        const body = responseBody(response.body);
+        const summary = responseBody(body.summary);
+        const collection = recordArray(body.badges);
+        expect(body.progress).toEqual(
+          expect.objectContaining({ totalXp: 500, level: 2 }),
+        );
+        expect(summary.earnedCount).toBe(2);
+        expect(Number(summary.totalCount)).toBeGreaterThanOrEqual(4);
+        expect(collection.find((badge) => badge.key === 'FIRST_STEP')).toEqual(
+          expect.objectContaining({
+            status: 'EARNED',
+            progress: { current: 1, target: 1, percent: 100 },
+          }),
+        );
+        expect(collection.find((badge) => badge.key === 'STEADY_PATH')).toEqual(
+          expect.objectContaining({
+            status: 'LOCKED',
+            progress: { current: 0, target: 5, percent: 0 },
+          }),
+        );
+        expect(JSON.stringify(body)).not.toContain(emails.student);
+        expect(body).not.toHaveProperty('history');
+        expect(body).not.toHaveProperty('testResults');
+      });
+
+    await request(context.app.getHttpServer())
       .patch('/gamification/me/showcase')
       .set('Authorization', bearer('student'))
       .send({ badgeIds: badges.map((badge) => badge.id) })
@@ -172,6 +208,60 @@ describe('Gamification (e2e)', () => {
       .get('/gamification/me')
       .set('Authorization', bearer('teacher'))
       .expect(403);
+    await request(context.app.getHttpServer())
+      .get('/gamification/me/achievements')
+      .set('Authorization', bearer('teacher'))
+      .expect(403);
+  });
+
+  it('keeps an inactive badge visible after the student earned it', async () => {
+    const badge = await context.prisma.badge.create({
+      data: {
+        key: `HISTORIC_${stamp}`,
+        iconKey: 'award',
+        criteriaType: BadgeCriteriaType.PASSED_TEST_COUNT,
+        criteriaValue: 99,
+        isActive: false,
+        translations: {
+          create: [
+            {
+              locale: Locale.UK,
+              name: 'Історична нагорода',
+              description: 'Раніше отримана нагорода.',
+            },
+            {
+              locale: Locale.EN,
+              name: 'Historic reward',
+              description: 'A previously earned reward.',
+            },
+          ],
+        },
+      },
+    });
+    await context.prisma.userBadge.create({
+      data: { studentId: ids.student, badgeId: badge.id },
+    });
+
+    try {
+      await request(context.app.getHttpServer())
+        .get('/gamification/me/achievements')
+        .set('Authorization', bearer('student'))
+        .expect(200)
+        .expect((response) => {
+          const collection = recordArray(responseBody(response.body).badges);
+          expect(collection.find((item) => item.id === badge.id)).toEqual(
+            expect.objectContaining({
+              status: 'EARNED',
+              progress: { current: 99, target: 99, percent: 100 },
+            }),
+          );
+        });
+    } finally {
+      await context.prisma.userBadge.deleteMany({
+        where: { studentId: ids.student, badgeId: badge.id },
+      });
+      await context.prisma.badge.delete({ where: { id: badge.id } });
+    }
   });
 
   async function createUser(

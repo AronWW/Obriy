@@ -7,6 +7,7 @@ import {
   BadgeCriteriaType,
   Locale,
   Prisma,
+  TestAttemptStatus,
   TestStudentStatus,
   UserRole,
   XPSourceType,
@@ -15,11 +16,16 @@ import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../common/types/auth-user.type';
 import {
   AcknowledgeGamificationRewardsDto,
+  AchievementBadgeDto,
+  AchievementBadgeProgressDto,
+  AchievementBadgeStatus,
+  AchievementSummaryDto,
   BadgeAwardDto,
   EarnedBadgeDto,
   GamificationProfileDto,
   GamificationProgressDto,
   GamificationRewardDto,
+  StudentAchievementsDto,
   UnseenGamificationRewardsDto,
   UpdateBadgeShowcaseDto,
   XPAwardDto,
@@ -46,6 +52,108 @@ export class GamificationService {
     this.assertStudent(user);
     const locale = await this.findLocale(this.prisma, user.id);
     return this.getProfile(this.prisma, user.id, locale);
+  }
+
+  async getMyAchievements(user: AuthUser): Promise<StudentAchievementsDto> {
+    this.assertStudent(user);
+    const locale = await this.findLocale(this.prisma, user.id);
+    const [xp, passedTestCount, perfectScoreCount, catalog] = await Promise.all(
+      [
+        this.prisma.xPLedger.aggregate({
+          where: { studentId: user.id },
+          _sum: { amount: true },
+        }),
+        this.prisma.testStudentState.count({
+          where: { studentId: user.id, status: TestStudentStatus.COMPLETED },
+        }),
+        this.prisma.testAttempt.count({
+          where: {
+            studentState: { studentId: user.id },
+            status: TestAttemptStatus.GRADED,
+            scorePercent: { gte: 100 },
+          },
+        }),
+        this.prisma.badge.findMany({
+          where: {
+            OR: [
+              { isActive: true },
+              { awards: { some: { studentId: user.id } } },
+            ],
+          },
+          include: {
+            translations: true,
+            awards: { where: { studentId: user.id }, take: 1 },
+          },
+        }),
+      ],
+    );
+
+    const badges = catalog
+      .map((badge) => {
+        const award = badge.awards[0] ?? null;
+        const translation =
+          badge.translations.find((item) => item.locale === locale) ??
+          badge.translations.find((item) => item.locale === Locale.UK) ??
+          badge.translations[0];
+        const criterionCurrent =
+          badge.criteriaType === BadgeCriteriaType.PASSED_TEST_COUNT
+            ? passedTestCount
+            : perfectScoreCount;
+        const target = Math.max(1, badge.criteriaValue);
+        const current = award
+          ? Math.max(criterionCurrent, target)
+          : criterionCurrent;
+        return new AchievementBadgeDto({
+          id: badge.id,
+          key: badge.key,
+          iconKey: badge.iconKey,
+          name: translation?.name ?? badge.key,
+          description: translation?.description ?? '',
+          status: award
+            ? AchievementBadgeStatus.EARNED
+            : AchievementBadgeStatus.LOCKED,
+          criteriaType: badge.criteriaType,
+          progress: new AchievementBadgeProgressDto({
+            current: Math.min(current, target),
+            target,
+            percent: Math.min(100, Math.round((current / target) * 100)),
+          }),
+          earnedAt: award?.earnedAt ?? null,
+          showcasePosition: award?.showcasePosition ?? null,
+        });
+      })
+      .sort(compareAchievementBadges);
+    const earned = badges.filter(
+      (badge) => badge.status === AchievementBadgeStatus.EARNED,
+    );
+    const showcase = earned
+      .filter((badge) => badge.showcasePosition !== null)
+      .sort(
+        (left, right) =>
+          (left.showcasePosition ?? 0) - (right.showcasePosition ?? 0),
+      )
+      .map(
+        (badge) =>
+          new EarnedBadgeDto({
+            id: badge.id,
+            key: badge.key,
+            iconKey: badge.iconKey,
+            name: badge.name,
+            description: badge.description,
+            earnedAt: badge.earnedAt as Date,
+            showcasePosition: badge.showcasePosition,
+          }),
+      );
+
+    return new StudentAchievementsDto({
+      progress: gamificationProgress(xp._sum.amount ?? 0),
+      summary: new AchievementSummaryDto({
+        earnedCount: earned.length,
+        totalCount: badges.length,
+      }),
+      showcase,
+      badges,
+    });
   }
 
   async getPublicProfile(
@@ -365,6 +473,23 @@ export class GamificationService {
       });
     }
   }
+}
+
+export function compareAchievementBadges(
+  left: AchievementBadgeDto,
+  right: AchievementBadgeDto,
+): number {
+  if (left.status !== right.status) {
+    return left.status === AchievementBadgeStatus.EARNED ? -1 : 1;
+  }
+  if (left.status === AchievementBadgeStatus.EARNED) {
+    const dateDifference =
+      (right.earnedAt?.getTime() ?? 0) - (left.earnedAt?.getTime() ?? 0);
+    if (dateDifference !== 0) return dateDifference;
+  } else if (left.progress.target !== right.progress.target) {
+    return left.progress.target - right.progress.target;
+  }
+  return left.key.localeCompare(right.key);
 }
 
 export function xpThresholdForLevel(level: number): number {

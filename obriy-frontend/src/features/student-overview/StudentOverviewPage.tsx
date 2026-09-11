@@ -9,7 +9,7 @@ import { studentWorkspaceQueryKeys } from '../student-workspace/model/student-wo
 import type { StudentWorkItem } from '../student-workspace/model/student-workspace.types'
 import styles from '../student-workspace/StudentWorkspace.module.css'
 import { getMyGamification } from '../gamification/api/gamification.api'
-import { GamificationProgressCard } from '../gamification'
+import { BadgeIcon, GamificationProgressCard } from '../gamification'
 import { gamificationQueryKeys } from '../gamification/model/gamification-query-keys'
 import type { GamificationProgress } from '../gamification/model/gamification.types'
 
@@ -132,6 +132,47 @@ export function StudentOverviewPage() {
               items={dashboard.upcoming}
               title={t('studentWorkspace.overview.upcomingTitle')}
             />
+
+            <section className={styles.section} aria-labelledby="recent-achievements-title">
+              <div className={styles.sectionHeader}>
+                <h2 id="recent-achievements-title">
+                  {t('achievements.overview.title')}
+                </h2>
+                <Link to="/app/student/achievements">
+                  {t('achievements.overview.action')}
+                  <ArrowRight size={15} aria-hidden="true" />
+                </Link>
+              </div>
+              {!gamificationQuery.data?.badges.length ? (
+                <p className={styles.emptyLine}>
+                  {t('achievements.overview.empty')}
+                </p>
+              ) : (
+                <div className={styles.achievementList}>
+                  {gamificationQuery.data.badges.slice(0, 3).map((badge) => (
+                    <Link
+                      className={styles.achievementItem}
+                      key={badge.id}
+                      to="/app/student/achievements"
+                    >
+                      <span className={styles.achievementIcon}>
+                        <BadgeIcon iconKey={badge.iconKey} size={21} />
+                      </span>
+                      <span>
+                        <strong>{badge.name}</strong>
+                        <small>
+                          {new Intl.DateTimeFormat(dateLocale, {
+                            day: 'numeric',
+                            month: 'short',
+                          }).format(new Date(badge.earnedAt))}
+                        </small>
+                      </span>
+                      <ArrowRight aria-hidden="true" size={15} />
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
 
             <section className={styles.section} aria-labelledby="continue-title">
               <div className={styles.sectionHeader}>

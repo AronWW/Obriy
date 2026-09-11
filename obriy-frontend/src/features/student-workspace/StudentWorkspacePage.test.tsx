@@ -47,6 +47,30 @@ describe('student workspace pages', () => {
       http.get(`${API_BASE_URL}/student/dashboard`, () =>
         HttpResponse.json(dashboardFixture()),
       ),
+      http.get(`${API_BASE_URL}/gamification/me`, () =>
+        HttpResponse.json({
+          progress: {
+            totalXp: 500,
+            level: 2,
+            levelStartXp: 500,
+            nextLevelXp: 1500,
+            xpIntoLevel: 0,
+            xpForNextLevel: 1000,
+          },
+          showcase: [],
+          badges: [
+            {
+              id: 'badge-1',
+              key: 'FIRST_STEP',
+              iconKey: 'footprints',
+              name: 'First Step',
+              description: 'Pass the first test.',
+              earnedAt: '2026-09-10T10:00:00.000Z',
+              showcasePosition: null,
+            },
+          ],
+        }),
+      ),
     )
     renderPage(<StudentOverviewPage />)
 
@@ -55,6 +79,12 @@ describe('student workspace pages', () => {
     expect(screen.getByText('72%')).toBeInTheDocument()
     expect(screen.getByText('Revise chronology')).toBeInTheDocument()
     expect(screen.getByText('Scheduled map')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Recent achievements' })).toBeInTheDocument()
+    expect(screen.getByText('First Step')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /All achievements/ })).toHaveAttribute(
+      'href',
+      '/app/student/achievements',
+    )
     expect(
       screen.getByRole('link', { name: /Early states/ }),
     ).toHaveAttribute(

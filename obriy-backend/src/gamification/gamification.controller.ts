@@ -15,6 +15,7 @@ import type { AuthUser } from '../common/types/auth-user.type';
 import {
   AcknowledgeGamificationRewardsDto,
   GamificationProfileDto,
+  StudentAchievementsDto,
   UnseenGamificationRewardsDto,
   UpdateBadgeShowcaseDto,
 } from './dto/gamification.dto';
@@ -31,6 +32,14 @@ export class GamificationController {
   @Get('me')
   getMe(@CurrentUser() user: AuthUser): Promise<GamificationProfileDto> {
     return this.gamification.getMyProfile(user);
+  }
+
+  @ApiOkResponse({ type: StudentAchievementsDto })
+  @Get('me/achievements')
+  getMyAchievements(
+    @CurrentUser() user: AuthUser,
+  ): Promise<StudentAchievementsDto> {
+    return this.gamification.getMyAchievements(user);
   }
 
   @ApiOkResponse({ type: GamificationProfileDto })

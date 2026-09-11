@@ -1,0 +1,335 @@
+.page {
+  min-height: 100svh;
+  padding: var(--workspace-page-top) clamp(22px, 6vw, 82px) 72px;
+}
+
+.content {
+  width: min(100%, 1080px);
+}
+
+.pageHeader {
+  margin-bottom: 28px;
+}
+
+.pageHeader h1 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 500;
+  line-height: 1.06;
+}
+
+.pageHeader p,
+.sectionHeader p,
+.collectionHeader p {
+  margin: 10px 0 0;
+  color: var(--copy);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.36fr);
+  gap: 16px;
+}
+
+.summary > section {
+  margin-top: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--panel-solid), transparent 3%);
+  border-color: var(--line);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--ink), transparent 95%);
+}
+
+.collectionSummary,
+.section,
+.statePanel {
+  background: color-mix(in srgb, var(--panel-solid), transparent 3%);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--ink), transparent 95%);
+}
+
+.collectionSummary {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  padding: 20px;
+}
+
+.collectionSummary svg {
+  color: var(--gold);
+}
+
+.collectionSummary strong {
+  margin-top: 12px;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.collectionSummary span {
+  margin-top: 5px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.section {
+  margin-top: 18px;
+  padding: clamp(20px, 3vw, 27px);
+}
+
+.sectionHeader,
+.collectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.sectionHeader h2,
+.collectionHeader h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 500;
+}
+
+.sectionHeader button,
+.filters button,
+.statePanel button {
+  min-height: 40px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.sectionHeader button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+  padding: 0 13px;
+}
+
+.sectionHeader button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  padding: 3px;
+  border: 1px solid var(--line);
+}
+
+.filters button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.filters button[aria-pressed='true'] {
+  color: var(--panel-solid);
+  background: var(--archive-blue);
+}
+
+.badgeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.badgeCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 15px;
+  min-height: 178px;
+  padding: 18px;
+  border: 1px solid var(--line-soft);
+}
+
+.badgeCard[data-status='EARNED'] {
+  border-color: color-mix(in srgb, var(--gold), var(--line) 46%);
+  background: color-mix(in srgb, var(--gold), transparent 95%);
+}
+
+.badgeCard[data-status='LOCKED'] {
+  background: color-mix(in srgb, var(--ink), transparent 98%);
+}
+
+.badgeMark {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold), transparent 90%);
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 56%);
+  border-radius: 50%;
+}
+
+.badgeCard[data-status='LOCKED'] .badgeMark {
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: var(--line);
+}
+
+.badgeCopy {
+  min-width: 0;
+}
+
+.badgeTitle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.badgeTitle h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.badgeTitle svg {
+  flex: 0 0 auto;
+  color: var(--gold);
+}
+
+.badgeCard[data-status='LOCKED'] .badgeTitle svg {
+  color: var(--ink-soft);
+}
+
+.badgeCopy > p {
+  min-height: 42px;
+  margin: 7px 0 0;
+  color: var(--copy);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.badgeCopy time {
+  display: block;
+  margin-top: 18px;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badgeProgress {
+  margin-top: 14px;
+}
+
+.badgeProgress > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.badgeProgress strong {
+  color: var(--ink);
+}
+
+.progressTrack {
+  height: 6px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--line), transparent 12%);
+  border-radius: 999px;
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  background: var(--archive-blue);
+  border-radius: inherit;
+}
+
+.empty,
+.statePanel p {
+  margin: 0;
+  color: var(--copy);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.empty {
+  padding: 24px 0 8px;
+  text-align: center;
+}
+
+.statePanel {
+  padding: 28px;
+}
+
+.statePanel button {
+  margin-top: 15px;
+  padding: 0 14px;
+}
+
+@media (max-width: 760px) {
+  .summary,
+  .badgeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .collectionSummary {
+    grid-template-columns: auto 1fr;
+    column-gap: 12px;
+  }
+
+  .collectionSummary strong,
+  .collectionSummary span {
+    grid-column: 2;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .page {
+    padding-right: 14px;
+    padding-bottom: 50px;
+    padding-left: 14px;
+  }
+
+  .sectionHeader,
+  .collectionHeader {
+    display: grid;
+  }
+
+  .sectionHeader button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .filters button {
+    padding: 0 7px;
+  }
+
+  .badgeCard {
+    grid-template-columns: 1fr;
+  }
+}

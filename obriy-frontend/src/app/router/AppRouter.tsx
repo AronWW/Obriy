@@ -22,6 +22,7 @@ import { StudentOverviewPage } from '../../features/student-overview'
 import { StudentTasksPage } from '../../features/student-workspace'
 import { StudentProfilePage } from '../../features/student-profile'
 import { StudentLeaderboardPage } from '../../features/leaderboard'
+import { StudentAchievementsPage } from '../../features/gamification'
 import { TeacherProfilePage } from '../../features/teacher-profile'
 import { TeacherOverviewPage } from '../../features/teacher-overview'
 import {
@@ -49,7 +50,6 @@ import { RoleSelectionPage } from '../../pages/auth/RoleSelectionPage'
 import { VerifyEmailPage } from '../../pages/auth/VerifyEmailPage'
 import { DesignLabPage } from '../../pages/design-lab/DesignLabPage'
 import { HomePage } from '../../pages/home/HomePage'
-import { StudentPlaceholderPage } from '../../pages/student/StudentPlaceholderPage'
 
 const TeacherMapSandboxPage = lazy(() =>
   import('../../features/maps').then((module) => ({
@@ -99,10 +99,7 @@ export function AppRouter() {
               element={<ClassmateProfilePage />}
             />
             <Route path="tasks" element={<StudentTasksPage />} />
-            <Route
-              path="achievements"
-              element={<StudentPlaceholderPage section="achievements" />}
-            />
+            <Route path="achievements" element={<StudentAchievementsPage />} />
             <Route
               path="leaderboard"
               element={<StudentLeaderboardPage />}

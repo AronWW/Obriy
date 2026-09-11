@@ -23,6 +23,39 @@ export interface GamificationProfile {
   badges: EarnedBadge[]
 }
 
+export type AchievementBadgeStatus = 'EARNED' | 'LOCKED'
+
+export type AchievementCriteriaType =
+  | 'PASSED_TEST_COUNT'
+  | 'PERFECT_SCORE_COUNT'
+
+export interface AchievementBadge {
+  id: string
+  key: string
+  iconKey: string
+  name: string
+  description: string
+  status: AchievementBadgeStatus
+  criteriaType: AchievementCriteriaType
+  progress: {
+    current: number
+    target: number
+    percent: number
+  }
+  earnedAt: string | null
+  showcasePosition: number | null
+}
+
+export interface StudentAchievements {
+  progress: GamificationProgress
+  summary: {
+    earnedCount: number
+    totalCount: number
+  }
+  showcase: EarnedBadge[]
+  badges: AchievementBadge[]
+}
+
 export interface XPAward {
   id: string
   amount: number

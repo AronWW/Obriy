@@ -1,4 +1,10 @@
-import { Locale, UserRole, UserStatus, XPSourceType } from '@prisma/client';
+import {
+  BadgeCriteriaType,
+  Locale,
+  UserRole,
+  UserStatus,
+  XPSourceType,
+} from '@prisma/client';
 import type { PrismaService } from '../../../prisma/prisma.service';
 import type { AuthUser } from '../../../src/common/types/auth-user.type';
 import {
@@ -84,6 +90,116 @@ describe('GamificationService rewards', () => {
     expect(transaction.xpCreate).not.toHaveBeenCalled();
   });
 });
+
+describe('GamificationService achievements', () => {
+  const student: AuthUser = {
+    id: 'student-1',
+    email: 'student@example.com',
+    role: UserRole.STUDENT,
+    status: UserStatus.ACTIVE,
+  };
+
+  it('returns earned and locked badges with criterion progress', async () => {
+    const earnedAt = new Date('2026-09-10T10:00:00.000Z');
+    const badgeFindMany = jest.fn().mockResolvedValue([
+      achievementBadge({
+        id: 'earned',
+        key: 'FIRST_STEP',
+        criteriaValue: 1,
+        isActive: false,
+        award: { earnedAt, showcasePosition: 1 },
+      }),
+      achievementBadge({
+        id: 'locked',
+        key: 'STEADY_PATH',
+        criteriaValue: 5,
+      }),
+      achievementBadge({
+        id: 'perfect',
+        key: 'PERFECT_RESULT',
+        criteriaType: BadgeCriteriaType.PERFECT_SCORE_COUNT,
+        criteriaValue: 1,
+      }),
+    ]);
+    const prisma = {
+      user: {
+        findUnique: jest.fn().mockResolvedValue({
+          profile: { preferredLocale: Locale.EN },
+        }),
+      },
+      xPLedger: {
+        aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 700 } }),
+      },
+      testStudentState: { count: jest.fn().mockResolvedValue(3) },
+      testAttempt: { count: jest.fn().mockResolvedValue(0) },
+      badge: { findMany: badgeFindMany },
+    } as unknown as PrismaService;
+    const result = await new GamificationService(prisma).getMyAchievements(
+      student,
+    );
+
+    expect(result.progress).toEqual(
+      expect.objectContaining({ totalXp: 700, level: 2 }),
+    );
+    expect(result.summary).toEqual({ earnedCount: 1, totalCount: 3 });
+    expect(result.showcase).toEqual([
+      expect.objectContaining({ id: 'earned', showcasePosition: 1 }),
+    ]);
+    expect(result.badges).toEqual([
+      expect.objectContaining({
+        id: 'earned',
+        status: 'EARNED',
+        progress: { current: 1, target: 1, percent: 100 },
+      }),
+      expect.objectContaining({
+        id: 'perfect',
+        status: 'LOCKED',
+        progress: { current: 0, target: 1, percent: 0 },
+      }),
+      expect.objectContaining({
+        id: 'locked',
+        status: 'LOCKED',
+        progress: { current: 3, target: 5, percent: 60 },
+      }),
+    ]);
+    expect(badgeFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [
+            { isActive: true },
+            { awards: { some: { studentId: student.id } } },
+          ],
+        },
+      }),
+    );
+  });
+});
+
+function achievementBadge(input: {
+  id: string;
+  key: string;
+  criteriaType?: BadgeCriteriaType;
+  criteriaValue: number;
+  isActive?: boolean;
+  award?: { earnedAt: Date; showcasePosition: number | null };
+}) {
+  return {
+    id: input.id,
+    key: input.key,
+    iconKey: 'award',
+    criteriaType: input.criteriaType ?? BadgeCriteriaType.PASSED_TEST_COUNT,
+    criteriaValue: input.criteriaValue,
+    isActive: input.isActive ?? true,
+    translations: [
+      {
+        locale: Locale.EN,
+        name: input.key,
+        description: `${input.key} description`,
+      },
+    ],
+    awards: input.award ? [input.award] : [],
+  };
+}
 
 function rewardTransaction(input: {
   xpReward: number;

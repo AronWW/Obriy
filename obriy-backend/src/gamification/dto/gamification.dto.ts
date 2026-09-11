@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { BadgeCriteriaType } from '@prisma/client';
 import { ArrayMaxSize, IsArray, IsUUID } from 'class-validator';
+
+export enum AchievementBadgeStatus {
+  EARNED = 'EARNED',
+  LOCKED = 'LOCKED',
+}
 
 export class GamificationProgressDto {
   @ApiProperty({ minimum: 0 })
@@ -63,6 +69,87 @@ export class GamificationProfileDto {
   badges: EarnedBadgeDto[];
 
   constructor(data: GamificationProfileDto) {
+    Object.assign(this, data);
+  }
+}
+
+export class AchievementBadgeProgressDto {
+  @ApiProperty({ minimum: 0 })
+  current: number;
+
+  @ApiProperty({ minimum: 1 })
+  target: number;
+
+  @ApiProperty({ minimum: 0, maximum: 100 })
+  percent: number;
+
+  constructor(data: AchievementBadgeProgressDto) {
+    Object.assign(this, data);
+  }
+}
+
+export class AchievementBadgeDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  key: string;
+
+  @ApiProperty()
+  iconKey: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  description: string;
+
+  @ApiProperty({ enum: AchievementBadgeStatus })
+  status: AchievementBadgeStatus;
+
+  @ApiProperty({ enum: BadgeCriteriaType })
+  criteriaType: BadgeCriteriaType;
+
+  @ApiProperty({ type: AchievementBadgeProgressDto })
+  progress: AchievementBadgeProgressDto;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  earnedAt: Date | null;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 3, nullable: true })
+  showcasePosition: number | null;
+
+  constructor(data: AchievementBadgeDto) {
+    Object.assign(this, data);
+  }
+}
+
+export class AchievementSummaryDto {
+  @ApiProperty({ minimum: 0 })
+  earnedCount: number;
+
+  @ApiProperty({ minimum: 0 })
+  totalCount: number;
+
+  constructor(data: AchievementSummaryDto) {
+    Object.assign(this, data);
+  }
+}
+
+export class StudentAchievementsDto {
+  @ApiProperty({ type: GamificationProgressDto })
+  progress: GamificationProgressDto;
+
+  @ApiProperty({ type: AchievementSummaryDto })
+  summary: AchievementSummaryDto;
+
+  @ApiProperty({ type: EarnedBadgeDto, isArray: true, maxItems: 3 })
+  showcase: EarnedBadgeDto[];
+
+  @ApiProperty({ type: AchievementBadgeDto, isArray: true })
+  badges: AchievementBadgeDto[];
+
+  constructor(data: StudentAchievementsDto) {
     Object.assign(this, data);
   }
 }

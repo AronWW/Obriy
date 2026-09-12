@@ -51,14 +51,14 @@ test('single-child parent report remains linear on mobile', async ({
   await page.setViewportSize({ width: 390, height: 844 })
   await prepareParentSession(page, 'night', [linkedChildren[0]])
 
-  await page.goto('/app/parent')
+  await page.goto('/app/parent/child/child-maria')
   await page.emulateMedia({ reducedMotion: 'reduce' })
 
   await expect(
     page.getByRole('heading', { name: 'Марія Коваль' }),
   ).toBeVisible()
   await expect(
-    page.getByRole('heading', { name: 'Варто перевірити' }),
+    page.getByRole('heading', { name: 'Потребує уваги' }),
   ).toBeVisible()
   await expect(
     page.getByRole('link', { name: 'Докладний прогрес' }),
@@ -72,16 +72,30 @@ test('single-child parent report remains linear on mobile', async ({
   })
 })
 
+test('parent family overview remains readable on an English tablet', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 900 })
+  await prepareParentSession(page, 'day', linkedChildren, 'en')
+  await page.goto('/app/parent')
+
+  await expect(
+    page.getByRole('heading', { name: 'Your children’s learning' }),
+  ).toBeVisible()
+  await expectNoHorizontalOverflow(page)
+})
+
 async function prepareParentSession(
   page: Page,
   theme: 'day' | 'night',
   children: typeof linkedChildren,
+  language: 'uk' | 'en' = 'uk',
 ) {
-  await page.addInitScript((selectedTheme) => {
+  await page.addInitScript(({ selectedTheme, selectedLanguage }) => {
     localStorage.setItem('obriy-theme', selectedTheme)
-    localStorage.setItem('obriy-language', 'uk')
+    localStorage.setItem('obriy-language', selectedLanguage)
     localStorage.setItem('obriy-has-session', '1')
-  }, theme)
+  }, { selectedTheme: theme, selectedLanguage: language })
 
   await page.route('**/auth/refresh', async (route) => {
     await route.fulfill({
@@ -101,7 +115,7 @@ async function prepareParentSession(
             bio: null,
             gradeLevel: null,
             subjectArea: null,
-            preferredLocale: 'UK',
+            preferredLocale: language === 'en' ? 'EN' : 'UK',
           },
         },
       }),
@@ -115,6 +129,51 @@ async function prepareParentSession(
       body: JSON.stringify(children),
     })
   })
+  const summaries = children.map((child) => ({
+    ...child,
+    class: { id: 'class-1', name: 'Історія' },
+    metrics: {
+      requiredReleaseCount: 4,
+      completedCount: 2,
+      completionPercent: 50,
+      averagePercent: 72,
+      attentionCount: child.id === 'child-maria' ? 1 : 0,
+      nextDueAt: '2026-09-12T12:00:00.000Z',
+    },
+  }))
+  await page.route('**/parent/dashboard', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ children: summaries }),
+    }),
+  )
+  await page.route('**/parent/children/child-maria/overview', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        child: summaries[0],
+        attention: [visualWork('Карта держав', 'DUE_SOON')],
+        upcoming: [visualWork('Писемні джерела', null)],
+        recentActivity: [visualWork('Хронологія', null, 'COMPLETED')],
+      }),
+    }),
+  )
+  await page.route('**/notifications/unread-count', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{"unreadCount":0}' }),
+  )
+}
+
+function visualWork(title: string, attentionReason: string | null, status = 'NOT_STARTED') {
+  return {
+    releaseId: title, testId: title, title,
+    lesson: { id: 'lesson-1', title: 'Ранні держави', position: 1 },
+    releaseStatus: 'ACTIVE', isRequired: true, availability: 'AVAILABLE', status,
+    availableFrom: null, dueAt: '2026-09-12T12:00:00.000Z', maxPoints: 10,
+    scorePoints: null, scorePercent: null, bestPoints: null, bestPercent: null,
+    attemptCount: 0, lastActivityAt: '2026-09-11T12:00:00.000Z', attentionReason,
+  }
 }
 
 async function expectNoHorizontalOverflow(page: Page) {

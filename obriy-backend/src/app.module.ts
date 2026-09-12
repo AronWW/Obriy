@@ -28,6 +28,7 @@ import { StudentWorkspaceModule } from './student-workspace/student-workspace.mo
 import { GamificationModule } from './gamification/gamification.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ParentDashboardModule } from './parent-dashboard/parent-dashboard.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { validateEnvironment } from './config/env.validation';
 
@@ -66,6 +67,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     GamificationModule,
     LeaderboardModule,
     NotificationsModule,
+    ParentDashboardModule,
   ],
   controllers: [AppController],
   providers: [

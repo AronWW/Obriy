@@ -1,30 +1,20 @@
+import { useQuery } from '@tanstack/react-query'
+import { parentApi } from '../api/parent.api'
 import {
-  ChildOverview,
-  FamilyOverview,
-  ParentDataState,
-} from '../components/ParentHubContent'
-import { useLinkedChildren } from '../hooks/useLinkedChildren'
+  FamilyDashboard,
+  ParentEmptyState,
+  ParentErrorState,
+  ParentLoadingState,
+} from '../components/ParentDashboardView'
+import { parentQueryKeys } from '../model/parent-query-keys'
 
 export function ParentHubPage() {
-  const childrenQuery = useLinkedChildren()
-  if (
-    childrenQuery.isLoading ||
-    childrenQuery.isError ||
-    !childrenQuery.data?.length
-  ) {
-    return (
-      <ParentDataState
-        isLoading={childrenQuery.isLoading}
-        isError={childrenQuery.isError}
-        onRetry={() => void childrenQuery.refetch()}
-        children={childrenQuery.data}
-      />
-    )
-  }
-  const children = childrenQuery.data ?? []
-  return children.length === 1 ? (
-    <ChildOverview child={children[0]} children={children} />
-  ) : (
-    <FamilyOverview children={children} />
-  )
+  const query = useQuery({
+    queryKey: parentQueryKeys.dashboard(),
+    queryFn: parentApi.getDashboard,
+  })
+  if (query.isLoading) return <ParentLoadingState />
+  if (query.isError) return <ParentErrorState onRetry={() => void query.refetch()} />
+  if (!query.data?.children.length) return <ParentEmptyState />
+  return <FamilyDashboard dashboard={query.data} />
 }

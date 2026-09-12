@@ -12,6 +12,7 @@ import {
 import { ChildAvatar } from '../components/ChildAvatar'
 import styles from '../components/ParentHub.module.css'
 import { linkedChildrenQueryKey } from '../hooks/useLinkedChildren'
+import { parentQueryKeys } from '../model/parent-query-keys'
 
 export function ParentConnectPage() {
   const { t } = useTranslation()
@@ -32,6 +33,7 @@ export function ParentConnectPage() {
         Array.isArray(current) ? [...current, child] : [child],
       )
       void queryClient.invalidateQueries({ queryKey: linkedChildrenQueryKey })
+      void queryClient.invalidateQueries({ queryKey: parentQueryKeys.root })
       navigate('/app/parent', { replace: true })
     },
   })
@@ -85,7 +87,6 @@ export function ParentConnectPage() {
       </Link>
       <section className={`${styles.stateCard} ${styles.connectState}`}>
         <ChildAvatar child={{ ...child, gradeLevel: null }} size="large" />
-        <p className={styles.eyebrow}>{t('parentLinks.connect.eyebrow')}</p>
         <h1>{child.displayName}</h1>
         <p>{t('parentLinks.connect.confirmDescription')}</p>
 

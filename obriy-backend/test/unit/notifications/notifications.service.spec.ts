@@ -12,8 +12,9 @@ describe('NotificationsService', () => {
     role: UserRole.STUDENT,
     status: UserStatus.ACTIVE,
   };
+  const emitCreated = jest.fn();
   const gateway = {
-    emitCreated: jest.fn(),
+    emitCreated,
     emitRead: jest.fn(),
     emitReadAll: jest.fn(),
   } as unknown as NotificationsGateway;
@@ -25,9 +26,12 @@ describe('NotificationsService', () => {
       notification('notification-2', new Date('2026-09-11T12:00:00.000Z')),
       notification('notification-1', new Date('2026-09-11T11:00:00.000Z')),
     ];
+    const findMany = jest
+      .fn<Promise<typeof records>, [Record<string, unknown>]>()
+      .mockResolvedValue(records);
     const prisma = {
       notification: {
-        findMany: jest.fn().mockResolvedValue(records),
+        findMany,
         count: jest.fn().mockResolvedValue(2),
       },
     } as unknown as PrismaService;
@@ -37,12 +41,10 @@ describe('NotificationsService', () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.nextCursor).toEqual(expect.any(String));
-    expect(prisma.notification.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ recipientId: user.id, readAt: null }),
-        take: 2,
-      }),
-    );
+    expect(findMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { recipientId: user.id, readAt: null },
+      take: 2,
+    });
   });
 
   it('rejects malformed cursors', async () => {
@@ -84,7 +86,7 @@ describe('NotificationsService', () => {
     ]);
 
     expect(result).toHaveLength(1);
-    expect(gateway.emitCreated).toHaveBeenCalledWith(
+    expect(emitCreated).toHaveBeenCalledWith(
       user.id,
       expect.objectContaining({ id: created.id }),
     );

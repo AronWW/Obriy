@@ -41,7 +41,7 @@ export class NotificationsGateway implements OnGatewayConnection {
         select: { id: true, status: true },
       });
       if (!user || user.status !== UserStatus.ACTIVE) throw new Error();
-      client.data.userId = user.id;
+      (client.data as Record<string, unknown>).userId = user.id;
       await client.join(this.userRoom(user.id));
     } catch {
       client.disconnect(true);
@@ -67,7 +67,11 @@ export class NotificationsGateway implements OnGatewayConnection {
   }
 
   private accessToken(client: Socket): string {
-    const fromAuth = client.handshake.auth?.accessToken;
+    const handshakeAuth: unknown = client.handshake.auth;
+    const fromAuth =
+      typeof handshakeAuth === 'object' && handshakeAuth !== null
+        ? (handshakeAuth as Record<string, unknown>).accessToken
+        : undefined;
     if (typeof fromAuth === 'string' && fromAuth.length > 0) return fromAuth;
     const authorization = client.handshake.headers.authorization;
     if (authorization?.startsWith('Bearer ')) return authorization.slice(7);

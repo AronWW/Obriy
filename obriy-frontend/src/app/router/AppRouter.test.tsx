@@ -85,6 +85,9 @@ describe('AppRouter auth boundaries', () => {
       http.get(`${API_BASE_URL}/student/tasks`, () =>
         HttpResponse.json({ class: null, items: [], nextCursor: null }),
       ),
+      http.get(`${API_BASE_URL}/parent/dashboard`, () =>
+        HttpResponse.json({ children: [] }),
+      ),
     )
   })
 
@@ -612,7 +615,9 @@ describe('AppRouter auth boundaries', () => {
     renderRouter('/app/parent')
 
     expect(
-      await screen.findByRole('heading', { name: 'Підключіть дитину' }),
+      await screen.findByRole('heading', {
+        name: 'Підключіть профіль дитини',
+      }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Підключити дитину' }),
@@ -764,6 +769,17 @@ describe('AppRouter auth boundaries', () => {
         children = [linkedChild]
         return HttpResponse.json(linkedChild, { status: 201 })
       }),
+      http.get(`${API_BASE_URL}/parent/dashboard`, () =>
+        HttpResponse.json({
+          children: children.map((child) =>
+            dashboardChild(
+              child.id,
+              child.displayName,
+              child.gradeLevel,
+            ),
+          ),
+        }),
+      ),
     )
 
     renderRouter('/app/parent/connect')
@@ -784,7 +800,7 @@ describe('AppRouter auth boundaries', () => {
     expect(getPendingParentInvitation()).toBeNull()
   })
 
-  it('opens the child overview directly for a parent with one linked child', async () => {
+  it('opens the child overview from a single-child dashboard', async () => {
     const user = userEvent.setup()
     useSessionStore.setState({
       user: { ...authenticatedUser, role: 'PARENT' },
@@ -800,25 +816,40 @@ describe('AppRouter auth boundaries', () => {
           },
         ]),
       ),
+      http.get(`${API_BASE_URL}/parent/dashboard`, () =>
+        HttpResponse.json({
+          children: [dashboardChild('child-1', 'Марія', 7)],
+        }),
+      ),
+      http.get(`${API_BASE_URL}/parent/children/child-1/overview`, () =>
+        HttpResponse.json(childOverview('child-1', 'Марія', 7)),
+      ),
+      http.get(`${API_BASE_URL}/parent/children/child-1/progress`, () =>
+        HttpResponse.json(childProgress('child-1', 'Марія', 7)),
+      ),
     )
 
     renderRouter('/app/parent')
 
     expect(
-      await screen.findByRole('heading', { name: 'Марія' }),
+      await screen.findByRole('heading', { name: 'Навчання ваших дітей' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('link', { name: /Марія/ }))
+    expect(
+      await screen.findByRole('heading', { name: 'Марія', level: 1 }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Варто перевірити' }),
+      screen.getByRole('heading', { name: 'Потребує уваги' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Цей тиждень' }),
+      screen.getByRole('heading', { name: 'Наступні роботи' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Докладний прогрес' }),
     ).toHaveAttribute('href', '/app/parent/child/child-1/progress')
     expect(
-      screen.queryByRole('heading', { name: 'Навчання ваших дітей' }),
-    ).not.toBeInTheDocument()
+      screen.getByTestId('current-location'),
+    ).toHaveTextContent('/app/parent/child/child-1')
 
     await user.click(
       screen.getByRole('link', { name: 'Докладний прогрес' }),
@@ -854,6 +885,17 @@ describe('AppRouter auth boundaries', () => {
           },
         ]),
       ),
+      http.get(`${API_BASE_URL}/parent/dashboard`, () =>
+        HttpResponse.json({
+          children: [
+            dashboardChild('child-1', 'Марія', 7),
+            dashboardChild('child-2', 'Остап', null),
+          ],
+        }),
+      ),
+      http.get(`${API_BASE_URL}/parent/children/child-1/overview`, () =>
+        HttpResponse.json(childOverview('child-1', 'Марія', 7)),
+      ),
     )
 
     renderRouter('/app/parent')
@@ -870,7 +912,7 @@ describe('AppRouter auth boundaries', () => {
       await screen.findByRole('heading', { name: 'Марія' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('combobox', { name: 'Переглянути дитину' }),
+      screen.getByRole('combobox', { name: 'Дитина' }),
     ).toHaveValue('child-1')
     expect(screen.getByTestId('current-location')).toHaveTextContent(
       '/app/parent/child/child-1',
@@ -891,6 +933,52 @@ function renderRouter(initialEntry: string) {
       </MemoryRouter>
     </QueryClientProvider>,
   )
+}
+
+function dashboardChild(
+  id: string,
+  displayName: string,
+  gradeLevel: number | null,
+) {
+  return {
+    id,
+    displayName,
+    avatarUrl: null,
+    gradeLevel,
+    class: { id: 'class-1', name: '7-А' },
+    metrics: {
+      requiredReleaseCount: 0,
+      completedCount: 0,
+      completionPercent: null,
+      averagePercent: null,
+      attentionCount: 0,
+      nextDueAt: null,
+    },
+  }
+}
+
+function childOverview(
+  id: string,
+  displayName: string,
+  gradeLevel: number | null,
+) {
+  return {
+    child: dashboardChild(id, displayName, gradeLevel),
+    attention: [],
+    upcoming: [],
+    recentActivity: [],
+  }
+}
+
+function childProgress(
+  id: string,
+  displayName: string,
+  gradeLevel: number | null,
+) {
+  return {
+    child: dashboardChild(id, displayName, gradeLevel),
+    lessons: [],
+  }
 }
 
 function LocationProbe() {

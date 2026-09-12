@@ -1,7 +1,7 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { TestLatePolicy, TestReleaseStatus } from '@prisma/client';
+import { Prisma, TestLatePolicy, TestReleaseStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { notificationEvents } from '../notifications/notifications.events';
 
@@ -35,15 +35,19 @@ export class TestReleaseLifecycleService {
     await this.synchronizeWhere({ classId });
   }
 
+  async synchronizeClasses(classIds: string[]): Promise<void> {
+    const uniqueIds = [...new Set(classIds)];
+    if (uniqueIds.length === 0) return;
+    await this.synchronizeWhere({ classId: { in: uniqueIds } });
+  }
+
   async synchronizeRelease(releaseId: string): Promise<void> {
     await this.synchronizeWhere({ id: releaseId });
   }
 
-  private async synchronizeWhere(scope: {
-    id?: string;
-    lessonId?: string;
-    classId?: string;
-  }): Promise<{ activated: number; closed: number }> {
+  private async synchronizeWhere(
+    scope: Prisma.TestReleaseWhereInput,
+  ): Promise<{ activated: number; closed: number }> {
     const now = new Date();
     const activating = this.events
       ? await this.prisma.testRelease.findMany({

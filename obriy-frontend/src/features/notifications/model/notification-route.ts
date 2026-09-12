@@ -8,6 +8,15 @@ export function notificationRoute(
     typeof notification.payload[key] === 'string'
       ? (notification.payload[key] as string)
       : null
+  if (notification.type === 'CHAT_MESSAGE') {
+    const conversationId = value('conversationId')
+    if (conversationId && role === 'TEACHER') {
+      return `/app/teacher/messages/${conversationId}`
+    }
+    return conversationId
+      ? `/app/student/messages/${conversationId}`
+      : '/app/student/messages'
+  }
   if (role === 'TEACHER') {
     const lessonId = value('lessonId')
     const attemptId = value('attemptId')
@@ -32,4 +41,3 @@ export function notificationRoute(
     ? `/app/student/lessons/${lessonId}?test=${releaseId}`
     : '/app/student/tasks'
 }
-

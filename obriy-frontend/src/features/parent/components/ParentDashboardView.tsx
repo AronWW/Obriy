@@ -7,6 +7,7 @@ import {
   ChevronDown,
   CircleAlert,
   Clock3,
+  MessagesSquare,
   RefreshCw,
   TrendingUp,
 } from 'lucide-react'
@@ -110,9 +111,14 @@ export function ChildOverviewView({
           <WorkSection icon={<Clock3 size={19} />} title={t('parentLearning.recent.title')} empty={t('parentLearning.recent.empty')} items={overview.recentActivity} />
         </>
       )}
-      <Link className={styles.progressLink} to={`/app/parent/child/${child.id}/progress`}>
-        <BookOpen size={17} />{t('parentLearning.actions.details')}<ArrowRight size={16} />
-      </Link>
+      <div className={styles.childActions}>
+        <Link className={styles.progressLink} to={`/app/parent/child/${child.id}/progress`}>
+          <BookOpen size={17} />{t('parentLearning.actions.details')}<ArrowRight size={16} />
+        </Link>
+        <Link className={styles.progressLink} to={`/app/parent/child/${child.id}/messages`}>
+          <MessagesSquare size={17} />{t('chat.parent.open')}<ArrowRight size={16} />
+        </Link>
+      </div>
       <UnlinkChildButton childId={child.id} />
     </div>
   )

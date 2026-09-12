@@ -90,3 +90,8 @@
   .attempt time { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+.childActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

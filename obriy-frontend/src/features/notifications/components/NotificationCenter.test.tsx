@@ -142,6 +142,11 @@ describe('NotificationCenter', () => {
       type: 'BADGE_UNLOCKED',
       payload: {},
     }, 'STUDENT')).toBe('/app/student/achievements')
+    expect(notificationRoute({
+      ...base,
+      type: 'CHAT_MESSAGE',
+      payload: { conversationId: 'conversation-1' },
+    }, 'TEACHER')).toBe('/app/teacher/messages/conversation-1')
   })
 })
 

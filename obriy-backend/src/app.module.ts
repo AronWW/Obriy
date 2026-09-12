@@ -29,6 +29,7 @@ import { GamificationModule } from './gamification/gamification.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ParentDashboardModule } from './parent-dashboard/parent-dashboard.module';
+import { ChatModule } from './chat/chat.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { validateEnvironment } from './config/env.validation';
 
@@ -68,6 +69,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     LeaderboardModule,
     NotificationsModule,
     ParentDashboardModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [

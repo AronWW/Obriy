@@ -27,6 +27,14 @@ export interface CreateNotificationInput {
   deduplicationKey: string;
 }
 
+export interface ChatNotificationInput {
+  recipientId: string;
+  studentId: string;
+  conversationId: string;
+  senderDisplayName: string;
+  unreadCount: number;
+}
+
 @Injectable()
 export class NotificationsService {
   constructor(
@@ -145,6 +153,67 @@ export class NotificationsService {
     await this.prisma.notification.deleteMany({
       where: { recipientId: parentId, subjectStudentId: childId },
     });
+  }
+
+  async notifyChatMessage(input: ChatNotificationInput): Promise<void> {
+    if (
+      await this.gateway.isViewingConversation(
+        input.recipientId,
+        input.conversationId,
+      )
+    )
+      return;
+    const deduplicationKey = `CHAT_MESSAGE:${input.conversationId}`;
+    const notification = await this.prisma.notification.upsert({
+      where: {
+        recipientId_deduplicationKey: {
+          recipientId: input.recipientId,
+          deduplicationKey,
+        },
+      },
+      create: {
+        recipientId: input.recipientId,
+        subjectStudentId: input.studentId,
+        type: NotificationType.CHAT_MESSAGE,
+        deduplicationKey,
+        payload: {
+          conversationId: input.conversationId,
+          senderDisplayName: input.senderDisplayName,
+          unreadCount: input.unreadCount,
+        },
+      },
+      update: {
+        readAt: null,
+        createdAt: new Date(),
+        payload: {
+          conversationId: input.conversationId,
+          senderDisplayName: input.senderDisplayName,
+          unreadCount: input.unreadCount,
+        },
+      },
+    });
+    this.gateway.emitCreated(input.recipientId, this.toDto(notification));
+  }
+
+  async markChatNotificationRead(
+    recipientId: string,
+    conversationId: string,
+  ): Promise<void> {
+    const notification = await this.prisma.notification.findUnique({
+      where: {
+        recipientId_deduplicationKey: {
+          recipientId,
+          deduplicationKey: `CHAT_MESSAGE:${conversationId}`,
+        },
+      },
+      select: { id: true, readAt: true },
+    });
+    if (!notification || notification.readAt) return;
+    await this.prisma.notification.update({
+      where: { id: notification.id },
+      data: { readAt: new Date() },
+    });
+    this.gateway.emitRead(recipientId, notification.id);
   }
 
   private toDto(record: {

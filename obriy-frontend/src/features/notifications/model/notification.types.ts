@@ -8,6 +8,7 @@ export type NotificationType =
   | 'TEST_NEEDS_REVISION'
   | 'BADGE_UNLOCKED'
   | 'LEVEL_UP'
+  | 'CHAT_MESSAGE'
 
 export interface AppNotification {
   id: string
@@ -30,4 +31,3 @@ export interface NotificationUnreadCount {
 }
 
 export type NotificationFilter = 'ALL' | 'UNREAD'
-

@@ -7,6 +7,7 @@ import {
   Library,
   Map,
   Menu,
+  MessageCircle,
   Route,
   Settings,
   Sparkles,
@@ -20,6 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useSessionStore } from '../../features/auth/model/session.store'
 import { GamificationRewardNotifier } from '../../features/gamification'
+import { ChatUnreadBadge } from '../../features/chat'
 import { ObriyBackground } from '../../shared/backgrounds/ObriyBackground'
 import { BrandLogo } from '../../shared/brand/BrandLogo'
 import { requestWorkspaceNavigation } from '../../shared/navigation/workspace-navigation-guard'
@@ -62,6 +64,11 @@ const studentNavigationItems: NavigationItem[] = [
     key: 'studentTasks',
     to: '/app/student/tasks',
     icon: Library,
+  },
+  {
+    key: 'studentMessages',
+    to: '/app/student/messages',
+    icon: MessageCircle,
   },
   {
     key: 'studentAchievements',
@@ -111,6 +118,11 @@ const teacherNavigationItems: NavigationItem[] = [
     key: 'teacherAnalytics',
     to: '/app/teacher/analytics',
     icon: ChartBar,
+  },
+  {
+    key: 'teacherMessages',
+    to: '/app/teacher/messages',
+    icon: MessageCircle,
   },
   {
     key: 'teacherProfile',
@@ -177,6 +189,7 @@ export function DesignLabPage() {
                 >
                   <Icon size={17} />
                   <span>{t(`navigation.${item.key}`)}</span>
+                  {(item.key === 'studentMessages' || item.key === 'teacherMessages') && <ChatUnreadBadge />}
                 </NavLink>
               )
             }

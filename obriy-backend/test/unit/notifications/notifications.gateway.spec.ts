@@ -64,6 +64,47 @@ describe('NotificationsGateway', () => {
       notificationId: 'notification-1',
     });
   });
+
+  it('delivers chat events only to the target user room', () => {
+    const gateway = new NotificationsGateway(
+      {} as JwtService,
+      {} as ConfigService,
+      {} as PrismaService,
+    );
+    const emit = jest.fn();
+    const to = jest.fn().mockReturnValue({ emit });
+    Object.assign(gateway, { server: { to } });
+    const message = { id: 'message-1' } as never;
+
+    gateway.emitChatMessage('teacher-1', message);
+
+    expect(to).toHaveBeenCalledWith('user:teacher-1');
+    expect(emit).toHaveBeenCalledWith('chat.message.created', message);
+  });
+
+  it('recognizes only a focused socket watching the requested conversation', async () => {
+    const gateway = new NotificationsGateway(
+      {} as JwtService,
+      {} as ConfigService,
+      {} as PrismaService,
+    );
+    const fetchSockets = jest.fn().mockResolvedValue([
+      {
+        data: { activeConversationId: 'conversation-1', chatFocused: false },
+      },
+      { data: { activeConversationId: 'conversation-2', chatFocused: true } },
+    ]);
+    Object.assign(gateway, {
+      server: { in: jest.fn().mockReturnValue({ fetchSockets }) },
+    });
+
+    await expect(
+      gateway.isViewingConversation('student-1', 'conversation-1'),
+    ).resolves.toBe(false);
+    await expect(
+      gateway.isViewingConversation('student-1', 'conversation-2'),
+    ).resolves.toBe(true);
+  });
 });
 
 function socket(auth: Record<string, unknown>) {

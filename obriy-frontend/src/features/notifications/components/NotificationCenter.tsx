@@ -23,6 +23,7 @@ import type {
   AppNotification,
   NotificationFilter,
 } from '../model/notification.types'
+import { chatQueryKeys } from '../../chat/model/chat-query-keys'
 import styles from './NotificationCenter.module.css'
 
 const REALTIME_URL = `${new URL(API_BASE_URL, window.location.origin).origin}/realtime`
@@ -75,13 +76,18 @@ export function NotificationCenter() {
     })
     socket.on('disconnect', () => setConnectionState('disconnected'))
     socket.on('connect_error', () => setConnectionState('disconnected'))
-    socket.on('notification.created', refresh)
+    socket.on('notification.created', (notification?: AppNotification) => {
+      refresh()
+      if (notification?.type === 'CHAT_MESSAGE') {
+        void queryClient.invalidateQueries({ queryKey: chatQueryKeys.root })
+      }
+    })
     socket.on('notification.read', refresh)
     socket.on('notification.read-all', refresh)
     return () => {
       socket.disconnect()
     }
-  }, [accessToken, refresh])
+  }, [accessToken, queryClient, refresh])
 
   useEffect(() => {
     const reconcile = () => {

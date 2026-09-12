@@ -91,6 +91,75 @@ describe('NotificationsService', () => {
       expect.objectContaining({ id: created.id }),
     );
   });
+
+  it('groups chat notifications by conversation without storing message text', async () => {
+    const created = {
+      ...notification('notification-chat', new Date()),
+      type: NotificationType.CHAT_MESSAGE,
+      payload: {
+        conversationId: 'conversation-1',
+        senderDisplayName: 'Teacher',
+        unreadCount: 2,
+      },
+    };
+    const upsert = jest
+      .fn<Promise<typeof created>, [Record<string, unknown>]>()
+      .mockResolvedValue(created);
+    const chatGateway = {
+      ...gateway,
+      isViewingConversation: jest.fn().mockResolvedValue(false),
+    } as unknown as NotificationsGateway;
+    const service = new NotificationsService(
+      { notification: { upsert } } as unknown as PrismaService,
+      chatGateway,
+    );
+
+    await service.notifyChatMessage({
+      recipientId: 'student-1',
+      studentId: 'student-1',
+      conversationId: 'conversation-1',
+      senderDisplayName: 'Teacher',
+      unreadCount: 2,
+    });
+
+    expect(upsert).toHaveBeenCalledTimes(1);
+    const call = upsert.mock.calls[0]?.[0];
+    expect(call?.where).toEqual({
+      recipientId_deduplicationKey: {
+        recipientId: 'student-1',
+        deduplicationKey: 'CHAT_MESSAGE:conversation-1',
+      },
+    });
+    const update = call?.update as { payload?: Record<string, unknown> };
+    expect(update.payload).toEqual({
+      conversationId: 'conversation-1',
+      senderDisplayName: 'Teacher',
+      unreadCount: 2,
+    });
+    expect(update.payload).not.toHaveProperty('message');
+  });
+
+  it('suppresses a chat notification while that conversation is focused', async () => {
+    const upsert = jest.fn();
+    const chatGateway = {
+      ...gateway,
+      isViewingConversation: jest.fn().mockResolvedValue(true),
+    } as unknown as NotificationsGateway;
+    const service = new NotificationsService(
+      { notification: { upsert } } as unknown as PrismaService,
+      chatGateway,
+    );
+
+    await service.notifyChatMessage({
+      recipientId: 'student-1',
+      studentId: 'student-1',
+      conversationId: 'conversation-1',
+      senderDisplayName: 'Teacher',
+      unreadCount: 1,
+    });
+
+    expect(upsert).not.toHaveBeenCalled();
+  });
 });
 
 function notification(id: string, createdAt: Date) {

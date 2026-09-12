@@ -23,6 +23,7 @@ import { StudentTasksPage } from '../../features/student-workspace'
 import { StudentProfilePage } from '../../features/student-profile'
 import { StudentLeaderboardPage } from '../../features/leaderboard'
 import { StudentAchievementsPage } from '../../features/gamification'
+import { ChatWorkspacePage, ParentChatPage } from '../../features/chat'
 import { TeacherProfilePage } from '../../features/teacher-profile'
 import { TeacherOverviewPage } from '../../features/teacher-overview'
 import {
@@ -99,6 +100,8 @@ export function AppRouter() {
               element={<ClassmateProfilePage />}
             />
             <Route path="tasks" element={<StudentTasksPage />} />
+            <Route path="messages" element={<ChatWorkspacePage />} />
+            <Route path="messages/:conversationId" element={<ChatWorkspacePage />} />
             <Route path="achievements" element={<StudentAchievementsPage />} />
             <Route
               path="leaderboard"
@@ -153,6 +156,8 @@ export function AppRouter() {
               element={<TeacherTestEditorPage />}
             />
             <Route path="analytics" element={<TeacherAnalyticsPage />} />
+            <Route path="messages" element={<ChatWorkspacePage />} />
+            <Route path="messages/:conversationId" element={<ChatWorkspacePage />} />
             <Route
               path="analytics/classes/:classId/students/:studentId"
               element={<TeacherStudentAnalyticsPage />}
@@ -168,6 +173,8 @@ export function AppRouter() {
               path="child/:childId/progress"
               element={<ParentProgressPage />}
             />
+            <Route path="child/:childId/messages" element={<ParentChatPage />} />
+            <Route path="child/:childId/messages/:conversationId" element={<ParentChatPage />} />
             <Route path="connect" element={<ParentConnectPage />} />
           </Route>
         </Route>

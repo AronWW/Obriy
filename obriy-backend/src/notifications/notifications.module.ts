@@ -18,6 +18,6 @@ import { NotificationsSchedulerService } from './notifications-scheduler.service
     NotificationsListener,
     NotificationsSchedulerService,
   ],
-  exports: [NotificationsService],
+  exports: [NotificationsService, NotificationsGateway],
 })
 export class NotificationsModule {}

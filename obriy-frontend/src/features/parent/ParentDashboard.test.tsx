@@ -25,11 +25,11 @@ describe('Parent learning dashboard', () => {
         role: 'PARENT',
         status: 'ACTIVE',
         emailVerifiedAt: '2026-09-01T10:00:00.000Z',
+        hasPassword: true,
         profile: {
           displayName: 'Olena',
           avatarUrl: null,
           bio: null,
-          gradeLevel: null,
           subjectArea: null,
           preferredLocale: 'EN',
         },
@@ -106,12 +106,12 @@ describe('Parent learning dashboard', () => {
 
 const children = [
   {
-    id: 'student-1', displayName: 'Marta', avatarUrl: null, gradeLevel: 8,
+    id: 'student-1', displayName: 'Marta', avatarUrl: null,
     class: { id: 'class-1', name: 'History' },
     metrics: { requiredReleaseCount: 2, completedCount: 1, completionPercent: 50, averagePercent: 40, attentionCount: 1, nextDueAt: '2026-09-12T10:00:00.000Z' },
   },
   {
-    id: 'student-2', displayName: 'Ostap', avatarUrl: null, gradeLevel: 5,
+    id: 'student-2', displayName: 'Ostap', avatarUrl: null,
     class: null,
     metrics: { requiredReleaseCount: 0, completedCount: 0, completionPercent: null, averagePercent: null, attentionCount: 0, nextDueAt: null },
   },

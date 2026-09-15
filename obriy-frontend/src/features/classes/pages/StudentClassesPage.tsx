@@ -219,13 +219,6 @@ export function StudentClassesPage() {
                   />
                   <div>
                     <strong>{classmate.displayName}</strong>
-                    <span>
-                      {classmate.gradeLevel === null
-                        ? t('classes.common.gradeUnknown')
-                        : t('classes.common.grade', {
-                            grade: classmate.gradeLevel,
-                          })}
-                    </span>
                   </div>
                   <Link to={`/app/student/classmates/${classmate.id}`}>
                     {t('classes.student.classmates.open')}

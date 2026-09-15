@@ -1,6 +1,19 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  Put,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
@@ -12,7 +25,7 @@ import type { AuthUser } from '../common/types/auth-user.type';
 import { PrivateProfileDto } from './dto/profile.dto';
 import { LinkedChildDto } from './dto/linked-child.dto';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
-import { UsersService } from './users.service';
+import { UsersService, type UploadedAvatar } from './users.service';
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('Users')
@@ -46,5 +59,33 @@ export class UsersController {
     @Body() dto: UpdateMyProfileDto,
   ): Promise<PrivateProfileDto> {
     return this.usersService.updateMyProfile(user.id, dto);
+  }
+
+  @ApiOperation({ summary: 'Upload and replace the current avatar' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['avatar'],
+      properties: { avatar: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiOkResponse({ type: PrivateProfileDto })
+  @UseInterceptors(
+    FileInterceptor('avatar', { limits: { fileSize: 5 * 1024 * 1024 } }),
+  )
+  @Put('me/avatar')
+  uploadMyAvatar(
+    @CurrentUser() user: AuthUser,
+    @UploadedFile() file?: UploadedAvatar,
+  ): Promise<PrivateProfileDto> {
+    return this.usersService.uploadMyAvatar(user.id, file);
+  }
+
+  @ApiOperation({ summary: 'Remove the current avatar' })
+  @ApiOkResponse({ type: PrivateProfileDto })
+  @Delete('me/avatar')
+  removeMyAvatar(@CurrentUser() user: AuthUser): Promise<PrivateProfileDto> {
+    return this.usersService.removeMyAvatar(user.id);
   }
 }

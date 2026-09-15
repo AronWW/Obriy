@@ -31,11 +31,14 @@ export class PrivateProfileDto {
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   emailVerifiedAt: Date | null;
   @ApiProperty({
+    description: 'Whether the account has a local password configured.',
+  })
+  hasPassword: boolean;
+  @ApiProperty({
     example: {
       displayName: 'Olena',
       avatarUrl: null,
       bio: null,
-      gradeLevel: 9,
       subjectArea: null,
       preferredLocale: 'UK',
     },
@@ -44,7 +47,6 @@ export class PrivateProfileDto {
     displayName: string;
     avatarUrl: string | null;
     bio: string | null;
-    gradeLevel: number | null;
     subjectArea: string | null;
     preferredLocale: Locale;
   };
@@ -55,6 +57,7 @@ export class PrivateProfileDto {
     this.role = data.role;
     this.status = data.status;
     this.emailVerifiedAt = data.emailVerifiedAt;
+    this.hasPassword = data.hasPassword;
     this.profile = data.profile;
   }
 }

@@ -29,7 +29,6 @@ export interface TeacherAnalyticsStudent {
   id: string
   displayName: string
   avatarUrl: string | null
-  gradeLevel: number | null
   requiredCount: number
   completedCount: number
   completionPercent: number | null

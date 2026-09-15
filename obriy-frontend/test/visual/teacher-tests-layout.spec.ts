@@ -114,11 +114,11 @@ async function prepareTeacherSession(page: Page) {
           role: 'TEACHER',
           status: 'ACTIVE',
           emailVerifiedAt: '2026-09-07T12:00:00.000Z',
+          hasPassword: true,
           profile: {
             displayName: 'Layout Teacher',
             avatarUrl: null,
             bio: null,
-            gradeLevel: null,
             subjectArea: 'History',
             preferredLocale: 'EN',
           },

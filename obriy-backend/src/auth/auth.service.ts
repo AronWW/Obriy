@@ -10,6 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { I18nService } from 'nestjs-i18n';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
 import { Locale, Prisma, UserRole, UserStatus } from '@prisma/client';
@@ -28,6 +29,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { OAuthStateService } from './oauth-state.service';
 import { GoogleProfile } from './types/google-profile.type';
 import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { authEvents } from './auth.events';
 
 type TokenPair = {
   accessToken: string;
@@ -39,6 +42,7 @@ type TokenUser = {
   email: string;
   role: UserRole;
   status: UserStatus;
+  sessionVersion: number;
 };
 
 type UserWithProfile = Prisma.UserGetPayload<{
@@ -59,6 +63,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly i18n: I18nService,
     private readonly oauthStateService: OAuthStateService,
+    private readonly events: EventEmitter2,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthMessageDto> {
@@ -436,7 +441,7 @@ export class AuthService {
       }),
       this.prisma.user.update({
         where: { id: storedToken.userId },
-        data: { passwordHash },
+        data: { passwordHash, sessionVersion: { increment: 1 } },
       }),
       this.prisma.refreshToken.updateMany({
         where: { userId: storedToken.userId, revokedAt: null },
@@ -444,9 +449,60 @@ export class AuthService {
       }),
     ]);
 
+    this.events.emit(authEvents.sessionsRevoked, {
+      userId: storedToken.userId,
+    });
+
     return new AuthMessageDto({
       code: 'PASSWORD_RESET',
       message: this.t('auth.passwordReset'),
+    });
+  }
+
+  async changePassword(
+    user: AuthUser,
+    dto: ChangePasswordDto,
+  ): Promise<AuthMessageDto> {
+    const account = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { passwordHash: true },
+    });
+    if (!account?.passwordHash) {
+      throw new BadRequestException({
+        code: 'LOCAL_PASSWORD_NOT_SET',
+        message: this.t('auth.errors.localPasswordNotSet'),
+      });
+    }
+    if (!(await argon2.verify(account.passwordHash, dto.currentPassword))) {
+      throw new UnauthorizedException({
+        code: 'CURRENT_PASSWORD_INVALID',
+        message: this.t('auth.errors.currentPasswordInvalid'),
+      });
+    }
+    if (await argon2.verify(account.passwordHash, dto.newPassword)) {
+      throw new BadRequestException({
+        code: 'PASSWORD_REUSE_FORBIDDEN',
+        message: this.t('auth.errors.passwordReuseForbidden'),
+      });
+    }
+
+    const passwordHash = await argon2.hash(dto.newPassword);
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash, sessionVersion: { increment: 1 } },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: now },
+      }),
+    ]);
+
+    this.events.emit(authEvents.sessionsRevoked, { userId: user.id });
+    return new AuthMessageDto({
+      code: 'PASSWORD_CHANGED',
+      message: this.t('auth.passwordChanged'),
     });
   }
 
@@ -694,6 +750,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
       status: user.status,
+      sessionVersion: user.sessionVersion,
     };
 
     return this.jwtService.signAsync(payload, {

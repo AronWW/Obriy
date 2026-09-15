@@ -230,7 +230,6 @@ describe('Student lessons (e2e)', () => {
             displayName:
               key === 'teacher' ? 'Teacher Example' : 'Student Example',
             preferredLocale,
-            gradeLevel: role === UserRole.STUDENT ? 8 : null,
           },
         },
       },

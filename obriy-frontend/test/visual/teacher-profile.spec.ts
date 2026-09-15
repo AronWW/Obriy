@@ -80,11 +80,11 @@ async function prepareTeacherSession(page: Page, theme: 'day' | 'night') {
           role: 'TEACHER',
           status: 'ACTIVE',
           emailVerifiedAt: '2026-07-18T12:00:00.000Z',
+          hasPassword: true,
           profile: {
             displayName: 'Олена Коваль',
             avatarUrl: null,
             bio: 'Допомагаю учням бачити зв’язки між подіями.',
-            gradeLevel: null,
             subjectArea: 'Історія України',
             preferredLocale: 'UK',
           },

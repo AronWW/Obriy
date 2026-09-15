@@ -18,11 +18,11 @@ const studentSession = {
     role: 'STUDENT',
     status: 'ACTIVE',
     emailVerifiedAt: '2026-07-19T12:00:00.000Z',
+    hasPassword: false,
     profile: {
       displayName: 'Google Student',
       avatarUrl: 'https://example.com/avatar.png',
       bio: null,
-      gradeLevel: null,
       subjectArea: null,
       preferredLocale: 'UK',
     },

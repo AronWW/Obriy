@@ -59,11 +59,6 @@ export function ClassmateProfilePage() {
   }
 
   const profile = profileQuery.data
-  const grade =
-    profile.gradeLevel === null
-      ? t('studentProfile.gradeUnavailable')
-      : t('studentProfile.grade', { grade: profile.gradeLevel })
-
   return (
     <section
       className={profileStyles.page}
@@ -93,7 +88,6 @@ export function ClassmateProfilePage() {
             />
             <div>
               <h1 id="classmate-profile-title">{profile.displayName}</h1>
-              <p>{grade}</p>
               <span>{t('studentProfile.titleEmpty')}</span>
             </div>
           </div>

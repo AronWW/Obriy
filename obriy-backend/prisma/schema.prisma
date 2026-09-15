@@ -185,6 +185,7 @@ model User {
   googleId        String?    @unique
   role            UserRole
   status          UserStatus @default(PENDING)
+  sessionVersion  Int        @default(0)
   emailVerifiedAt DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
@@ -211,9 +212,9 @@ model User {
   earnedBadges            UserBadge[]              @relation("StudentBadges")
   receivedNotifications   Notification[]           @relation("NotificationRecipient")
   subjectNotifications    Notification[]           @relation("NotificationSubjectStudent")
-  taughtConversations     Conversation[]            @relation("ConversationTeacher")
-  studentConversations    Conversation[]            @relation("ConversationStudent")
-  sentMessages            Message[]                 @relation("MessageSender")
+  taughtConversations     Conversation[]           @relation("ConversationTeacher")
+  studentConversations    Conversation[]           @relation("ConversationStudent")
+  sentMessages            Message[]                @relation("MessageSender")
   studentClassId          String?
   studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
 
@@ -252,16 +253,16 @@ model OAuthRegistrationTicket {
 }
 
 model Profile {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  displayName     String
-  avatarUrl       String?
-  bio             String?
-  gradeLevel      Int?
-  subjectArea     String?
-  preferredLocale Locale   @default(UK)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  displayName      String
+  avatarUrl        String?
+  avatarStorageKey String?  @db.VarChar(255)
+  bio              String?
+  subjectArea      String?
+  preferredLocale  Locale   @default(UK)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -767,8 +768,8 @@ model Conversation {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  teacher User      @relation("ConversationTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
-  student User      @relation("ConversationStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher  User      @relation("ConversationTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  student  User      @relation("ConversationStudent", fields: [studentId], references: [id], onDelete: Cascade)
   messages Message[]
 
   @@unique([teacherId, studentId])

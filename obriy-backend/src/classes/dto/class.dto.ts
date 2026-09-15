@@ -77,9 +77,6 @@ export class ClassMemberDto {
   @ApiPropertyOptional({ nullable: true })
   avatarUrl: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
-  gradeLevel: number | null;
-
   constructor(data: ClassMemberDto) {
     Object.assign(this, data);
   }

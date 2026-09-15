@@ -39,7 +39,7 @@ const RELEASE_STATUSES = [
 const childSelect = {
   id: true,
   profile: {
-    select: { displayName: true, avatarUrl: true, gradeLevel: true },
+    select: { displayName: true, avatarUrl: true },
   },
   studentClass: { select: { id: true, name: true } },
 } satisfies Prisma.UserSelect;
@@ -417,7 +417,6 @@ export class ParentDashboardService {
       id: child.id,
       displayName: child.profile?.displayName ?? 'Student',
       avatarUrl: child.profile?.avatarUrl ?? null,
-      gradeLevel: child.profile?.gradeLevel ?? null,
     });
   }
 

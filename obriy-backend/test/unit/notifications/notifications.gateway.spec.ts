@@ -46,6 +46,33 @@ describe('NotificationsGateway', () => {
     expect(client.disconnect).toHaveBeenCalledWith(true);
   });
 
+  it('disconnects a token issued for an older session version', async () => {
+    const gateway = new NotificationsGateway(
+      {
+        verifyAsync: jest.fn().mockResolvedValue({
+          sub: 'student-1',
+          sessionVersion: 1,
+        }),
+      } as unknown as JwtService,
+      { get: jest.fn().mockReturnValue('secret') } as unknown as ConfigService,
+      {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: 'student-1',
+            status: UserStatus.ACTIVE,
+            sessionVersion: 2,
+          }),
+        },
+      } as unknown as PrismaService,
+    );
+    const client = socket({ accessToken: 'stale-token' });
+
+    await gateway.handleConnection(client.value);
+
+    expect(client.join).not.toHaveBeenCalled();
+    expect(client.disconnect).toHaveBeenCalledWith(true);
+  });
+
   it('emits an event only into the target user room', () => {
     const gateway = new NotificationsGateway(
       {} as JwtService,
@@ -104,6 +131,26 @@ describe('NotificationsGateway', () => {
     await expect(
       gateway.isViewingConversation('student-1', 'conversation-2'),
     ).resolves.toBe(true);
+  });
+
+  it('disconnects all live sockets for a revoked user session', async () => {
+    const gateway = new NotificationsGateway(
+      {} as JwtService,
+      {} as ConfigService,
+      {} as PrismaService,
+    );
+    const disconnect = jest.fn();
+    Object.assign(gateway, {
+      server: {
+        in: jest.fn().mockReturnValue({
+          fetchSockets: jest.fn().mockResolvedValue([{ disconnect }]),
+        }),
+      },
+    });
+
+    await gateway.disconnectUser('student-1');
+
+    expect(disconnect).toHaveBeenCalledWith(true);
   });
 });
 

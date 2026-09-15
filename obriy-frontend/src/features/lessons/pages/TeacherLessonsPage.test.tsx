@@ -17,11 +17,11 @@ const teacher = {
   role: 'TEACHER' as const,
   status: 'ACTIVE' as const,
   emailVerifiedAt: '2026-08-01T10:00:00.000Z',
+  hasPassword: true,
   profile: {
     displayName: 'Olena Koval',
     avatarUrl: null,
     bio: null,
-    gradeLevel: null,
     subjectArea: 'History',
     preferredLocale: 'UK' as const,
   },

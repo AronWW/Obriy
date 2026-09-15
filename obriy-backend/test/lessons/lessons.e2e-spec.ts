@@ -404,7 +404,6 @@ describe('Teacher lessons (e2e)', () => {
           create: {
             displayName: key,
             preferredLocale,
-            gradeLevel: role === UserRole.STUDENT ? 8 : null,
           },
         },
       },

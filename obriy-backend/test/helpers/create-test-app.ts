@@ -11,6 +11,8 @@ import { MailService } from '../../src/mail/mail.service';
 import { TestMailService } from './test-mail.service';
 import { MapStorageService } from '../../src/map-presets/map-storage.service';
 import { TestMapStorageService } from './test-map-storage.service';
+import { AvatarStorageService } from '../../src/users/avatar-storage.service';
+import { TestAvatarStorageService } from './test-avatar-storage.service';
 
 process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
@@ -30,11 +32,13 @@ export type AuthTestContext = {
   authService: AuthService;
   oauthStateService: OAuthStateService;
   tokenCleanupService: AuthTokenCleanupService;
+  avatarStorage: TestAvatarStorageService;
 };
 
 export async function createAuthTestContext(): Promise<AuthTestContext> {
   const mail = new TestMailService();
   const mapStorage = new TestMapStorageService();
+  const avatarStorage = new TestAvatarStorageService();
   const moduleFixture = await Test.createTestingModule({
     imports: [AppModule],
   })
@@ -42,6 +46,8 @@ export async function createAuthTestContext(): Promise<AuthTestContext> {
     .useValue(mail)
     .overrideProvider(MapStorageService)
     .useValue(mapStorage)
+    .overrideProvider(AvatarStorageService)
+    .useValue(avatarStorage)
     .compile();
 
   const app = moduleFixture.createNestApplication<INestApplication<App>>();
@@ -62,6 +68,7 @@ export async function createAuthTestContext(): Promise<AuthTestContext> {
     authService: app.get(AuthService),
     oauthStateService: app.get(OAuthStateService),
     tokenCleanupService: app.get(AuthTokenCleanupService),
+    avatarStorage,
   };
 }
 

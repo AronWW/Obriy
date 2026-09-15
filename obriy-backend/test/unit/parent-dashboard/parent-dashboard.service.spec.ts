@@ -20,7 +20,7 @@ describe('ParentDashboardService', () => {
   };
   const child = {
     id: 'student-1',
-    profile: { displayName: 'Marta', avatarUrl: null, gradeLevel: 8 },
+    profile: { displayName: 'Marta', avatarUrl: null },
     studentClass: { id: 'class-1', name: 'History' },
   };
   const lifecycle = {

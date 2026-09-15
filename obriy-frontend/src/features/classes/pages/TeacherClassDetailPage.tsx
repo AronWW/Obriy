@@ -260,13 +260,6 @@ export function TeacherClassDetailPage() {
                     />
                     <div>
                       <strong>{member.displayName}</strong>
-                      <span>
-                        {member.gradeLevel === null
-                          ? t('classes.common.gradeUnknown')
-                          : t('classes.common.grade', {
-                              grade: member.gradeLevel,
-                            })}
-                      </span>
                     </div>
                   </li>
                 ))}

@@ -226,7 +226,7 @@ describe('TeacherAnalyticsService', () => {
 function student(id: string, displayName: string) {
   return {
     id,
-    profile: { displayName, avatarUrl: null, gradeLevel: 8 },
+    profile: { displayName, avatarUrl: null },
   };
 }
 

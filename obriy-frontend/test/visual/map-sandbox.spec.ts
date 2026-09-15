@@ -317,11 +317,11 @@ async function prepareTeacherSession(page: Page, theme: 'day' | 'night') {
           role: 'TEACHER',
           status: 'ACTIVE',
           emailVerifiedAt: '2026-08-25T12:00:00.000Z',
+          hasPassword: true,
           profile: {
             displayName: 'Map Teacher',
             avatarUrl: null,
             bio: null,
-            gradeLevel: null,
             subjectArea: 'History',
             preferredLocale: 'EN',
           },

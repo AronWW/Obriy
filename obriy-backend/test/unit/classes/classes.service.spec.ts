@@ -101,7 +101,6 @@ describe('ClassesService access boundaries', () => {
         profile: {
           displayName: 'Марія',
           avatarUrl: null,
-          gradeLevel: 8,
         },
       },
     ]);
@@ -111,7 +110,6 @@ describe('ClassesService access boundaries', () => {
         id: 'student-2',
         displayName: 'Марія',
         avatarUrl: null,
-        gradeLevel: 8,
       },
     ]);
 
@@ -128,7 +126,6 @@ describe('ClassesService access boundaries', () => {
           select: {
             displayName: true,
             avatarUrl: true,
-            gradeLevel: true,
           },
         },
       },

@@ -32,6 +32,7 @@ import {
   updateBadgeShowcase,
 } from '../gamification/api/gamification.api'
 import { gamificationQueryKeys } from '../gamification/model/gamification-query-keys'
+import { AvatarEditor, SecuritySection } from '../profile'
 
 type StudentProfileFormValues = UpdateStudentProfileInput
 
@@ -100,11 +101,6 @@ export function StudentProfilePage() {
     )
   }
 
-  const grade =
-    user.profile.gradeLevel === null
-      ? t('studentProfile.gradeUnavailable')
-      : t('studentProfile.grade', { grade: user.profile.gradeLevel })
-
   const openEditor = () => {
     reset({
       bio: user.profile.bio ?? '',
@@ -160,7 +156,6 @@ export function StudentProfilePage() {
             />
             <div>
               <h1 id="student-profile-title">{user.profile.displayName}</h1>
-              <p>{grade}</p>
               <span>{t('studentProfile.titleEmpty')}</span>
             </div>
           </div>
@@ -270,10 +265,10 @@ export function StudentProfilePage() {
                   )}
                 </label>
 
-                <p className={styles.avatarHint}>
+                <div className={styles.avatarHint}>
                   <Frame size={16} aria-hidden="true" />
-                  {t('studentProfile.editor.avatarHint')}
-                </p>
+                  <AvatarEditor hasAvatar={Boolean(user.profile.avatarUrl)} />
+                </div>
               </fieldset>
 
               {saveMutation.isError && (
@@ -388,6 +383,7 @@ export function StudentProfilePage() {
             </section>
           </div>
         </div>
+        <SecuritySection />
         {badgeDialog && gamificationQuery.data && (
           <BadgeCollectionDialog
             badges={gamificationQuery.data.badges}

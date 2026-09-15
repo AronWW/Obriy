@@ -86,7 +86,7 @@ export function ParentConnectPage() {
         {t('parentHub.actions.backToHome')}
       </Link>
       <section className={`${styles.stateCard} ${styles.connectState}`}>
-        <ChildAvatar child={{ ...child, gradeLevel: null }} size="large" />
+        <ChildAvatar child={child} size="large" />
         <h1>{child.displayName}</h1>
         <p>{t('parentLinks.connect.confirmDescription')}</p>
 

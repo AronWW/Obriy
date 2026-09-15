@@ -87,7 +87,8 @@ async function prepareAnalytics(
         user: {
           id: 'teacher-1', email: 'teacher@example.com', role: 'TEACHER', status: 'ACTIVE',
           emailVerifiedAt: '2026-09-01T10:00:00.000Z',
-          profile: { displayName: 'Olena', avatarUrl: null, bio: null, gradeLevel: null, subjectArea: 'History', preferredLocale: language === 'en' ? 'EN' : 'UK' },
+          hasPassword: true,
+          profile: { displayName: 'Olena', avatarUrl: null, bio: null, subjectArea: 'History', preferredLocale: language === 'en' ? 'EN' : 'UK' },
         },
       }),
     })
@@ -115,7 +116,7 @@ function classFixture(language: 'en' | 'uk') {
   return {
     class: { id: 'class-1', name: language === 'en' ? 'History club' : 'Історичний гурток' },
     metrics: { studentCount: 1, requiredReleaseCount: 2, requiredWorkCount: 2, completedWorkCount: 1, completionPercent: 50, averagePercent: 80, awaitingReviewCount: 1 },
-    students: [{ id: 'student-1', displayName: studentName, avatarUrl: null, gradeLevel: 8, requiredCount: 2, completedCount: 1, completionPercent: 50, averagePercent: 80, statuses: counts, lastActivityAt: '2026-09-09T10:00:00.000Z' }],
+    students: [{ id: 'student-1', displayName: studentName, avatarUrl: null, requiredCount: 2, completedCount: 1, completionPercent: 50, averagePercent: 80, statuses: counts, lastActivityAt: '2026-09-09T10:00:00.000Z' }],
     lessons: [{ id: 'lesson-1', title: lessonTitle, position: 1, requiredTestCount: 1, completionPercent: 50, averagePercent: 80, tests: [{ releaseId: 'release-1', testId: 'test-1', title: testTitle, releaseStatus: 'ACTIVE', isRequired: true, availableFrom: null, dueAt: '2026-09-20T10:00:00.000Z', maxPoints: 10, passingPercent: 60, studentCount: 1, completionPercent: 50, averagePercent: 80, statuses: counts }] }],
   }
 }

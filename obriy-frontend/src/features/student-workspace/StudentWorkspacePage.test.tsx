@@ -30,11 +30,11 @@ describe('student workspace pages', () => {
         role: 'STUDENT',
         status: 'ACTIVE',
         emailVerifiedAt: '2026-09-01T10:00:00.000Z',
+        hasPassword: true,
         profile: {
           displayName: 'Marta',
           avatarUrl: null,
           bio: null,
-          gradeLevel: 8,
           subjectArea: null,
           preferredLocale: 'EN',
         },

@@ -9,13 +9,9 @@ export class LinkedChildDto {
   @ApiPropertyOptional({ nullable: true, example: null })
   avatarUrl: string | null;
 
-  @ApiPropertyOptional({ nullable: true, example: 7 })
-  gradeLevel: number | null;
-
   constructor(data: LinkedChildDto) {
     this.id = data.id;
     this.displayName = data.displayName;
     this.avatarUrl = data.avatarUrl;
-    this.gradeLevel = data.gradeLevel;
   }
 }

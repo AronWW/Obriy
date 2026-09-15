@@ -37,12 +37,6 @@ export function StudentOverviewPage() {
     )
   }
 
-  const grade =
-    user.profile.gradeLevel === null
-      ? t('studentWorkspace.profile.gradeUnavailable')
-      : t('studentWorkspace.profile.grade', {
-          grade: user.profile.gradeLevel,
-        })
   const dashboard = query.data
   const dateLocale = i18n.language === 'en' ? 'en-GB' : 'uk-UA'
 
@@ -69,7 +63,6 @@ export function StudentOverviewPage() {
             <ProfilePanel
               avatarUrl={user.profile.avatarUrl}
               displayName={user.profile.displayName}
-              grade={grade}
               progress={gamificationQuery.data?.progress}
             />
             <StatePanel
@@ -87,7 +80,6 @@ export function StudentOverviewPage() {
                 avatarUrl={user.profile.avatarUrl}
                 className={dashboard.class.name}
                 displayName={user.profile.displayName}
-                grade={grade}
                 progress={gamificationQuery.data?.progress}
               />
               <div className={styles.metrics} aria-label={t('studentWorkspace.metrics.label')}>
@@ -218,13 +210,11 @@ function ProfilePanel({
   avatarUrl,
   className,
   displayName,
-  grade,
   progress,
 }: {
   avatarUrl: string | null
   className?: string
   displayName: string
-  grade: string
   progress?: GamificationProgress
 }) {
   const { t } = useTranslation()
@@ -241,7 +231,7 @@ function ProfilePanel({
       </div>
       <div>
         <h2>{displayName}</h2>
-        <p>{className ? `${className} · ${grade}` : grade}</p>
+        {className && <p>{className}</p>}
       </div>
       <Link to="/app/student/profile">
         <UserRound size={16} aria-hidden="true" />

@@ -39,9 +39,6 @@ export class ParentChildIdentityDto {
   @ApiPropertyOptional({ nullable: true })
   avatarUrl: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
-  gradeLevel: number | null;
-
   constructor(data: ParentChildIdentityDto) {
     Object.assign(this, data);
   }

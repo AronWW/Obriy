@@ -183,7 +183,6 @@ describe('Parent links (e2e)', () => {
         profile: {
           create: {
             displayName,
-            gradeLevel: role === UserRole.STUDENT ? 7 : null,
           },
         },
       },

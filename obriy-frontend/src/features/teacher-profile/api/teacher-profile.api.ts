@@ -10,7 +10,7 @@ export interface UpdateTeacherProfileInput {
 /**
  * The profile endpoint accepts a partial `UpdateMyProfileDto`.  This feature
  * deliberately sends only the teacher-facing fields, so it cannot overwrite
- * a grade, locale, or avatar setting owned by another flow.
+ * locale or avatar settings owned by another flow.
  */
 export function updateTeacherProfile(
   input: UpdateTeacherProfileInput,

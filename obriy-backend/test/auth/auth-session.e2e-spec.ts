@@ -76,7 +76,11 @@ describe('Auth session (e2e)', () => {
       .expect(200)
       .expect((response) => {
         expect(getResponseBody(response)).toEqual(
-          expect.objectContaining({ email, role: 'STUDENT' }),
+          expect.objectContaining({
+            email,
+            role: 'STUDENT',
+            hasPassword: true,
+          }),
         );
       });
 
@@ -114,8 +118,152 @@ describe('Auth session (e2e)', () => {
       .expect(201);
 
     await request(context.app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(401);
+
+    const passwordLogin = await request(context.app.getHttpServer())
       .post('/auth/login')
       .send({ email, password: 'NewStrongPassword123!' })
+      .expect(201);
+    const passwordAccessToken = getStringField(passwordLogin, 'accessToken');
+    const passwordCookie = getRefreshCookie(
+      passwordLogin.headers['set-cookie'],
+    );
+
+    await request(context.app.getHttpServer())
+      .patch('/users/me/profile')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .send({ avatarUrl: 'https://example.com/untrusted.png' })
+      .expect(400);
+    await request(context.app.getHttpServer())
+      .patch('/users/me/profile')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .send({ subjectArea: 'History' })
+      .expect(400)
+      .expect((response) => {
+        expect(getResponseBody(response).code).toBe(
+          'PROFILE_FIELD_NOT_ALLOWED',
+        );
+      });
+    await request(context.app.getHttpServer())
+      .patch('/users/me/profile')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .send({
+        displayName: '  Updated Student  ',
+        bio: '  ',
+        preferredLocale: 'UK',
+      })
+      .expect(200)
+      .expect((response) => {
+        const body = getResponseBody(response);
+        expect(body.profile).toEqual(
+          expect.objectContaining({
+            displayName: 'Updated Student',
+            bio: null,
+            preferredLocale: 'UK',
+          }),
+        );
+        expect(body.profile).not.toHaveProperty('gradeLevel');
+      });
+
+    await request(context.app.getHttpServer())
+      .put('/users/me/avatar')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .attach('avatar', Buffer.from('not-a-png'), {
+        filename: 'avatar.png',
+        contentType: 'image/png',
+      })
+      .expect(400)
+      .expect((response) => {
+        expect(getResponseBody(response).code).toBe('AVATAR_SIGNATURE_INVALID');
+      });
+
+    const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]);
+    await request(context.app.getHttpServer())
+      .put('/users/me/avatar')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .attach('avatar', png, {
+        filename: 'avatar.png',
+        contentType: 'image/png',
+      })
+      .expect(200)
+      .expect((response) => {
+        const profile = getResponseBody(response).profile as Record<
+          string,
+          unknown
+        >;
+        expect(profile.avatarUrl).toEqual(
+          expect.stringContaining('cdn.example'),
+        );
+      });
+    const firstAvatarKey = context.avatarStorage.uploads[0];
+    await request(context.app.getHttpServer())
+      .put('/users/me/avatar')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .attach('avatar', png, {
+        filename: 'avatar.png',
+        contentType: 'image/png',
+      })
+      .expect(200);
+    expect(context.avatarStorage.destroyed).toContain(firstAvatarKey);
+
+    const secondAvatarKey = context.avatarStorage.uploads[1];
+    await request(context.app.getHttpServer())
+      .delete('/users/me/avatar')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .expect(200)
+      .expect((response) => {
+        const profile = getResponseBody(response).profile as Record<
+          string,
+          unknown
+        >;
+        expect(profile.avatarUrl).toBeNull();
+      });
+    expect(context.avatarStorage.destroyed).toContain(secondAvatarKey);
+
+    await request(context.app.getHttpServer())
+      .post('/auth/change-password')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .send({
+        currentPassword: 'WrongPassword123!',
+        newPassword: 'AnotherStrongPassword123!',
+      })
+      .expect(401);
+
+    await request(context.app.getHttpServer())
+      .post('/auth/change-password')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .send({
+        currentPassword: 'NewStrongPassword123!',
+        newPassword: 'NewStrongPassword123!',
+      })
+      .expect(400)
+      .expect((response) => {
+        expect(getResponseBody(response).code).toBe('PASSWORD_REUSE_FORBIDDEN');
+      });
+
+    await request(context.app.getHttpServer())
+      .post('/auth/change-password')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .send({
+        currentPassword: 'NewStrongPassword123!',
+        newPassword: 'AnotherStrongPassword123!',
+      })
+      .expect(201)
+      .expect('set-cookie', /obriy_refresh_token=;/);
+
+    await request(context.app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${passwordAccessToken}`)
+      .expect(401);
+    await request(context.app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', passwordCookie)
+      .expect(401);
+    await request(context.app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: 'AnotherStrongPassword123!' })
       .expect(201);
   });
 });

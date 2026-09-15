@@ -1,0 +1,132 @@
+.page {
+  width: min(100%, 760px);
+  margin-inline: auto;
+}
+
+.document {
+  padding: clamp(24px, 5vw, 44px);
+  background: color-mix(in srgb, var(--color-surface-solid), transparent 3%);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-surface);
+}
+
+.heading h1 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 600;
+}
+
+.heading p {
+  margin: 11px 0 0;
+  color: var(--color-text-soft);
+  line-height: 1.6;
+}
+
+.identity {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin: 30px 0;
+  padding: 20px 0;
+  border-block: 1px solid var(--color-border);
+}
+
+.avatar {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  place-items: center;
+  color: #f7ead1;
+  background: var(--color-accent-deep, #173d57);
+  border: 2px solid var(--color-accent);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.form,
+.fieldset {
+  display: grid;
+  gap: 20px;
+}
+
+.fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--color-text);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border-strong);
+  font: inherit;
+}
+
+.field textarea {
+  min-height: 118px;
+  resize: vertical;
+}
+
+.field input[readonly] {
+  color: var(--color-text-soft);
+  background: color-mix(in srgb, var(--color-surface-solid), var(--color-text) 3%);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.save {
+  min-height: 44px;
+  padding: 0 17px;
+  color: #fff;
+  cursor: pointer;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  font-weight: 700;
+}
+
+.save:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.success,
+.error {
+  margin: 0;
+  font-size: 13px;
+}
+
+.success { color: var(--color-success, #3c7354); }
+.error { color: var(--color-danger, #a44338); }
+
+@media (max-width: 560px) {
+  .document { padding: 23px 18px; }
+  .identity { align-items: flex-start; flex-direction: column; }
+  .save { width: 100%; }
+}

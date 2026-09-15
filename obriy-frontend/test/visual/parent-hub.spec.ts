@@ -5,19 +5,16 @@ const linkedChildren = [
     id: 'child-maria',
     displayName: 'Марія Коваль',
     avatarUrl: null,
-    gradeLevel: 7,
   },
   {
     id: 'child-ostap',
     displayName: 'Остап Коваль',
     avatarUrl: null,
-    gradeLevel: 4,
   },
   {
     id: 'child-solomia',
     displayName: 'Соломія Коваль',
     avatarUrl: null,
-    gradeLevel: null,
   },
 ]
 
@@ -85,6 +82,20 @@ test('parent family overview remains readable on an English tablet', async ({
   await expectNoHorizontalOverflow(page)
 })
 
+test('parent profile remains usable without a sidebar on mobile', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await prepareParentSession(page, 'night', linkedChildren, 'en')
+  await page.goto('/app/parent/profile')
+
+  await expect(page.getByRole('heading', { name: 'Parent profile' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Security' })).toBeVisible()
+  await expect(page.getByLabel('Email address')).toHaveValue('parent@example.com')
+  await expect(page.locator('aside')).toHaveCount(0)
+  await expectNoHorizontalOverflow(page)
+})
+
 async function prepareParentSession(
   page: Page,
   theme: 'day' | 'night',
@@ -109,11 +120,11 @@ async function prepareParentSession(
           role: 'PARENT',
           status: 'ACTIVE',
           emailVerifiedAt: '2026-07-18T12:00:00.000Z',
+          hasPassword: true,
           profile: {
             displayName: 'Олена Коваль',
             avatarUrl: null,
             bio: null,
-            gradeLevel: null,
             subjectArea: null,
             preferredLocale: language === 'en' ? 'EN' : 'UK',
           },

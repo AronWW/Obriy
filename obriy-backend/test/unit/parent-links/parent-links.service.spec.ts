@@ -128,7 +128,6 @@ describe('ParentLinksService', () => {
         profile: {
           displayName: 'Марія',
           avatarUrl: null,
-          gradeLevel: 7,
         },
       },
     });
@@ -144,7 +143,6 @@ describe('ParentLinksService', () => {
       id: student.id,
       displayName: 'Марія',
       avatarUrl: null,
-      gradeLevel: 7,
     });
     expect(getNestedValue(invitationUpdate, ['where', 'id'])).toBe('invite-1');
     expect(getNestedValue(invitationUpdate, ['data', 'usedAt'])).toBeInstanceOf(

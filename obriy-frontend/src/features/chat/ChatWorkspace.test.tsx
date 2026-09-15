@@ -37,8 +37,8 @@ describe('chat workspace', () => {
       accessToken: 'student-token',
       status: 'authenticated',
       user: {
-        id: 'student-1', email: 'student@example.com', role: 'STUDENT', status: 'ACTIVE', emailVerifiedAt: null,
-        profile: { displayName: 'Student', avatarUrl: null, bio: null, gradeLevel: 8, subjectArea: null, preferredLocale: 'EN' },
+        id: 'student-1', email: 'student@example.com', role: 'STUDENT', status: 'ACTIVE', emailVerifiedAt: null, hasPassword: true,
+        profile: { displayName: 'Student', avatarUrl: null, bio: null, subjectArea: null, preferredLocale: 'EN' },
       },
     })
   })

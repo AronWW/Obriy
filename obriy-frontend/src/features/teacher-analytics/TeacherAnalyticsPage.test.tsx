@@ -134,7 +134,7 @@ const teacherLeaderboardFixture = {
 const classAnalyticsFixture: TeacherClassAnalytics = {
   class: { id: 'class-2', name: 'History club' },
   metrics: { studentCount: 1, requiredReleaseCount: 2, requiredWorkCount: 2, completedWorkCount: 1, completionPercent: 50, averagePercent: 80, awaitingReviewCount: 1 },
-  students: [{ id: 'student-1', displayName: 'Marta Ivaniuk', avatarUrl: null, gradeLevel: 8, requiredCount: 2, completedCount: 1, completionPercent: 50, averagePercent: 80, statuses: statusCounts, lastActivityAt: '2026-09-09T10:00:00.000Z' }],
+  students: [{ id: 'student-1', displayName: 'Marta Ivaniuk', avatarUrl: null, requiredCount: 2, completedCount: 1, completionPercent: 50, averagePercent: 80, statuses: statusCounts, lastActivityAt: '2026-09-09T10:00:00.000Z' }],
   lessons: [{ id: 'lesson-1', title: 'Kyivan Rus', position: 1, requiredTestCount: 1, completionPercent: 100, averagePercent: 80, tests: [
     { releaseId: 'release-1', testId: 'test-1', title: 'Source analysis', releaseStatus: 'ACTIVE', isRequired: true, availableFrom: null, dueAt: '2026-09-20T10:00:00.000Z', maxPoints: 10, passingPercent: 60, studentCount: 1, completionPercent: 100, averagePercent: 80, statuses: statusCounts },
     { releaseId: 'release-2', testId: 'test-2', title: 'Extra practice', releaseStatus: 'SCHEDULED', isRequired: false, availableFrom: '2026-09-15T10:00:00.000Z', dueAt: null, maxPoints: 5, passingPercent: 50, studentCount: 1, completionPercent: 0, averagePercent: 0, statuses: { ...statusCounts, notStarted: 1, awaitingReview: 0, completed: 0 } },

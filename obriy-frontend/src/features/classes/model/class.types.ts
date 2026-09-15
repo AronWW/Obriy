@@ -28,7 +28,6 @@ export interface ClassMember {
   id: string
   displayName: string
   avatarUrl: string | null
-  gradeLevel: number | null
 }
 
 export interface ClassmateProfile extends ClassMember {

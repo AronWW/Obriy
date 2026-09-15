@@ -13,13 +13,11 @@ const classmates = [
     id: 'student-maria',
     displayName: 'Марія Коваль',
     avatarUrl: null,
-    gradeLevel: 8,
   },
   {
     id: 'student-ostap',
     displayName: 'Остап Мельник',
     avatarUrl: null,
-    gradeLevel: 8,
   },
 ]
 
@@ -47,7 +45,6 @@ test('teacher class detail balances the roster and invitation controls', async (
           id: 'student-sofia',
           displayName: 'Софія Бондар',
           avatarUrl: null,
-          gradeLevel: 8,
         },
       ]),
     })
@@ -159,11 +156,11 @@ async function prepareSession(
           role,
           status: 'ACTIVE',
           emailVerifiedAt: '2026-07-18T12:00:00.000Z',
+          hasPassword: true,
           profile: {
             displayName: role === 'TEACHER' ? 'Олена Коваль' : 'Арія Косміна',
             avatarUrl: null,
             bio: null,
-            gradeLevel: role === 'STUDENT' ? 8 : null,
             subjectArea: role === 'TEACHER' ? 'Історія України' : null,
             preferredLocale: 'UK',
           },

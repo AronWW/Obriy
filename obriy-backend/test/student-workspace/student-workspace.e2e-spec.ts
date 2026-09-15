@@ -287,7 +287,6 @@ describe('Student workspace (e2e)', () => {
           create: {
             displayName: actor,
             preferredLocale: Locale.UK,
-            gradeLevel: role === UserRole.STUDENT ? 8 : null,
           },
         },
       },

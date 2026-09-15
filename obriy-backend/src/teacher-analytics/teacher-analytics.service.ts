@@ -34,7 +34,7 @@ const ANALYTICS_RELEASE_STATUSES = [
 const studentSelect = {
   id: true,
   profile: {
-    select: { displayName: true, avatarUrl: true, gradeLevel: true },
+    select: { displayName: true, avatarUrl: true },
   },
 } satisfies Prisma.UserSelect;
 
@@ -336,7 +336,6 @@ export class TeacherAnalyticsService {
       id: student.id,
       displayName: student.profile?.displayName ?? 'Student',
       avatarUrl: student.profile?.avatarUrl ?? null,
-      gradeLevel: student.profile?.gradeLevel ?? null,
       requiredCount: metrics.totalCount,
       completedCount: metrics.completedCount,
       completionPercent: metrics.completionPercent,

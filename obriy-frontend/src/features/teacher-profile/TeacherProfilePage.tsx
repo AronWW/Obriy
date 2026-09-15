@@ -8,6 +8,7 @@ import { useSessionStore } from '../auth/model/session.store'
 import { ApiError } from '../../shared/api/api-client'
 import { updateTeacherProfile, type UpdateTeacherProfileInput } from './api/teacher-profile.api'
 import styles from './TeacherProfilePage.module.css'
+import { AvatarEditor, SecuritySection } from '../profile'
 
 type TeacherProfileFormValues = UpdateTeacherProfileInput
 
@@ -115,7 +116,7 @@ export function TeacherProfilePage() {
           </div>
           <div>
             <p className={styles.identityName}>{displayName}</p>
-            <p className={styles.identityHint}>{t('teacherProfile.avatarHint')}</p>
+            <AvatarEditor hasAvatar={Boolean(user.profile.avatarUrl)} />
           </div>
         </div>
 
@@ -254,6 +255,7 @@ export function TeacherProfilePage() {
             </button>
           </div>
         </form>
+        <SecuritySection />
       </div>
     </section>
   )

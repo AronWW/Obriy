@@ -7,11 +7,13 @@ import { useSessionStore } from '../../features/auth/model/session.store'
 import { NotificationCenter } from '../../features/notifications'
 import { useTheme } from '../theme/theme-context'
 import styles from './GlobalControls.module.css'
+import { profileApi } from '../../features/profile'
 
 export function GlobalControls() {
   const { i18n, t } = useTranslation()
   const { theme, toggleTheme } = useTheme()
   const status = useSessionStore((state) => state.status)
+  const updateUser = useSessionStore((state) => state.updateUser)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isDay = theme === 'day'
@@ -24,12 +26,21 @@ export function GlobalControls() {
       navigate('/', { replace: true })
     },
   })
+  const localeMutation = useMutation({
+    mutationFn: profileApi.update,
+    onSuccess: updateUser,
+  })
 
   const toggleLanguage = async () => {
     const nextLanguage = currentLanguage === 'uk' ? 'en' : 'uk'
     localStorage.setItem('obriy-language', nextLanguage)
     document.documentElement.lang = nextLanguage
     await i18n.changeLanguage(nextLanguage)
+    if (status === 'authenticated') {
+      localeMutation.mutate({
+        preferredLocale: nextLanguage === 'en' ? 'EN' : 'UK',
+      })
+    }
   }
 
   const themeLabel = isDay ? t('theme.switchToNight') : t('theme.switchToDay')

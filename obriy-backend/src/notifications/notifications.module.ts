@@ -7,6 +7,7 @@ import { NotificationsService } from './notifications.service';
 import { NotificationProducerService } from './notification-producer.service';
 import { NotificationsListener } from './notifications.listener';
 import { NotificationsSchedulerService } from './notifications-scheduler.service';
+import { AuthSessionListener } from './auth-session.listener';
 
 @Module({
   imports: [ConfigModule, JwtModule.register({})],
@@ -17,6 +18,7 @@ import { NotificationsSchedulerService } from './notifications-scheduler.service
     NotificationProducerService,
     NotificationsListener,
     NotificationsSchedulerService,
+    AuthSessionListener,
   ],
   exports: [NotificationsService, NotificationsGateway],
 })

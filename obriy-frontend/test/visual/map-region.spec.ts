@@ -98,11 +98,11 @@ async function prepareSession(
           role,
           status: 'ACTIVE',
           emailVerifiedAt: '2026-09-02T10:00:00.000Z',
+          hasPassword: true,
           profile: {
             displayName: role === 'TEACHER' ? 'Map Teacher' : 'Map Student',
             avatarUrl: null,
             bio: null,
-            gradeLevel: role === 'STUDENT' ? 8 : null,
             subjectArea: role === 'TEACHER' ? 'Geography' : null,
             preferredLocale: 'EN',
           },

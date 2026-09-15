@@ -6,11 +6,11 @@ const student = {
   role: 'STUDENT',
   status: 'ACTIVE',
   emailVerifiedAt: '2026-08-01T09:00:00.000Z',
+  hasPassword: true,
   profile: {
     displayName: 'Максим Бондар',
     avatarUrl: null,
     bio: null,
-    gradeLevel: 9,
     subjectArea: null,
     preferredLocale: 'UK',
   },
@@ -238,13 +238,11 @@ async function mockStudentClass(page: Page) {
           id: 'student-sofiia',
           displayName: 'Софія Мельник',
           avatarUrl: null,
-          gradeLevel: 9,
         },
         {
           id: 'student-andrii',
           displayName: 'Андрій Левченко',
           avatarUrl: null,
-          gradeLevel: 9,
         },
       ]),
     })

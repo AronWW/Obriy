@@ -24,6 +24,7 @@ import styles from './LoginPage.module.css'
 
 interface LoginLocationState {
   from?: string
+  passwordChanged?: boolean
 }
 
 export function LoginPage() {
@@ -89,6 +90,10 @@ export function LoginPage() {
         <h2 className={styles.title}>{t('auth.login.title')}</h2>
         <p className={styles.subtitle}>{t('auth.login.subtitle')}</p>
       </header>
+
+      {(location.state as LoginLocationState | null)?.passwordChanged && (
+        <AuthAlert tone="success">{t('profileSettings.security.changedSuccess')}</AuthAlert>
+      )}
 
       <GoogleAuthButton intent="LOGIN" />
       <AuthMethodDivider />

@@ -9,11 +9,11 @@ export interface PrivateProfile {
   role: UserRole
   status: UserStatus
   emailVerifiedAt: string | null
+  hasPassword: boolean
   profile: {
     displayName: string
     avatarUrl: string | null
     bio: string | null
-    gradeLevel: number | null
     subjectArea: string | null
     preferredLocale: Locale
   }

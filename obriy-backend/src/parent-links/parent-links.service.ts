@@ -252,7 +252,6 @@ export class ParentLinksService {
       id: child.id,
       displayName: child.profile.displayName,
       avatarUrl: child.profile.avatarUrl,
-      gradeLevel: child.profile.gradeLevel,
     });
   }
 

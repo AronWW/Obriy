@@ -157,7 +157,6 @@ describe('Classes (e2e)', () => {
           id: ids.classmate,
           displayName: 'Марія',
           avatarUrl: null,
-          gradeLevel: 8,
           bio: null,
           gamification: {
             progress: {
@@ -204,7 +203,6 @@ describe('Classes (e2e)', () => {
         profile: {
           create: {
             displayName,
-            gradeLevel: role === UserRole.STUDENT ? 8 : null,
           },
         },
       },

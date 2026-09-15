@@ -7,6 +7,7 @@ import {
   RoleRoute,
 } from '../../features/auth/components/RoleRoute'
 import { ParentLayout } from '../../features/parent/components/ParentLayout'
+import { ParentProfilePage } from '../../features/parent/pages/ParentProfilePage'
 import { ParentChildPage } from '../../features/parent/pages/ParentChildPage'
 import { ParentConnectPage } from '../../features/parent/pages/ParentConnectPage'
 import { ParentHubPage } from '../../features/parent/pages/ParentHubPage'
@@ -168,6 +169,7 @@ export function AppRouter() {
         <Route element={<RoleRoute role="PARENT" />}>
           <Route path="/app/parent" element={<ParentLayout />}>
             <Route index element={<ParentHubPage />} />
+            <Route path="profile" element={<ParentProfilePage />} />
             <Route path="child/:childId" element={<ParentChildPage />} />
             <Route
               path="child/:childId/progress"

@@ -23,11 +23,11 @@ describe('Student leaderboard', () => {
         role: 'STUDENT',
         status: 'ACTIVE',
         emailVerifiedAt: '2026-09-01T10:00:00.000Z',
+        hasPassword: true,
         profile: {
           displayName: 'Zed',
           avatarUrl: null,
           bio: null,
-          gradeLevel: 8,
           subjectArea: null,
           preferredLocale: 'EN',
         },

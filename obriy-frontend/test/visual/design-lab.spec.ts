@@ -193,11 +193,11 @@ async function mockAuthenticatedSession(
           role,
           status: 'ACTIVE',
           emailVerifiedAt: '2026-07-18T12:00:00.000Z',
+          hasPassword: true,
           profile: {
             displayName: 'Арія Косміна',
             avatarUrl: null,
             bio: null,
-            gradeLevel: 9,
             subjectArea: null,
             preferredLocale,
           },

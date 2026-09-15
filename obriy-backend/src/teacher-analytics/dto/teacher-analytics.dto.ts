@@ -78,9 +78,6 @@ export class TeacherAnalyticsStudentDto {
   @ApiPropertyOptional({ nullable: true })
   avatarUrl: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
-  gradeLevel: number | null;
-
   @ApiProperty({ minimum: 0 })
   requiredCount: number;
 

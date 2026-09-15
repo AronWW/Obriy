@@ -30,8 +30,8 @@ async function prepare(page: Page, role: 'STUDENT' | 'TEACHER', theme: 'day' | '
       accessToken: 'chat-token',
       user: {
         id: role === 'TEACHER' ? 'teacher-1' : 'student-1',
-        email: 'member@example.com', role, status: 'ACTIVE', emailVerifiedAt: null,
-        profile: { displayName: 'Member', avatarUrl: null, bio: null, gradeLevel: null, subjectArea: null, preferredLocale: 'EN' },
+        email: 'member@example.com', role, status: 'ACTIVE', emailVerifiedAt: null, hasPassword: true,
+        profile: { displayName: 'Member', avatarUrl: null, bio: null, subjectArea: null, preferredLocale: 'EN' },
       },
     }),
   }))

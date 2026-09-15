@@ -21,11 +21,11 @@ const authenticatedUser = {
   role: 'STUDENT' as const,
   status: 'ACTIVE' as const,
   emailVerifiedAt: '2026-07-18T12:00:00.000Z',
+  hasPassword: true,
   profile: {
     displayName: 'Іван',
     avatarUrl: null,
     bio: null,
-    gradeLevel: 9,
     subjectArea: null,
     preferredLocale: 'UK' as const,
   },
@@ -427,7 +427,6 @@ describe('AppRouter auth boundaries', () => {
             id: 'student-2',
             displayName: 'Марія',
             avatarUrl: null,
-            gradeLevel: 8,
           },
         ]),
       ),
@@ -436,7 +435,6 @@ describe('AppRouter auth boundaries', () => {
           id: 'student-2',
           displayName: 'Марія',
           avatarUrl: null,
-          gradeLevel: 8,
           bio: 'Люблю досліджувати історію Київської Русі.',
           gamification: {
             progress: {
@@ -517,7 +515,7 @@ describe('AppRouter auth boundaries', () => {
       await screen.findByRole('heading', { name: '7-Б', level: 1 }),
     ).toBeInTheDocument()
     expect(receivedBody).toEqual({ code: 'ABCD-EFGH' })
-    expect(useSessionStore.getState().user?.profile.gradeLevel).toBe(9)
+    expect(useSessionStore.getState().user?.profile.displayName).toBe('Іван')
   })
 
   it('keeps the real teacher profile inside the sidebar shell and saves it', async () => {
@@ -744,7 +742,6 @@ describe('AppRouter auth boundaries', () => {
       id: 'child-invited',
       displayName: 'Марія',
       avatarUrl: null,
-      gradeLevel: 7,
     }
     let children: typeof linkedChild[] = []
     rememberParentInvitation(invitationToken)
@@ -772,11 +769,7 @@ describe('AppRouter auth boundaries', () => {
       http.get(`${API_BASE_URL}/parent/dashboard`, () =>
         HttpResponse.json({
           children: children.map((child) =>
-            dashboardChild(
-              child.id,
-              child.displayName,
-              child.gradeLevel,
-            ),
+            dashboardChild(child.id, child.displayName),
           ),
         }),
       ),
@@ -812,20 +805,19 @@ describe('AppRouter auth boundaries', () => {
             id: 'child-1',
             displayName: 'Марія',
             avatarUrl: null,
-            gradeLevel: 7,
           },
         ]),
       ),
       http.get(`${API_BASE_URL}/parent/dashboard`, () =>
         HttpResponse.json({
-          children: [dashboardChild('child-1', 'Марія', 7)],
+          children: [dashboardChild('child-1', 'Марія')],
         }),
       ),
       http.get(`${API_BASE_URL}/parent/children/child-1/overview`, () =>
-        HttpResponse.json(childOverview('child-1', 'Марія', 7)),
+        HttpResponse.json(childOverview('child-1', 'Марія')),
       ),
       http.get(`${API_BASE_URL}/parent/children/child-1/progress`, () =>
-        HttpResponse.json(childProgress('child-1', 'Марія', 7)),
+        HttpResponse.json(childProgress('child-1', 'Марія')),
       ),
     )
 
@@ -875,26 +867,24 @@ describe('AppRouter auth boundaries', () => {
             id: 'child-1',
             displayName: 'Марія',
             avatarUrl: null,
-            gradeLevel: 7,
           },
           {
             id: 'child-2',
             displayName: 'Остап',
             avatarUrl: null,
-            gradeLevel: null,
           },
         ]),
       ),
       http.get(`${API_BASE_URL}/parent/dashboard`, () =>
         HttpResponse.json({
           children: [
-            dashboardChild('child-1', 'Марія', 7),
-            dashboardChild('child-2', 'Остап', null),
+            dashboardChild('child-1', 'Марія'),
+            dashboardChild('child-2', 'Остап'),
           ],
         }),
       ),
       http.get(`${API_BASE_URL}/parent/children/child-1/overview`, () =>
-        HttpResponse.json(childOverview('child-1', 'Марія', 7)),
+        HttpResponse.json(childOverview('child-1', 'Марія')),
       ),
     )
 
@@ -938,13 +928,11 @@ function renderRouter(initialEntry: string) {
 function dashboardChild(
   id: string,
   displayName: string,
-  gradeLevel: number | null,
 ) {
   return {
     id,
     displayName,
     avatarUrl: null,
-    gradeLevel,
     class: { id: 'class-1', name: '7-А' },
     metrics: {
       requiredReleaseCount: 0,
@@ -960,10 +948,9 @@ function dashboardChild(
 function childOverview(
   id: string,
   displayName: string,
-  gradeLevel: number | null,
 ) {
   return {
-    child: dashboardChild(id, displayName, gradeLevel),
+    child: dashboardChild(id, displayName),
     attention: [],
     upcoming: [],
     recentActivity: [],
@@ -973,10 +960,9 @@ function childOverview(
 function childProgress(
   id: string,
   displayName: string,
-  gradeLevel: number | null,
 ) {
   return {
-    child: dashboardChild(id, displayName, gradeLevel),
+    child: dashboardChild(id, displayName),
     lessons: [],
   }
 }

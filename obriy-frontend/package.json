@@ -26,6 +26,7 @@
     "motion": "^12.42.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-easy-crop": "^6.2.3",
     "react-hook-form": "^7.82.0",
     "react-i18next": "^17.0.9",
     "react-router-dom": "^7.18.2",

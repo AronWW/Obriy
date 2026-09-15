@@ -30,13 +30,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         role: true,
         status: true,
+        sessionVersion: true,
       },
     });
 
-    if (!user || user.status !== UserStatus.ACTIVE) {
+    if (
+      !user ||
+      user.status !== UserStatus.ACTIVE ||
+      (user.sessionVersion ?? 0) !== (payload.sessionVersion ?? 0)
+    ) {
       throw new UnauthorizedException('Invalid access token');
     }
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    };
   }
 }

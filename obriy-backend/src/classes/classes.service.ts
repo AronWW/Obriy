@@ -120,7 +120,6 @@ export class ClassesService {
           select: {
             displayName: true,
             avatarUrl: true,
-            gradeLevel: true,
           },
         },
       },
@@ -241,7 +240,6 @@ export class ClassesService {
           select: {
             displayName: true,
             avatarUrl: true,
-            gradeLevel: true,
           },
         },
       },
@@ -276,7 +274,6 @@ export class ClassesService {
           select: {
             displayName: true,
             avatarUrl: true,
-            gradeLevel: true,
             bio: true,
           },
         },
@@ -298,7 +295,6 @@ export class ClassesService {
       id: classmate.id,
       displayName: classmate.profile.displayName,
       avatarUrl: classmate.profile.avatarUrl,
-      gradeLevel: classmate.profile.gradeLevel,
       bio: classmate.profile.bio,
       gamification,
     });
@@ -384,7 +380,6 @@ export class ClassesService {
     profile: {
       displayName: string;
       avatarUrl: string | null;
-      gradeLevel: number | null;
     } | null;
   }): ClassMemberDto {
     if (!student.profile) {
@@ -395,7 +390,6 @@ export class ClassesService {
       id: student.id,
       displayName: student.profile.displayName,
       avatarUrl: student.profile.avatarUrl,
-      gradeLevel: student.profile.gradeLevel,
     });
   }
 

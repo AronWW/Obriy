@@ -75,11 +75,11 @@ async function prepareTeacherOverview(
           role: 'TEACHER',
           status: 'ACTIVE',
           emailVerifiedAt: '2026-09-01T10:00:00.000Z',
+          hasPassword: true,
           profile: {
             displayName: language === 'en' ? 'Olena' : 'Олена',
             avatarUrl: null,
             bio: null,
-            gradeLevel: null,
             subjectArea: 'History',
             preferredLocale: language === 'en' ? 'EN' : 'UK',
           },

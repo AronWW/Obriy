@@ -46,6 +46,7 @@ import { GoogleOAuthExceptionFilter } from './filters/google-oauth-exception.fil
 import { AuthErrorDto } from './dto/auth-error.dto';
 import { AuthCookieService } from './auth-cookie.service';
 import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 type CookieRequest = Request & {
   cookies?: unknown;
@@ -167,6 +168,26 @@ export class AuthController {
   @Post('reset-password')
   resetPassword(@Body() dto: ResetPasswordDto): Promise<AuthMessageDto> {
     return this.authService.resetPassword(dto);
+  }
+
+  @ApiOperation({
+    summary: 'Change the local password and revoke all sessions',
+  })
+  @ApiBearerAuth()
+  @ApiCreatedResponse({ type: AuthMessageDto })
+  @ApiBadRequestResponse({ type: AuthErrorDto })
+  @ApiUnauthorizedResponse({ type: AuthErrorDto })
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('change-password')
+  async changePassword(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ChangePasswordDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<AuthMessageDto> {
+    const result = await this.authService.changePassword(user, dto);
+    this.authCookieService.clearRefreshToken(response);
+    return result;
   }
 
   @ApiOperation({ summary: 'Verify an email using a request body token' })

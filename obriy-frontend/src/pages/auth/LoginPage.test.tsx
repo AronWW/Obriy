@@ -18,11 +18,11 @@ const authResponse = {
     role: 'STUDENT',
     status: 'ACTIVE',
     emailVerifiedAt: '2026-07-18T12:00:00.000Z',
+    hasPassword: true,
     profile: {
       displayName: 'Olena',
       avatarUrl: null,
       bio: null,
-      gradeLevel: 9,
       subjectArea: null,
       preferredLocale: 'UK',
     },

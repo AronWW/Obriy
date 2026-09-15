@@ -42,9 +42,14 @@ export class NotificationsGateway implements OnGatewayConnection {
       });
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
-        select: { id: true, status: true, role: true },
+        select: { id: true, status: true, role: true, sessionVersion: true },
       });
-      if (!user || user.status !== UserStatus.ACTIVE) throw new Error();
+      if (
+        !user ||
+        user.status !== UserStatus.ACTIVE ||
+        (user.sessionVersion ?? 0) !== (payload.sessionVersion ?? 0)
+      )
+        throw new Error();
       (client.data as Record<string, unknown>).userId = user.id;
       (client.data as Record<string, unknown>).role = user.role;
       await client.join(this.userRoom(user.id));
@@ -84,6 +89,11 @@ export class NotificationsGateway implements OnGatewayConnection {
     payload: { conversationId: string; userId: string; readAt: Date },
   ): void {
     this.server.to(this.userRoom(userId)).emit('chat.read', payload);
+  }
+
+  async disconnectUser(userId: string): Promise<void> {
+    const sockets = await this.server.in(this.userRoom(userId)).fetchSockets();
+    for (const socket of sockets) socket.disconnect(true);
   }
 
   async isViewingConversation(

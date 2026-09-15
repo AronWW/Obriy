@@ -47,11 +47,11 @@ async function prepareSession(
           role: 'STUDENT',
           status: 'ACTIVE',
           emailVerifiedAt: '2026-09-01T10:00:00.000Z',
+          hasPassword: true,
           profile: {
             displayName: 'Marta',
             avatarUrl: null,
             bio: null,
-            gradeLevel: 8,
             subjectArea: null,
             preferredLocale: language === 'en' ? 'EN' : 'UK',
           },
@@ -111,4 +111,3 @@ async function expectNoHorizontalOverflow(page: Page) {
   )
   expect(overflow).toBe(false)
 }
-

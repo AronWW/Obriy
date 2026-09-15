@@ -6,13 +6,18 @@ import { UserRole, UserStatus } from '@prisma/client';
 import type { PrismaService } from '../../../prisma/prisma.service';
 import type { AuthUser } from '../../../src/common/types/auth-user.type';
 import { UsersService } from '../../../src/users/users.service';
+import type { AvatarStorageService } from '../../../src/users/avatar-storage.service';
 
 describe('UsersService.findMyLinkedChildren', () => {
   const findMany = jest.fn();
   const prisma = {
     parentChild: { findMany },
   } as unknown as PrismaService;
-  const service = new UsersService(prisma);
+  const avatarStorage = {
+    upload: jest.fn(),
+    destroy: jest.fn(),
+  } as unknown as AvatarStorageService;
+  const service = new UsersService(prisma, avatarStorage);
   const parent: AuthUser = {
     id: 'parent-1',
     email: 'parent@example.com',
@@ -32,7 +37,6 @@ describe('UsersService.findMyLinkedChildren', () => {
           profile: {
             displayName: 'Марія',
             avatarUrl: 'https://example.com/maria.png',
-            gradeLevel: 7,
           },
         },
       },
@@ -43,7 +47,6 @@ describe('UsersService.findMyLinkedChildren', () => {
         id: 'child-1',
         displayName: 'Марія',
         avatarUrl: 'https://example.com/maria.png',
-        gradeLevel: 7,
       },
     ]);
 
@@ -63,7 +66,6 @@ describe('UsersService.findMyLinkedChildren', () => {
               select: {
                 displayName: true,
                 avatarUrl: true,
-                gradeLevel: true,
               },
             },
           },

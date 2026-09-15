@@ -703,7 +703,6 @@ describe('Assignments (e2e)', () => {
           create: {
             displayName: actor,
             preferredLocale,
-            gradeLevel: role === UserRole.STUDENT ? 8 : null,
           },
         },
       },

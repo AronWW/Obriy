@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { LessonStatus, Locale } from '@prisma/client';
+import { LessonModerationStatus, LessonStatus, Locale } from '@prisma/client';
 import { StudentLessonProgressDto } from './student-lesson-progress.dto';
+import { TeacherLessonModerationDto } from '../../admin/dto/admin-output.dto';
 
 export class LessonClassLinkDto {
   @ApiProperty()
@@ -38,6 +39,12 @@ export class LessonSummaryDto {
 
   @ApiProperty({ enum: LessonStatus })
   status: LessonStatus;
+
+  @ApiProperty({ enum: LessonModerationStatus })
+  moderationStatus: LessonModerationStatus;
+
+  @ApiPropertyOptional({ type: TeacherLessonModerationDto, nullable: true })
+  moderation: TeacherLessonModerationDto | null;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: Date;
@@ -81,6 +88,9 @@ export class ClassLessonItemDto {
 
   @ApiProperty({ enum: LessonStatus })
   status: LessonStatus;
+
+  @ApiProperty({ enum: LessonModerationStatus })
+  moderationStatus: LessonModerationStatus;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: Date;

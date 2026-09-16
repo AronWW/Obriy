@@ -20,6 +20,12 @@ export function notificationRoute(
   if (role === 'TEACHER') {
     const lessonId = value('lessonId')
     const attemptId = value('attemptId')
+    if (
+      lessonId &&
+      notification.type.startsWith('LESSON_MODERATION_')
+    ) {
+      return `/app/teacher/lessons/${lessonId}/edit`
+    }
     return lessonId && attemptId
       ? `/app/teacher/lessons/${lessonId}/edit?reviewAttempt=${attemptId}`
       : '/app/teacher'
@@ -37,6 +43,9 @@ export function notificationRoute(
   }
   const lessonId = value('lessonId')
   const releaseId = value('releaseId')
+  if (notification.type === 'LESSON_REPORT_RESOLVED' && lessonId) {
+    return `/app/student/lessons/${lessonId}`
+  }
   return lessonId && releaseId
     ? `/app/student/lessons/${lessonId}?test=${releaseId}`
     : '/app/student/tasks'

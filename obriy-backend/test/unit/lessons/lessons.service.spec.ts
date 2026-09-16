@@ -94,6 +94,8 @@ describe('LessonsService access and draft boundaries', () => {
       contentLocale: Locale.EN,
       estimatedMinutes: null,
       status: LessonStatus.DRAFT,
+      moderationStatus: 'CLEAR',
+      moderationCases: [],
       createdAt,
       updatedAt: createdAt,
       classLinks: [],
@@ -109,6 +111,8 @@ describe('LessonsService access and draft boundaries', () => {
       contentLocale: Locale.EN,
       estimatedMinutes: null,
       status: LessonStatus.DRAFT,
+      moderationStatus: 'CLEAR',
+      moderation: null,
       createdAt,
       updatedAt: createdAt,
       classLinks: [],
@@ -246,7 +250,10 @@ describe('LessonsService access and draft boundaries', () => {
       where: {
         classId: 'class-1',
         publishedAt: { not: null },
-        lesson: { status: LessonStatus.PUBLISHED },
+        lesson: {
+          status: LessonStatus.PUBLISHED,
+          moderationStatus: 'CLEAR',
+        },
       },
       orderBy: [{ position: 'asc' }, { lessonId: 'asc' }],
       select: {
@@ -295,7 +302,10 @@ describe('LessonsService access and draft boundaries', () => {
         classId: 'class-1',
         lessonId: 'hidden-lesson',
         publishedAt: { not: null },
-        lesson: { status: LessonStatus.PUBLISHED },
+        lesson: {
+          status: LessonStatus.PUBLISHED,
+          moderationStatus: 'CLEAR',
+        },
       },
       select: {
         position: true,

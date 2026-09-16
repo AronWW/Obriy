@@ -7,6 +7,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  LessonModerationCaseStatus,
+  LessonModerationStatus,
   LessonStatus,
   Prisma,
   TestAttemptStatus,
@@ -43,6 +45,25 @@ const lessonInclude = {
       class: { select: { id: true, name: true } },
     },
   },
+  moderationCases: {
+    where: {
+      status: {
+        in: [
+          LessonModerationCaseStatus.REPORTED,
+          LessonModerationCaseStatus.UNDER_REVIEW,
+          LessonModerationCaseStatus.CHANGES_REQUESTED,
+        ],
+      },
+    },
+    orderBy: { createdAt: 'desc' as const },
+    take: 1,
+    select: {
+      id: true,
+      status: true,
+      resolutionNote: true,
+      editVersion: true,
+    },
+  },
 } satisfies Prisma.LessonInclude;
 
 const lessonSummarySelect = {
@@ -52,9 +73,11 @@ const lessonSummarySelect = {
   contentLocale: true,
   estimatedMinutes: true,
   status: true,
+  moderationStatus: true,
   createdAt: true,
   updatedAt: true,
   classLinks: lessonInclude.classLinks,
+  moderationCases: lessonInclude.moderationCases,
 } satisfies Prisma.LessonSelect;
 
 const classLessonSelect = {
@@ -70,6 +93,7 @@ const classLessonSelect = {
       contentLocale: true,
       estimatedMinutes: true,
       status: true,
+      moderationStatus: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -227,6 +251,13 @@ export class LessonsService {
         });
       }
 
+      if (existing.moderationStatus === LessonModerationStatus.UNDER_REVIEW) {
+        throw new ConflictException({
+          code: 'LESSON_UNDER_REVIEW',
+          message: 'A lesson under review cannot be edited',
+        });
+      }
+
       if (existing.status === LessonStatus.PUBLISHED) {
         this.assertLessonComplete({
           title: dto.title ?? existing.title,
@@ -293,7 +324,7 @@ export class LessonsService {
       await this.lockOwnedLesson(transaction, user.id, lessonId);
       const existing = await transaction.lesson.findUnique({
         where: { id: lessonId },
-        select: { id: true, status: true },
+        select: { id: true, status: true, moderationStatus: true },
       });
 
       if (!existing) {
@@ -334,7 +365,7 @@ export class LessonsService {
       await this.lockOwnedLesson(transaction, user.id, lessonId);
       const existing = await transaction.lesson.findUnique({
         where: { id: lessonId },
-        select: { id: true, status: true },
+        select: { id: true, status: true, moderationStatus: true },
       });
 
       if (!existing) {
@@ -345,6 +376,13 @@ export class LessonsService {
         throw new ConflictException({
           code: 'LESSON_NOT_ARCHIVED',
           message: 'Only an archived lesson can be restored',
+        });
+      }
+
+      if (existing.moderationStatus === LessonModerationStatus.REMOVED) {
+        throw new ConflictException({
+          code: 'LESSON_REMOVED_BY_MODERATION',
+          message: 'A lesson removed by moderation cannot be restored',
         });
       }
 
@@ -372,7 +410,10 @@ export class LessonsService {
       where: {
         classId,
         publishedAt: { not: null },
-        lesson: { status: LessonStatus.PUBLISHED },
+        lesson: {
+          status: LessonStatus.PUBLISHED,
+          moderationStatus: LessonModerationStatus.CLEAR,
+        },
       },
       orderBy: [{ position: 'asc' }, { lessonId: 'asc' }],
       select: studentLessonSummarySelect,
@@ -408,7 +449,10 @@ export class LessonsService {
         classId,
         lessonId,
         publishedAt: { not: null },
-        lesson: { status: LessonStatus.PUBLISHED },
+        lesson: {
+          status: LessonStatus.PUBLISHED,
+          moderationStatus: LessonModerationStatus.CLEAR,
+        },
       },
       select: studentLessonDetailSelect,
     });
@@ -464,6 +508,7 @@ export class LessonsService {
           summary: true,
           content: true,
           status: true,
+          moderationStatus: true,
         },
       });
 
@@ -475,6 +520,16 @@ export class LessonsService {
         throw new ConflictException({
           code: 'LESSON_ARCHIVED',
           message: 'An archived lesson cannot be assigned or published',
+        });
+      }
+
+      if (
+        published &&
+        lesson.moderationStatus !== LessonModerationStatus.CLEAR
+      ) {
+        throw new ConflictException({
+          code: 'LESSON_MODERATION_RESTRICTED',
+          message: 'A moderated lesson cannot be assigned or published',
         });
       }
 
@@ -1039,6 +1094,15 @@ export class LessonsService {
       contentLocale: lesson.contentLocale,
       estimatedMinutes: lesson.estimatedMinutes,
       status: lesson.status,
+      moderationStatus: lesson.moderationStatus,
+      moderation: lesson.moderationCases?.[0]
+        ? {
+            caseId: lesson.moderationCases[0].id,
+            status: lesson.moderationStatus,
+            editVersion: lesson.moderationCases[0].editVersion,
+            resolutionNote: lesson.moderationCases[0].resolutionNote,
+          }
+        : null,
       createdAt: lesson.createdAt,
       updatedAt: lesson.updatedAt,
       classLinks: lesson.classLinks.map(
@@ -1068,6 +1132,7 @@ export class LessonsService {
       contentLocale: link.lesson.contentLocale,
       estimatedMinutes: link.lesson.estimatedMinutes,
       status: link.lesson.status,
+      moderationStatus: link.lesson.moderationStatus,
       createdAt: link.lesson.createdAt,
       updatedAt: link.lesson.updatedAt,
       classId: link.classId,

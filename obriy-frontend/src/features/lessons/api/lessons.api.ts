@@ -114,3 +114,20 @@ export function listStudentLessons(): Promise<StudentLessonSummary[]> {
 export function getStudentLesson(lessonId: string): Promise<StudentLesson> {
   return authorizedRequest<StudentLesson>(`/classes/me/lessons/${lessonId}`)
 }
+
+export interface LessonReportInput {
+  category: 'AGE_INAPPROPRIATE' | 'VIOLENCE' | 'HATE_OR_HARASSMENT' | 'SEXUAL_CONTENT' | 'PERSONAL_DATA' | 'MISINFORMATION' | 'OTHER'
+  details: string
+}
+
+export function reportStudentLesson(lessonId: string, input: LessonReportInput) {
+  return authorizedRequest<{ caseId: string; status: string; reportedAt: string }>(`/student/lessons/${lessonId}/report`, { method: 'POST', body: input })
+}
+
+export function reportParentLesson(childId: string, lessonId: string, input: LessonReportInput) {
+  return authorizedRequest<{ caseId: string; status: string; reportedAt: string }>(`/parent/children/${childId}/lessons/${lessonId}/report`, { method: 'POST', body: input })
+}
+
+export function resubmitLessonModeration(lessonId: string, expectedEditVersion: number) {
+  return authorizedRequest<{ caseId: string; status: string; editVersion: number; resolutionNote: string | null }>(`/lessons/${lessonId}/moderation/resubmit`, { method: 'POST', body: { expectedEditVersion } })
+}

@@ -1434,3 +1434,27 @@
     border-top: 1px solid var(--line-soft);
   }
 }
+.moderationNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  margin: 18px 0;
+  padding: 15px 17px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--gold, #a66b2b), transparent 90%);
+  border: 1px solid color-mix(in srgb, var(--gold, #a66b2b), transparent 55%);
+}
+
+.moderationNotice > div {
+  flex: 1;
+}
+
+.moderationNotice p {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+}
+
+.moderationNotice[data-status='REMOVED'] {
+  background: rgb(154 55 50 / 8%);
+  border-color: rgb(154 55 50 / 35%);
+}

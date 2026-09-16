@@ -171,11 +171,57 @@ enum NotificationType {
   BADGE_UNLOCKED
   LEVEL_UP
   CHAT_MESSAGE
+  LESSON_MODERATION_CHANGES_REQUESTED
+  LESSON_MODERATION_APPROVED
+  LESSON_MODERATION_REMOVED
+  LESSON_REPORT_RESOLVED
 }
 
 enum ChatAttachmentResourceType {
   IMAGE
   RAW
+}
+
+enum LessonModerationStatus {
+  CLEAR
+  UNDER_REVIEW
+  CHANGES_REQUESTED
+  REMOVED
+}
+
+enum LessonModerationCaseStatus {
+  REPORTED
+  UNDER_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  DISMISSED
+  REMOVED
+}
+
+enum LessonReportCategory {
+  AGE_INAPPROPRIATE
+  VIOLENCE
+  HATE_OR_HARASSMENT
+  SEXUAL_CONTENT
+  PERSONAL_DATA
+  MISINFORMATION
+  OTHER
+}
+
+enum AdminAuditAction {
+  USER_SUSPENDED
+  USER_RESTORED
+  LESSON_HIDDEN
+  LESSON_REPORT_DISMISSED
+  LESSON_CHANGES_REQUESTED
+  LESSON_APPROVED
+  LESSON_REMOVED
+}
+
+enum AdminAuditTargetType {
+  USER
+  LESSON
+  MODERATION_CASE
 }
 
 model User {
@@ -215,6 +261,10 @@ model User {
   taughtConversations     Conversation[]           @relation("ConversationTeacher")
   studentConversations    Conversation[]           @relation("ConversationStudent")
   sentMessages            Message[]                @relation("MessageSender")
+  submittedLessonReports  LessonReport[]           @relation("LessonReportReporter")
+  subjectLessonReports    LessonReport[]           @relation("LessonReportSubjectStudent")
+  reviewedModerationCases LessonModerationCase[]   @relation("LessonModerationReviewer")
+  adminAuditLogs          AdminAuditLog[]          @relation("AdminAuditActor")
   studentClassId          String?
   studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
 
@@ -345,32 +395,95 @@ model Class {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  teacher      User          @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
-  students     User[]        @relation("ClassStudents")
-  lessonLinks  ClassLesson[]
-  testReleases TestRelease[]
+  teacher       User           @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+  students      User[]         @relation("ClassStudents")
+  lessonLinks   ClassLesson[]
+  testReleases  TestRelease[]
+  lessonReports LessonReport[]
 
   @@index([teacherId])
 }
 
 model Lesson {
-  id               String       @id @default(uuid())
+  id               String                 @id @default(uuid())
   teacherId        String
-  title            String       @db.VarChar(160)
-  summary          String       @db.VarChar(500)
-  content          String       @db.Text
+  title            String                 @db.VarChar(160)
+  summary          String                 @db.VarChar(500)
+  content          String                 @db.Text
   contentLocale    Locale
   estimatedMinutes Int?
-  status           LessonStatus @default(DRAFT)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  status           LessonStatus           @default(DRAFT)
+  moderationStatus LessonModerationStatus @default(CLEAR)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
 
-  teacher      User          @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
-  classLinks   ClassLesson[]
-  testLinks    LessonTest[]
-  testReleases TestRelease[]
+  teacher         User                   @relation("TeacherLessons", fields: [teacherId], references: [id], onDelete: Cascade)
+  classLinks      ClassLesson[]
+  testLinks       LessonTest[]
+  testReleases    TestRelease[]
+  moderationCases LessonModerationCase[]
 
   @@index([teacherId, status, updatedAt])
+  @@index([moderationStatus, updatedAt])
+}
+
+model LessonModerationCase {
+  id              String                     @id @default(uuid())
+  lessonId        String
+  status          LessonModerationCaseStatus @default(REPORTED)
+  initialSnapshot Json
+  resolutionNote  String?                    @db.Text
+  reviewedById    String?
+  editVersion     Int                        @default(1)
+  resolvedAt      DateTime?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  lesson     Lesson         @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  reviewedBy User?          @relation("LessonModerationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reports    LessonReport[]
+
+  @@index([status, createdAt, id])
+  @@index([lessonId, createdAt])
+  @@index([reviewedById, updatedAt])
+}
+
+model LessonReport {
+  id               String               @id @default(uuid())
+  caseId           String
+  reporterId       String
+  subjectStudentId String
+  classId          String
+  category         LessonReportCategory
+  details          String               @db.Text
+  createdAt        DateTime             @default(now())
+
+  moderationCase LessonModerationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  reporter       User                 @relation("LessonReportReporter", fields: [reporterId], references: [id], onDelete: Restrict)
+  subjectStudent User                 @relation("LessonReportSubjectStudent", fields: [subjectStudentId], references: [id], onDelete: Restrict)
+  class          Class                @relation(fields: [classId], references: [id], onDelete: Restrict)
+
+  @@unique([caseId, reporterId])
+  @@index([reporterId, createdAt])
+  @@index([subjectStudentId, createdAt])
+  @@index([classId, createdAt])
+}
+
+model AdminAuditLog {
+  id         String               @id @default(uuid())
+  actorId    String
+  action     AdminAuditAction
+  targetType AdminAuditTargetType
+  targetId   String               @db.VarChar(64)
+  reason     String               @db.VarChar(500)
+  metadata   Json?
+  createdAt  DateTime             @default(now())
+
+  actor User @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([actorId, createdAt, id])
+  @@index([action, createdAt, id])
+  @@index([targetType, targetId, createdAt])
 }
 
 model ClassLesson {

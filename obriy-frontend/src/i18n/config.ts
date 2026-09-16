@@ -138,6 +138,10 @@ const resources = {
           BADGE_UNLOCKED: { title: 'Новий бейдж', message: '{{studentDisplayName}} отримав(-ла) нову нагороду.' },
           LEVEL_UP: { title: 'Новий рівень', message: '{{studentDisplayName}} досягнув(-ла) рівня {{level}}.' },
           CHAT_MESSAGE: { title: 'Нове повідомлення', message: '{{senderDisplayName}} надіслав(-ла) повідомлення. Непрочитаних: {{unreadCount}}.' },
+          LESSON_MODERATION_CHANGES_REQUESTED: { title: 'Потрібні правки уроку', message: 'Адміністратор попросив оновити урок «{{lessonTitle}}».' },
+          LESSON_MODERATION_APPROVED: { title: 'Урок схвалено', message: 'Урок «{{lessonTitle}}» знову доступний учням.' },
+          LESSON_MODERATION_REMOVED: { title: 'Урок видалено', message: 'Урок «{{lessonTitle}}» видалено за рішенням адміністрації.' },
+          LESSON_REPORT_RESOLVED: { title: 'Скаргу розглянуто', message: 'Перевірку уроку завершено. Дякуємо за звернення.' },
         },
       },
       home: {
@@ -860,6 +864,13 @@ const resources = {
         },
       },
       lessons: {
+        moderation: {
+          changesRequested: 'Адміністратор попросив внести зміни',
+          underReview: 'Урок перевіряється адміністрацією',
+          removed: 'Урок видалено адміністрацією',
+          resubmit: 'Надіслати повторно',
+          resubmitError: 'Не вдалося повторно надіслати урок. Збережіть зміни та спробуйте ще раз.',
+        },
         common: {
           retry: 'Спробувати ще раз',
           cancel: 'Скасувати',
@@ -2930,6 +2941,10 @@ const resources = {
           BADGE_UNLOCKED: { title: 'New badge', message: '{{studentDisplayName}} earned a new reward.' },
           LEVEL_UP: { title: 'Level up', message: '{{studentDisplayName}} reached level {{level}}.' },
           CHAT_MESSAGE: { title: 'New message', message: '{{senderDisplayName}} sent a message. Unread: {{unreadCount}}.' },
+          LESSON_MODERATION_CHANGES_REQUESTED: { title: 'Lesson changes required', message: 'An administrator requested changes to “{{lessonTitle}}”.' },
+          LESSON_MODERATION_APPROVED: { title: 'Lesson approved', message: '“{{lessonTitle}}” is available to students again.' },
+          LESSON_MODERATION_REMOVED: { title: 'Lesson removed', message: '“{{lessonTitle}}” was removed by an administrator.' },
+          LESSON_REPORT_RESOLVED: { title: 'Report reviewed', message: 'The lesson review is complete. Thank you for reporting it.' },
         },
       },
       home: {
@@ -3652,6 +3667,13 @@ const resources = {
         },
       },
       lessons: {
+        moderation: {
+          changesRequested: 'The administrator requested changes',
+          underReview: 'The lesson is under administrative review',
+          removed: 'The lesson was removed by an administrator',
+          resubmit: 'Resubmit for review',
+          resubmitError: 'Could not resubmit the lesson. Save your changes and try again.',
+        },
         common: {
           retry: 'Try again',
           cancel: 'Cancel',

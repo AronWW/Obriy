@@ -32,6 +32,7 @@ import { ParentDashboardModule } from './parent-dashboard/parent-dashboard.modul
 import { ChatModule } from './chat/chat.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { validateEnvironment } from './config/env.validation';
+import { AdminModule } from './admin/admin.module';
 
 const i18nPath = existsSync(join(__dirname, 'i18n'))
   ? join(__dirname, 'i18n')
@@ -70,6 +71,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     NotificationsModule,
     ParentDashboardModule,
     ChatModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

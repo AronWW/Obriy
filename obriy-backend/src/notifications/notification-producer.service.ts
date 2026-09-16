@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  LessonModerationStatus,
   NotificationType,
   Prisma,
   TestAttemptStatus,
@@ -35,6 +36,7 @@ const releaseNotificationSelect = {
       },
     },
   },
+  lesson: { select: { moderationStatus: true } },
 } satisfies Prisma.TestReleaseSelect;
 
 type ReleaseNotificationRecord = Prisma.TestReleaseGetPayload<{
@@ -50,13 +52,26 @@ export class NotificationProducerService {
 
   async notifyReleasePublished(releaseId: string): Promise<void> {
     const release = await this.findRelease(releaseId);
-    if (!release) return;
+    if (
+      !release ||
+      (release.lessonId !== null &&
+        release.lesson?.moderationStatus !== LessonModerationStatus.CLEAR)
+    ) {
+      return;
+    }
     await this.notifyReleaseAudience(release, NotificationType.TEST_ASSIGNED);
   }
 
   async notifyReleaseAvailable(releaseId: string): Promise<void> {
     const release = await this.findRelease(releaseId);
-    if (!release || release.availableFrom === null) return;
+    if (
+      !release ||
+      (release.lessonId !== null &&
+        release.lesson?.moderationStatus !== LessonModerationStatus.CLEAR) ||
+      release.availableFrom === null
+    ) {
+      return;
+    }
     await this.notifyReleaseAudience(release, NotificationType.TEST_AVAILABLE);
   }
 
@@ -181,24 +196,34 @@ export class NotificationProducerService {
     const releases = await this.prisma.testRelease.findMany({
       where: {
         publishedAt: { not: null },
-        OR: [
+        AND: [
           {
-            status: TestReleaseStatus.ACTIVE,
-            availableFrom: { not: null, lte: now },
+            OR: [
+              { lessonId: null },
+              { lesson: { moderationStatus: LessonModerationStatus.CLEAR } },
+            ],
           },
           {
-            isRequired: true,
-            status: {
-              in: [TestReleaseStatus.SCHEDULED, TestReleaseStatus.ACTIVE],
-            },
-            dueAt: { gt: now, lte: dueSoonEnd },
-          },
-          {
-            isRequired: true,
-            status: {
-              in: [TestReleaseStatus.ACTIVE, TestReleaseStatus.CLOSED],
-            },
-            dueAt: { lte: now },
+            OR: [
+              {
+                status: TestReleaseStatus.ACTIVE,
+                availableFrom: { not: null, lte: now },
+              },
+              {
+                isRequired: true,
+                status: {
+                  in: [TestReleaseStatus.SCHEDULED, TestReleaseStatus.ACTIVE],
+                },
+                dueAt: { gt: now, lte: dueSoonEnd },
+              },
+              {
+                isRequired: true,
+                status: {
+                  in: [TestReleaseStatus.ACTIVE, TestReleaseStatus.CLOSED],
+                },
+                dueAt: { lte: now },
+              },
+            ],
           },
         ],
       },

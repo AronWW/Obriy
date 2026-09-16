@@ -25,6 +25,18 @@ import { StudentProfilePage } from '../../features/student-profile'
 import { StudentLeaderboardPage } from '../../features/leaderboard'
 import { StudentAchievementsPage } from '../../features/gamification'
 import { ChatWorkspacePage, ParentChatPage } from '../../features/chat'
+import {
+  AdminAuditPage,
+  AdminClassDetailPage,
+  AdminClassesPage,
+  AdminDashboardPage,
+  AdminLayout,
+  AdminModerationDetailPage,
+  AdminModerationPage,
+  AdminProfilePage,
+  AdminUserDetailPage,
+  AdminUsersPage,
+} from '../../features/admin'
 import { TeacherProfilePage } from '../../features/teacher-profile'
 import { TeacherOverviewPage } from '../../features/teacher-overview'
 import {
@@ -181,7 +193,17 @@ export function AppRouter() {
           </Route>
         </Route>
         <Route element={<RoleRoute role="ADMIN" />}>
-          <Route path="/app/admin" element={<DesignLabPage />} />
+          <Route path="/app/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="users/:userId" element={<AdminUserDetailPage />} />
+            <Route path="classes" element={<AdminClassesPage />} />
+            <Route path="classes/:classId" element={<AdminClassDetailPage />} />
+            <Route path="moderation" element={<AdminModerationPage />} />
+            <Route path="moderation/:caseId" element={<AdminModerationDetailPage />} />
+            <Route path="audit" element={<AdminAuditPage />} />
+            <Route path="profile" element={<AdminProfilePage />} />
+          </Route>
         </Route>
 
         <Route path="/app/*" element={<RoleHomeRedirect />} />

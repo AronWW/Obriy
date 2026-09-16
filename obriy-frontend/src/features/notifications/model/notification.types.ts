@@ -9,6 +9,10 @@ export type NotificationType =
   | 'BADGE_UNLOCKED'
   | 'LEVEL_UP'
   | 'CHAT_MESSAGE'
+  | 'LESSON_MODERATION_CHANGES_REQUESTED'
+  | 'LESSON_MODERATION_APPROVED'
+  | 'LESSON_MODERATION_REMOVED'
+  | 'LESSON_REPORT_RESOLVED'
 
 export interface AppNotification {
   id: string

@@ -9,6 +9,7 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   AssignmentType,
+  LessonModerationStatus,
   MapPresetSourceType,
   Prisma,
   TestAnswerStatus,
@@ -224,6 +225,7 @@ export class StudentTestsService {
         lessonId,
         publishedAt: { not: null },
         class: { students: { some: { id: user.id } } },
+        lesson: { moderationStatus: LessonModerationStatus.CLEAR },
       },
       select: { classId: true },
     });
@@ -733,9 +735,15 @@ export class StudentTestsService {
             lessonId: release.lessonId,
           },
         },
-        select: { publishedAt: true },
+        select: {
+          publishedAt: true,
+          lesson: { select: { moderationStatus: true } },
+        },
       });
-      if (!visibleLesson?.publishedAt) {
+      if (
+        !visibleLesson?.publishedAt ||
+        visibleLesson.lesson.moderationStatus !== LessonModerationStatus.CLEAR
+      ) {
         throw this.releaseNotFound();
       }
     }
@@ -788,9 +796,15 @@ export class StudentTestsService {
             lessonId: release.lessonId,
           },
         },
-        select: { publishedAt: true },
+        select: {
+          publishedAt: true,
+          lesson: { select: { moderationStatus: true } },
+        },
       });
-      if (!visible?.publishedAt) {
+      if (
+        !visible?.publishedAt ||
+        visible.lesson.moderationStatus !== LessonModerationStatus.CLEAR
+      ) {
         throw this.attemptNotFound();
       }
     }

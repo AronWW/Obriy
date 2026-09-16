@@ -29,7 +29,7 @@ async function main(): Promise<void> {
     }
 
     const passwordHash = await argon2.hash(password);
-    await prisma.user.upsert({
+    const admin = await prisma.user.upsert({
       where: { email },
       create: {
         email,
@@ -44,6 +44,7 @@ async function main(): Promise<void> {
       update: {
         passwordHash,
         status: UserStatus.ACTIVE,
+        sessionVersion: { increment: 1 },
         emailVerifiedAt: existingUser?.emailVerifiedAt ?? new Date(),
         profile: {
           upsert: {
@@ -53,6 +54,12 @@ async function main(): Promise<void> {
         },
       },
     });
+    if (existingUser) {
+      await prisma.refreshToken.updateMany({
+        where: { userId: admin.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
 
     console.log(`Admin account is ready: ${email}`);
   } finally {

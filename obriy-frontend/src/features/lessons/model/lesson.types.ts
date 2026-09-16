@@ -1,6 +1,14 @@
 import type { Locale } from '../../auth/model/auth.types'
 
 export type LessonStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+export type LessonModerationStatus = 'CLEAR' | 'UNDER_REVIEW' | 'CHANGES_REQUESTED' | 'REMOVED'
+
+export interface TeacherLessonModeration {
+  caseId: string
+  status: LessonModerationStatus
+  editVersion: number
+  resolutionNote: string | null
+}
 
 export interface LessonClassLink {
   classId: string
@@ -16,6 +24,8 @@ export interface LessonSummary {
   contentLocale: Locale
   estimatedMinutes: number | null
   status: LessonStatus
+  moderationStatus: LessonModerationStatus
+  moderation: TeacherLessonModeration | null
   createdAt: string
   updatedAt: string
   classLinks: LessonClassLink[]
@@ -46,6 +56,7 @@ export interface ClassLessonItem {
   contentLocale: Locale
   estimatedMinutes: number | null
   status: LessonStatus
+  moderationStatus: LessonModerationStatus
   createdAt: string
   updatedAt: string
   position: number

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  AlertTriangle,
   ArrowLeft,
   Clock3,
   Eye,
@@ -7,6 +8,7 @@ import {
   Link2,
   Link2Off,
   Save,
+  Send,
   School,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -21,6 +23,7 @@ import {
   createLesson,
   getLesson,
   setClassLesson,
+  resubmitLessonModeration,
   unlinkClassLesson,
   updateLesson,
 } from '../api/lessons.api'
@@ -106,6 +109,20 @@ export function TeacherLessonEditorPage() {
     queryKey: ['classes', 'teacher'],
     queryFn: listTeacherClasses,
   })
+  const moderation = lessonQuery.data?.moderation ?? null
+  const moderationLocked =
+    moderation?.status === 'UNDER_REVIEW' || moderation?.status === 'REMOVED'
+  const resubmitMutation = useMutation({
+    mutationFn: () =>
+      resubmitLessonModeration(activeLessonId ?? '', moderation?.editVersion ?? 0),
+    onSuccess: () => {
+      if (activeLessonId) {
+        void queryClient.invalidateQueries({
+          queryKey: lessonQueryKeys.detail(activeLessonId),
+        })
+      }
+    },
+  })
 
   useEffect(() => {
     if (!lessonQuery.data || hasHydrated) {
@@ -165,6 +182,7 @@ export function TeacherLessonEditorPage() {
       !isDirty ||
       durationError ||
       lessonStatus !== 'DRAFT' ||
+      moderationLocked ||
       saveMutation.isPending ||
       saveState === 'error' ||
       showDiscardDialog ||
@@ -193,6 +211,7 @@ export function TeacherLessonEditorPage() {
     hasMeaningfulContent,
     isDirty,
     lessonStatus,
+    moderationLocked,
     saveMutation,
     saveState,
     showDiscardDialog,
@@ -311,7 +330,7 @@ export function TeacherLessonEditorPage() {
 
   const classLinks = lessonQuery.data?.classLinks ?? []
   const isArchived = lessonStatus === 'ARCHIVED'
-  const classControlsDisabled = isArchived || shouldWarn
+  const classControlsDisabled = isArchived || moderationLocked || shouldWarn
 
   return (
     <section className={styles.page} aria-labelledby="lesson-editor-title">
@@ -336,6 +355,7 @@ export function TeacherLessonEditorPage() {
               className={styles.primaryButton}
               disabled={
                 isArchived ||
+                moderationLocked ||
                 Boolean(durationError) ||
                 saveMutation.isPending ||
                 (!isDirty && Boolean(activeLessonId))
@@ -356,6 +376,37 @@ export function TeacherLessonEditorPage() {
         {isArchived && (
           <p className={styles.archiveNotice}>{t('lessons.editor.archived')}</p>
         )}
+        {moderation && moderation.status !== 'CLEAR' && (
+          <div className={styles.moderationNotice} data-status={moderation.status}>
+            <AlertTriangle size={20} aria-hidden="true" />
+            <div>
+              <strong>
+                {moderation.status === 'CHANGES_REQUESTED'
+                  ? t('lessons.moderation.changesRequested')
+                  : moderation.status === 'UNDER_REVIEW'
+                    ? t('lessons.moderation.underReview')
+                    : t('lessons.moderation.removed')}
+              </strong>
+              {moderation.resolutionNote && <p>{moderation.resolutionNote}</p>}
+            </div>
+            {moderation.status === 'CHANGES_REQUESTED' && (
+              <button
+                className={styles.primaryButton}
+                disabled={isDirty || saveMutation.isPending || resubmitMutation.isPending}
+                onClick={() => resubmitMutation.mutate()}
+                type="button"
+              >
+                <Send size={15} aria-hidden="true" />
+                {t('lessons.moderation.resubmit')}
+              </button>
+            )}
+          </div>
+        )}
+        {resubmitMutation.isError && (
+          <p className={styles.errorStatus} role="alert">
+            {t('lessons.moderation.resubmitError')}
+          </p>
+        )}
         {saveMutation.isError && (
           <p className={styles.errorStatus} role="alert">
             {getSaveError(saveMutation.error, t)}
@@ -367,7 +418,7 @@ export function TeacherLessonEditorPage() {
             className={styles.editorForm}
             onSubmit={(event) => event.preventDefault()}
           >
-              <fieldset disabled={isArchived}>
+              <fieldset disabled={isArchived || moderationLocked}>
                 <section className={styles.editorFormSection}>
                   <div className={styles.editorSectionHeading}>
                     <h2>{t('lessons.editor.sections.basicsTitle')}</h2>

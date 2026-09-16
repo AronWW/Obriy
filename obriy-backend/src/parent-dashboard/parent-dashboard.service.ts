@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  LessonModerationStatus,
   Prisma,
   TestLatePolicy,
   TestReleaseStatus,
@@ -231,7 +232,11 @@ export class ParentDashboardService {
     await this.releaseLifecycle.synchronizeClass(classId);
     const [classLessons, releases] = await this.prisma.$transaction([
       this.prisma.classLesson.findMany({
-        where: { classId, publishedAt: { not: null } },
+        where: {
+          classId,
+          publishedAt: { not: null },
+          lesson: { moderationStatus: LessonModerationStatus.CLEAR },
+        },
         orderBy: [{ position: 'asc' }, { lessonId: 'asc' }],
         select: classLessonSelect,
       }),
@@ -280,6 +285,7 @@ export class ParentDashboardService {
         OR: classIds.map((classId) => ({
           classId,
           lesson: {
+            moderationStatus: LessonModerationStatus.CLEAR,
             classLinks: {
               some: { classId, publishedAt: { not: null } },
             },
@@ -303,6 +309,7 @@ export class ParentDashboardService {
         status: { in: RELEASE_STATUSES },
         lessonId: { not: null },
         lesson: {
+          moderationStatus: LessonModerationStatus.CLEAR,
           classLinks: { some: { classId, publishedAt: { not: null } } },
         },
       },

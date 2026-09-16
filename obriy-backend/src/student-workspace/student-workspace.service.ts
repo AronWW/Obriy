@@ -4,6 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import {
+  LessonModerationStatus,
   Prisma,
   TestLatePolicy,
   TestReleaseStatus,
@@ -234,6 +235,7 @@ export class StudentWorkspaceService {
         lessonId: { not: null },
         status: { in: WORKSPACE_RELEASE_STATUSES },
         lesson: {
+          moderationStatus: LessonModerationStatus.CLEAR,
           classLinks: { some: { classId, publishedAt: { not: null } } },
         },
       },

@@ -25,6 +25,8 @@ import type {
   ParentWorkItem,
 } from '../model/parent.types'
 import { parentLinksApi } from '../../parent-links/api/parent-links.api'
+import { reportParentLesson } from '../../lessons/api/lessons.api'
+import { LessonReportDialog } from '../../lessons/components/LessonReportDialog'
 import { linkedChildrenQueryKey } from '../hooks/useLinkedChildren'
 import { parentQueryKeys } from '../model/parent-query-keys'
 import { ChildAvatar } from './ChildAvatar'
@@ -149,7 +151,10 @@ export function ChildProgressView({
             <section className={styles.lesson} key={lesson.id}>
               <header className={styles.lessonHeader}>
                 <div><span>{t('parentLearning.progress.lesson', { number: lesson.position })}</span><h2>{lesson.title}</h2></div>
-                <div className={styles.lessonMetric}><strong>{percent(lesson.completionPercent)}</strong><small>{t('parentLearning.metrics.progress')}</small></div>
+                <div className={styles.rowActions}>
+                  <LessonReportDialog submit={(input) => reportParentLesson(child.id, lesson.id, input)} />
+                  <div className={styles.lessonMetric}><strong>{percent(lesson.completionPercent)}</strong><small>{t('parentLearning.metrics.progress')}</small></div>
+                </div>
               </header>
               {lesson.tests.length === 0 ? <p className={styles.lessonEmpty}>{t('parentLearning.progress.noTests')}</p> : (
                 <div className={styles.testList}>{lesson.tests.map((test) => <TestProgress key={test.releaseId} test={test} />)}</div>

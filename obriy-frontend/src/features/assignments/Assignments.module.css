@@ -12,10 +12,10 @@
 .intro,
 .editorHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 28px;
+  margin-bottom: 30px;
 }
 
 .introActions {
@@ -25,20 +25,20 @@
   flex: 0 0 auto;
 }
 
-.intro h1,
-.editorHeading h1 {
-  margin: 5px 0 7px;
+.intro h1 {
+  margin: 0;
   color: var(--ink);
-  font-family: 'Lora', serif;
-  font-size: clamp(1.8rem, 4vw, 2.55rem);
-  line-height: 1.1;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 500;
+  line-height: 1.06;
 }
 
-.intro > div > p:last-child,
-.editorHeading > p:last-child {
+.intro > div > p:last-child {
   max-width: 680px;
-  margin: 0;
+  margin: 14px 0 0;
   color: var(--copy);
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -124,8 +124,18 @@
 
 .iconButton {
   width: 40px;
+  min-width: 40px;
   min-height: 40px;
   padding: 0;
+}
+
+.editorBackButton {
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+.editorBackButton > svg {
+  margin: auto;
 }
 
 .dangerIconButton {
@@ -360,8 +370,43 @@
   display: grid;
   place-items: center;
   padding: 22px;
+  overflow: hidden;
   background: rgb(3 12 20 / 72%);
   backdrop-filter: blur(5px);
+}
+
+/* Portaled dialogs leave the workspace tree, so restore its color tokens here. */
+.dialogPortal {
+  --panel: rgb(255 250 240 / 94%);
+  --panel-solid: #fffaf0;
+  --panel-deep: #ede3d1;
+  --ink: #173143;
+  --ink-soft: #4e6371;
+  --copy: #294959;
+  --gold: #a66b2b;
+  --gold-bright: #c98e40;
+  --archive-blue: #3b78a6;
+  --archive-blue-deep: #295f89;
+  --line: rgb(128 104 70 / 40%);
+  --line-soft: rgb(128 104 70 / 17%);
+  --panel-shadow: 0 16px 36px rgb(42 66 83 / 12%);
+  --danger: var(--color-danger);
+}
+
+:global(:root[data-theme='night']) .dialogPortal {
+  --panel: rgb(6 18 28 / 96%);
+  --panel-solid: #081721;
+  --panel-deep: #102630;
+  --ink: #eee2cb;
+  --ink-soft: #9eacb3;
+  --copy: #9eacb3;
+  --gold: #b38a4b;
+  --gold-bright: #cba866;
+  --archive-blue: #b38a4b;
+  --archive-blue-deep: #8e6a38;
+  --line: rgb(179 138 75 / 56%);
+  --line-soft: rgb(179 138 75 / 17%);
+  --panel-shadow: 0 12px 28px rgb(0 0 0 / 28%);
 }
 
 .dialog {
@@ -654,6 +699,13 @@
 .editorHeading {
   flex: 1;
   min-width: 0;
+}
+
+.editorHeading h1 {
+  margin: 5px 0 7px;
+  color: var(--ink);
+  font-family: 'Lora', serif;
+  line-height: 1.1;
 }
 
 .editorHeading h1 {
@@ -2359,8 +2411,11 @@
   cursor: pointer;
 }
 .imageUploadField input {
-  grid-column: 1 / -1;
-  width: 100%;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
 }
 .assignmentPromptImage {
   display: block;
@@ -2742,12 +2797,30 @@
     height: calc(100dvh - 20px);
   }
 
-  .editorHeader > .iconButton {
+  .dialogPortalFullScreen {
+    padding: 0;
+  }
+
+  .dialogPortalFullScreen .dialogFullScreen {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .editorHeader > .editorBackButton {
     align-self: flex-start;
   }
 
   .editorHeading {
     width: calc(100% - 60px);
+  }
+
+  .editorHeading h1 {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .editorHeaderActions {
@@ -2859,9 +2932,12 @@
 }
 
 @media (max-width: 480px) {
-  .intro h1,
   .editorHeading h1 {
     font-size: 1.55rem;
+  }
+
+  .intro h1 {
+    font-size: 2.15rem;
   }
 
   .assignmentRow {

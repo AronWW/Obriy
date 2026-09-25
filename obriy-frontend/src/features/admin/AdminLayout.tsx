@@ -1,7 +1,7 @@
 import { ClipboardCheck, Gauge, History, Menu, School, Shield, User, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { ObriyBackground } from '../../shared/backgrounds/ObriyBackground'
 import { BrandLogo } from '../../shared/brand/BrandLogo'
 import { adminCopy } from './admin.copy'
@@ -25,7 +25,7 @@ export function AdminLayout() {
       <ObriyBackground />
       <button className={styles.scrim} aria-label="Close" onClick={() => setOpen(false)} />
       <aside className={styles.sidebar}>
-        <div className={styles.brand}><BrandLogo large /><button aria-label="Close" onClick={() => setOpen(false)}><X size={19} /></button></div>
+        <div className={styles.brand}><Link to="/app/admin" onClick={() => setOpen(false)}><BrandLogo large /></Link><button aria-label="Close" onClick={() => setOpen(false)}><X size={19} /></button></div>
         <div className={styles.adminMark}><Shield size={17} /><span>Obriy Admin</span></div>
         <nav aria-label="Admin">
           {items.map(({ to, end, icon: Icon }, index) => (

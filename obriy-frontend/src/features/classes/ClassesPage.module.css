@@ -714,3 +714,7 @@
     flex-direction: column;
   }
 }
+
+.classmateProfileBody.classmateProfileBody {
+  grid-template-columns: minmax(0, 1fr);
+}

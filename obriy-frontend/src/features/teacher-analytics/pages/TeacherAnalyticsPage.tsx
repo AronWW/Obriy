@@ -13,6 +13,7 @@ import {
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
+import { UserAvatarImage } from '../../../shared/ui/UserAvatarImage'
 import { listTeacherClasses } from '../../classes/api/classes.api'
 import { TeacherLeaderboardTab } from '../../leaderboard'
 import { getTeacherClassAnalytics } from '../api/teacher-analytics.api'
@@ -338,7 +339,7 @@ function StudentIdentity({ student }: { student: TeacherAnalyticsStudent }) {
   return (
     <div className={styles.studentIdentity}>
       <span aria-hidden="true">
-        {student.avatarUrl ? <img alt="" src={student.avatarUrl} /> : initials(student.displayName)}
+        <UserAvatarImage avatarUrl={student.avatarUrl} displayName={student.displayName} />
       </span>
       <strong>{student.displayName}</strong>
     </div>
@@ -391,8 +392,4 @@ function studentSortValue(student: TeacherAnalyticsStudent, sort: Exclude<Studen
   if (sort === 'completion') return student.completionPercent
   if (sort === 'average') return student.averagePercent
   return student.lastActivityAt ? new Date(student.lastActivityAt).getTime() : null
-}
-
-function initials(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
 }

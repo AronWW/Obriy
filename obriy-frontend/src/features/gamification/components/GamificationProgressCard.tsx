@@ -21,12 +21,16 @@ export function GamificationProgressCard({
       aria-label={t('gamification.progress.label')}
     >
       <div className={styles.levelMedallion}>
-        <Sparkles aria-hidden="true" size={compact ? 14 : 18} />
+        <Sparkles
+          aria-hidden="true"
+          className={styles.levelSparkle}
+          size={compact ? 12 : 15}
+        />
         <strong>{progress.level}</strong>
         <span>{t('gamification.progress.level')}</span>
       </div>
       <div className={styles.progressCopy}>
-        <div>
+        <div className={styles.progressSummary}>
           <strong>
             {t('gamification.progress.totalXp', { count: progress.totalXp })}
           </strong>

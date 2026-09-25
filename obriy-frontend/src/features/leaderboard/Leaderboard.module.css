@@ -341,14 +341,19 @@
 .loadMore,
 .statePanel button,
 .statePanel a {
+  display: inline-flex;
   min-height: 40px;
+  align-items: center;
+  justify-content: center;
   padding: 0 16px;
   color: var(--panel-solid);
   background: var(--archive-blue-deep);
   border: 1px solid var(--archive-blue-deep);
+  border-radius: 10px;
   font: inherit;
   font-size: 11px;
   font-weight: 800;
+  line-height: 1.2;
   text-decoration: none;
   cursor: pointer;
 }
@@ -396,6 +401,12 @@
   max-width: 520px;
   font-size: 13px;
   line-height: 1.55;
+}
+
+.statePanel button,
+.statePanel a {
+  justify-self: center;
+  margin-top: 3px;
 }
 
 .loading {

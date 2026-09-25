@@ -1,4 +1,5 @@
 import type { LinkedChild } from '../model/parent.types'
+import { UserAvatarImage } from '../../../shared/ui/UserAvatarImage'
 import styles from './ParentHub.module.css'
 
 export function ChildAvatar({
@@ -8,19 +9,11 @@ export function ChildAvatar({
   child: LinkedChild
   size?: 'small' | 'regular' | 'large'
 }) {
-  const initials = child.displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-
   return (
     <span
       className={`${styles.avatar} ${size === 'small' ? styles.avatarSmall : size === 'large' ? styles.avatarLarge : ''}`}
     >
-      {child.avatarUrl ? <img src={child.avatarUrl} alt="" /> : initials}
+      <UserAvatarImage avatarUrl={child.avatarUrl} displayName={child.displayName} />
     </span>
   )
 }

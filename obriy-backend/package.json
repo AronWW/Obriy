@@ -5,8 +5,12 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": "22.x",
+    "npm": "11.x"
+  },
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
     "typecheck": "tsc --noEmit && tsc --noEmit --project test/tsconfig.json",
     "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.ts\" \"test/**/*.ts\" \"test/**/*.json\" \"*.json\"",
     "start": "nest start",
@@ -19,9 +23,13 @@
     "test:cov": "jest --config ./test/jest-unit.json --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --config ./test/jest-unit.json --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "db:migrate:deploy": "prisma migrate deploy",
     "seed:admin": "ts-node prisma/seed-admin.ts",
+    "seed:admin:prod": "node dist/prisma/seed-admin.js",
     "seed:maps": "ts-node prisma/seed-maps.ts",
-    "seed:badges": "ts-node prisma/seed-badges.ts"
+    "seed:maps:prod": "node dist/prisma/seed-maps.js",
+    "seed:badges": "ts-node prisma/seed-badges.ts",
+    "seed:badges:prod": "node dist/prisma/seed-badges.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -49,6 +57,7 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.22.0",
+    "prisma": "7.9.1",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.17.2",
     "rxjs": "^7.8.1",
@@ -74,7 +83,6 @@
     "globals": "^17.0.0",
     "jest": "^30.0.0",
     "prettier": "^3.4.2",
-    "prisma": "^7.9.1",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
@@ -87,7 +95,7 @@
   "overrides": {
     "@hono/node-server": "1.19.15",
     "mapshaper": {
-      "adm-zip": "0.6.0",
+      "adm-zip": "0.6.1",
       "fflate": "0.8.3"
     }
   }

@@ -201,8 +201,8 @@ export function TeacherInteractiveAssignmentEditorPage({ type }: { type: Interac
     })
   }, [shouldWarn])
 
-  if (query.isLoading && assignmentId) return <section className={styles.page}><p>{t('assignments.editor.loading')}</p></section>
-  if (query.isError || (query.data && query.data.type !== type)) return <section className={styles.page}><p>{t('assignments.editor.loadError')}</p></section>
+  if (query.isLoading && assignmentId) return <section className={styles.page}><div className={`${styles.content} ${styles.statusPanel}`}><p>{t('assignments.editor.loading')}</p></div></section>
+  if (query.isError || (query.data && query.data.type !== type)) return <section className={styles.page}><div className={`${styles.content} ${styles.statusPanel}`}><p>{t('assignments.editor.loadError')}</p></div></section>
 
   const promptImage = getPromptImage(values.publicConfig)
   const imageSrc = pendingImageUrl ?? (!removeExistingImage && promptImage ? assignmentImageUrl(promptImage.attachmentId) : null)
@@ -211,8 +211,9 @@ export function TeacherInteractiveAssignmentEditorPage({ type }: { type: Interac
 
   return (
     <section className={styles.page}>
+      <div className={styles.content}>
       <header className={styles.editorHeader}>
-        <button aria-label={t('assignments.common.back')} className={styles.iconButton} onClick={() => requestLeave('/app/teacher/tasks')} type="button"><ArrowLeft size={18} /></button>
+        <button aria-label={t('assignments.common.back')} className={`${styles.iconButton} ${styles.editorBackButton}`} onClick={() => requestLeave('/app/teacher/tasks')} type="button"><ArrowLeft size={18} /></button>
         <div className={styles.editorHeading}>
           <h1>{assignmentId ? values.title || t(`assignments.types.${type}.title`) : t('assignments.interactive.newTitle')}</h1>
           <p>{t(`assignments.types.${type}.description`)}</p>
@@ -251,13 +252,13 @@ export function TeacherInteractiveAssignmentEditorPage({ type }: { type: Interac
           {type === 'IMAGE_HOTSPOT' && <HotspotBuilder dimensions={pendingImageDimensions} imageSrc={imageSrc} onDimensions={setPendingImageDimensions} values={values} onChange={setValues} />}
 
           <section className={styles.editorSection}>
-            <label className={styles.field}><span>{t('assignments.editor.fields.explanation')}</span><textarea maxLength={50_000} onChange={(event) => patch(setValues, { explanation: event.target.value })} rows={3} value={values.explanation} /></label>
+            <label className={styles.field}><span>{t('assignments.editor.feedback.label')}</span><textarea maxLength={50_000} onChange={(event) => patch(setValues, { explanation: event.target.value })} rows={3} value={values.explanation} /></label>
           </section>
         </main>
         <aside className={styles.editorAside}>
           <div className={styles.settingsPanel}>
             <label className={styles.field}><span>{t('assignments.editor.settings.points')}</span><input min="0.01" onChange={(event) => patch(setValues, { defaultMaxPoints: event.target.value })} step="0.01" type="number" value={values.defaultMaxPoints} /></label>
-            <label className={styles.field}><span>{t('assignments.editor.settings.passing')}</span><input max="100" min="0" onChange={(event) => patch(setValues, { defaultPassingPercent: event.target.value })} type="number" value={values.defaultPassingPercent} /></label>
+            <label className={styles.field}><span>{t('assignments.editor.settings.passingPercent')}</span><input max="100" min="0" onChange={(event) => patch(setValues, { defaultPassingPercent: event.target.value })} type="number" value={values.defaultPassingPercent} /></label>
             <p className={styles.saveState} data-state={displayedSaveState}>{t(`assignments.editor.saveState.${displayedSaveState}`)}</p>
             {validation.length > 0 && <div className={styles.validationList}>{validation.map((message) => <p key={message}>{message}</p>)}</div>}
             {mutation.isError && saveState !== 'conflict' && <p className={styles.inlineError}>{mutation.error instanceof ImageActionError ? t('assignments.interactive.uploadError') : t('assignments.errors.save')}</p>}
@@ -265,6 +266,7 @@ export function TeacherInteractiveAssignmentEditorPage({ type }: { type: Interac
         </aside>
       </div>
       </fieldset>
+      </div>
       {showDiscardDialog && <AssignmentConfirmDialog cancelLabel={t('assignments.editor.discard.cancel')} confirmLabel={t('assignments.editor.discard.confirm')} description={t('assignments.editor.discard.description')} onCancel={() => { setShowDiscardDialog(false); setPendingNavigation(null) }} onConfirm={() => { const target = pendingNavigation ?? '/app/teacher/tasks'; setShowDiscardDialog(false); setPendingNavigation(null); navigate(target) }} title={t('assignments.editor.discard.title')} />}
     </section>
   )

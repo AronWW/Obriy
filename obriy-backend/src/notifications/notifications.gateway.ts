@@ -15,10 +15,14 @@ import type { JwtPayload } from '../common/types/jwt-payload.type';
 import type { NotificationDto } from './dto/notification.dto';
 import type { ChatMessageDto } from '../chat/dto/chat-output.dto';
 
+const realtimeFrontendOrigin = new URL(
+  process.env.FRONTEND_URL ?? 'http://localhost:5173',
+).origin;
+
 @WebSocketGateway({
   namespace: '/realtime',
   cors: {
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+    origin: realtimeFrontendOrigin,
     credentials: true,
   },
 })

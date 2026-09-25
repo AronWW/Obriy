@@ -81,7 +81,10 @@ export function TeacherLessonsPage() {
             <h1 id="teacher-lessons-title">{t('lessons.library.title')}</h1>
             <p>{t('lessons.library.description')}</p>
           </div>
-          <Link className={styles.primaryButton} to="/app/teacher/lessons/new">
+          <Link
+            className={`${styles.primaryButton} teacher-create-action`}
+            to="/app/teacher/lessons/new"
+          >
             <Plus size={17} aria-hidden="true" />
             {t('lessons.library.create')}
           </Link>

@@ -25,7 +25,8 @@ const resources = {
         },
         security: {
           title: 'Безпека',
-          description: 'Зміна пароля завершить усі активні сесії на ваших пристроях.',
+          description:
+            'Після зміни пароля буде виконано вихід з усіх пристроїв, включно з цим.',
           currentPassword: 'Поточний пароль',
           newPassword: 'Новий пароль',
           confirmPassword: 'Повторіть новий пароль',
@@ -35,7 +36,10 @@ const resources = {
           change: 'Змінити пароль',
           changing: 'Змінюємо…',
           changeError: 'Не вдалося змінити пароль. Перевірте поточний пароль і вимоги.',
-          createPassword: 'Надіслати лист для створення пароля',
+          setupTitle: 'Встановіть пароль для входу',
+          setupDescription:
+            'Ви входите через Google. Ми надішлемо захищене посилання для встановлення пароля на вашу пошту.',
+          createPassword: 'Надіслати лист для встановлення пароля',
           sending: 'Надсилаємо…',
           emailSent: 'Лист надіслано. Перевірте свою пошту.',
           emailError: 'Не вдалося надіслати лист. Спробуйте пізніше.',
@@ -718,8 +722,7 @@ const resources = {
         collection: {
           title: 'Колекція досягнень',
           description: 'Усі зароблені значки та особливі відзнаки.',
-          empty:
-            'Колекція з’явиться після запуску завдань і системи досягнень.',
+          empty: 'Ви ще не отримали жодного значка.',
         },
         appearance: {
           title: 'Оформлення',
@@ -2828,7 +2831,8 @@ const resources = {
         },
         security: {
           title: 'Security',
-          description: 'Changing your password will end all active sessions on your devices.',
+          description:
+            'Changing your password will sign you out on every device, including this one.',
           currentPassword: 'Current password',
           newPassword: 'New password',
           confirmPassword: 'Confirm new password',
@@ -2838,7 +2842,10 @@ const resources = {
           change: 'Change password',
           changing: 'Changing…',
           changeError: 'Could not change the password. Check the current password and requirements.',
-          createPassword: 'Send email to create a password',
+          setupTitle: 'Set a password for sign-in',
+          setupDescription:
+            'You currently sign in with Google. We will send a secure password setup link to your email.',
+          createPassword: 'Send password setup email',
           sending: 'Sending…',
           emailSent: 'Email sent. Check your inbox.',
           emailError: 'Could not send the email. Try again later.',
@@ -3518,8 +3525,7 @@ const resources = {
         collection: {
           title: 'Achievement collection',
           description: 'All earned badges and special awards.',
-          empty:
-            'The collection will appear after assignments and achievements are available.',
+          empty: 'You have not earned any badges yet.',
         },
         appearance: {
           title: 'Appearance',

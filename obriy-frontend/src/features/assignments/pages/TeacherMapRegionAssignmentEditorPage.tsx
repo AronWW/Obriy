@@ -221,10 +221,11 @@ export function TeacherMapRegionAssignmentEditorPage() {
 
   return (
     <section className={styles.page}>
+      <div className={styles.content}>
       <header className={styles.editorHeader}>
         <button
           aria-label={t('assignments.common.back')}
-          className={styles.iconButton}
+          className={`${styles.iconButton} ${styles.editorBackButton}`}
           onClick={() => requestLeave('/app/teacher/tasks')}
           type="button"
         >
@@ -507,6 +508,7 @@ export function TeacherMapRegionAssignmentEditorPage() {
           </aside>
         </div>
       </fieldset>
+      </div>
 
       {showDiscardDialog && (
         <AssignmentConfirmDialog

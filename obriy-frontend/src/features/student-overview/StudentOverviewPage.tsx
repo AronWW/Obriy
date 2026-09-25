@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, BookOpen, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { UserAvatarImage } from '../../shared/ui/UserAvatarImage'
 import { Link } from 'react-router-dom'
 import { useSessionStore } from '../auth/model/session.store'
 import { getStudentDashboard } from '../student-workspace/api/student-workspace.api'
@@ -218,16 +219,10 @@ function ProfilePanel({
   progress?: GamificationProgress
 }) {
   const { t } = useTranslation()
-  const initials = displayName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
   return (
     <article className={styles.profilePanel}>
       <div className={styles.avatar} aria-hidden="true">
-        {avatarUrl ? <img alt="" src={avatarUrl} /> : initials || 'O'}
+        <UserAvatarImage avatarUrl={avatarUrl} displayName={displayName} />
       </div>
       <div>
         <h2>{displayName}</h2>

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
+import { UserAvatarImage } from '../../../shared/ui/UserAvatarImage'
 import { getTeacherStudentAnalytics } from '../api/teacher-analytics.api'
 import { teacherAnalyticsQueryKeys } from '../model/teacher-analytics-query-keys'
 import {
@@ -53,7 +54,7 @@ export function TeacherStudentAnalyticsPage() {
           <>
             <header className={styles.studentHero}>
               <div className={styles.studentAvatar} aria-hidden="true">
-                {analyticsQuery.data.student.avatarUrl ? <img alt="" src={analyticsQuery.data.student.avatarUrl} /> : initials(analyticsQuery.data.student.displayName)}
+                <UserAvatarImage avatarUrl={analyticsQuery.data.student.avatarUrl} displayName={analyticsQuery.data.student.displayName} />
               </div>
               <div>
                 <h1 id="student-analytics-title">{analyticsQuery.data.student.displayName}</h1>
@@ -166,8 +167,4 @@ function DetailLoading() {
 function statusKey(status: string): string {
   const camel = status.toLowerCase().replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase())
   return camel
-}
-
-function initials(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
 }

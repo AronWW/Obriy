@@ -46,8 +46,12 @@ export function getClassInvite(classId: string): Promise<ClassInvite> {
   return authorizedRequest<ClassInvite>(`/classes/${classId}/invite`)
 }
 
-export function getStudentClass(): Promise<StudentClass | null> {
-  return authorizedRequest<StudentClass | null>('/classes/me')
+export async function getStudentClass(): Promise<StudentClass | null> {
+  const classroom = await authorizedRequest<
+    StudentClass | null | undefined
+  >('/classes/me')
+
+  return classroom ?? null
 }
 
 export function listClassmates(): Promise<ClassMember[]> {

@@ -467,9 +467,11 @@ function StudentTestRunner({
   return (
     <AssignmentDialog
       closeLabel={closing ? t('tests.student.saving') : t('tests.common.close')}
-      fullScreen
+      fullScreen={editable}
       onClose={() => void closeRunner()}
+      portal
       title={release?.title ?? t('tests.student.loading')}
+      wide={Boolean(release && !editable && !canStart(release))}
     >
       {query.isLoading && (
         <p className={styles.runnerState}>{t('tests.student.loadingTest')}</p>
@@ -489,7 +491,6 @@ function StudentTestRunner({
           <span>
             <Beaker size={30} />
           </span>
-          <h3>{release.title}</h3>
           {release.instructions && <p>{release.instructions}</p>}
           <div>
             <span>

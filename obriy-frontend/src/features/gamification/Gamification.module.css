@@ -19,12 +19,15 @@
 }
 
 .levelMedallion {
+  position: relative;
   width: 72px;
   height: 72px;
   flex: 0 0 72px;
   display: grid;
   place-items: center;
   align-content: center;
+  gap: 2px;
+  overflow: hidden;
   border: 1px solid color-mix(in srgb, #b78a3f 70%, var(--color-border));
   border-radius: 50%;
   color: #a9782e;
@@ -32,9 +35,21 @@
 }
 
 .progressCompact .levelMedallion {
-  width: 54px;
-  height: 54px;
-  flex-basis: 54px;
+  width: 64px;
+  height: 64px;
+  flex-basis: 64px;
+}
+
+.levelSparkle {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  opacity: 0.82;
+}
+
+.progressCompact .levelSparkle {
+  top: 10px;
+  right: 12px;
 }
 
 .levelMedallion strong {
@@ -42,9 +57,14 @@
 }
 
 .levelMedallion span {
-  font-size: 0.66rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  max-width: calc(100% - 14px);
+  overflow: hidden;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.05;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .progressCopy {
@@ -52,11 +72,29 @@
   flex: 1;
 }
 
-.progressCopy > div:first-child {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
+.progressSummary {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.35rem 0.75rem;
+  align-items: end;
   margin-bottom: 0.55rem;
+}
+
+.progressSummary > span {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.progressCompact .progressSummary {
+  grid-template-columns: 1fr;
+  min-height: 2.45rem;
+  align-content: center;
+  gap: 0.12rem;
+}
+
+.progressCompact .progressSummary > span {
+  text-align: left;
 }
 
 .progressCopy strong,
@@ -298,11 +336,15 @@
 @media (max-width: 620px) {
   .progressCard,
   .progressCompact {
-    align-items: flex-start;
+    align-items: center;
   }
 
-  .progressCopy > div:first-child {
-    display: block;
+  .progressCard .progressSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .progressCard .progressSummary > span {
+    text-align: left;
   }
 
   .badgeGrid {

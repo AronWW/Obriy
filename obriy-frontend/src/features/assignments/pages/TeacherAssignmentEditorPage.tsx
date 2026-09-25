@@ -335,7 +335,7 @@ function TeacherWrittenAssignmentEditorPage() {
         <header className={styles.editorHeader}>
           <button
             aria-label={t('assignments.common.back')}
-            className={styles.iconButton}
+            className={`${styles.iconButton} ${styles.editorBackButton}`}
             onClick={() => requestLeave()}
             type="button"
           >

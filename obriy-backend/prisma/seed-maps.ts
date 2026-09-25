@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { BUILT_IN_MAP_PRESETS } from './map-presets.data';
+import { getDatabaseAdapterConfig } from './database-config';
 
 type MapPresetSeeder = Pick<PrismaClient, 'mapPreset'>;
 
@@ -21,11 +22,8 @@ export async function seedMapPresets(prisma: MapPresetSeeder): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error('DATABASE_URL is required');
-
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: databaseUrl }),
+    adapter: new PrismaPg(getDatabaseAdapterConfig()),
   });
   try {
     await seedMapPresets(prisma);

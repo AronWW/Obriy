@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, Mail } from 'lucide-react'
+import { KeyRound, Mail, ShieldCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -49,8 +49,17 @@ export function SecuritySection() {
 
   return (
     <section className={styles.security} aria-labelledby="profile-security-title">
-      <h2 id="profile-security-title">{t('profileSettings.security.title')}</h2>
-      <p>{t('profileSettings.security.description')}</p>
+      <div className={styles.securityHeading}>
+        <span className={styles.securityIcon} aria-hidden="true">
+          <ShieldCheck size={21} />
+        </span>
+        <div>
+          <h2 id="profile-security-title">
+            {t('profileSettings.security.title')}
+          </h2>
+          <p>{t('profileSettings.security.description')}</p>
+        </div>
+      </div>
 
       {user.hasPassword ? (
         <form className={styles.securityForm} onSubmit={submit}>
@@ -88,12 +97,18 @@ export function SecuritySection() {
               onChange={(event) => setConfirmation(event.target.value)}
             />
           </label>
-          <button className={styles.primaryButton} type="submit" disabled={change.isPending}>
-            <KeyRound size={16} aria-hidden="true" />
-            {change.isPending
-              ? t('profileSettings.security.changing')
-              : t('profileSettings.security.change')}
-          </button>
+          <div className={styles.securityActions}>
+            <button
+              className={styles.primaryButton}
+              type="submit"
+              disabled={change.isPending}
+            >
+              <KeyRound size={16} aria-hidden="true" />
+              {change.isPending
+                ? t('profileSettings.security.changing')
+                : t('profileSettings.security.change')}
+            </button>
+          </div>
           {(validationError || change.isError) && (
             <p className={styles.error} role="alert">
               {validationError ?? changeError(change.error, t)}
@@ -101,7 +116,11 @@ export function SecuritySection() {
           )}
         </form>
       ) : (
-        <div>
+        <div className={styles.passwordSetup}>
+          <div>
+            <strong>{t('profileSettings.security.setupTitle')}</strong>
+            <p>{t('profileSettings.security.setupDescription')}</p>
+          </div>
           <button
             className={styles.primaryButton}
             type="button"

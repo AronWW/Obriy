@@ -60,13 +60,14 @@ describe('Auth Google OAuth (e2e)', () => {
       data: { avatarUrl: 'https://example.com/custom-avatar.png' },
     });
 
+    const googleId = `google-linked-${Date.now()}`;
     const state = context.oauthStateService.create({
       intent: 'LOGIN',
       locale: Locale.EN,
     });
     const callback = await context.authService.handleGoogleCallback(
       {
-        googleId: `google-linked-${Date.now()}`,
+        googleId,
         email: linkedEmail,
         emailVerified: true,
         displayName: 'Google Name',
@@ -101,6 +102,37 @@ describe('Auth Google OAuth (e2e)', () => {
         avatarUrl: 'https://example.com/custom-avatar.png',
       }),
     );
+
+    // Removing an avatar is an intentional preference, not a missing Google value.
+    await context.prisma.profile.update({
+      where: { userId: (await findUser(linkedEmail)).id },
+      data: { avatarUrl: null },
+    });
+    const nextState = context.oauthStateService.create({
+      intent: 'LOGIN',
+      locale: Locale.EN,
+    });
+    const nextCallback = await context.authService.handleGoogleCallback(
+      {
+        googleId,
+        email: linkedEmail,
+        emailVerified: true,
+        displayName: 'Google Name',
+        avatarUrl: 'https://example.com/google-avatar.png',
+      },
+      nextState,
+      nextState,
+    );
+    expect(nextCallback.type).toBe('SESSION');
+    if (nextCallback.type !== 'SESSION') {
+      throw new Error('Expected a Google session exchange code');
+    }
+    const nextExchange = await request(context.app.getHttpServer())
+      .post('/auth/google/exchange')
+      .send({ code: nextCallback.code })
+      .expect(201);
+    const nextUser = getRecordField(getResponseBody(nextExchange), 'user');
+    expect(getRecordField(nextUser, 'profile').avatarUrl).toBeNull();
 
     await request(context.app.getHttpServer())
       .post('/auth/login')

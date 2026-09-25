@@ -119,7 +119,7 @@ export function TeacherMapSandboxPage() {
             <p>{t('maps.sandbox.description')}</p>
           </div>
           <button
-            className={styles.primaryMapAction}
+            className={`${styles.primaryMapAction} teacher-create-action`}
             onClick={() => setShowCreate(true)}
             type="button"
           >

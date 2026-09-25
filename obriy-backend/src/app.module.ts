@@ -33,6 +33,7 @@ import { ChatModule } from './chat/chat.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { validateEnvironment } from './config/env.validation';
 import { AdminModule } from './admin/admin.module';
+import { HealthController } from './health/health.controller';
 
 const i18nPath = existsSync(join(__dirname, 'i18n'))
   ? join(__dirname, 'i18n')
@@ -49,7 +50,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
       loader: I18nJsonLoader,
       loaderOptions: {
         path: i18nPath,
-        watch: true,
+        watch: process.env.NODE_ENV !== 'production',
       },
       resolvers: [AcceptLanguageResolver],
     }),
@@ -73,7 +74,7 @@ const i18nPath = existsSync(join(__dirname, 'i18n'))
     ChatModule,
     AdminModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [
     AppService,
     {

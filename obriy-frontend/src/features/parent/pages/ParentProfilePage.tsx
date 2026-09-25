@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useSessionStore } from '../../auth/model/session.store'
 import { AvatarEditor, SecuritySection, profileApi } from '../../profile'
+import { UserAvatarImage } from '../../../shared/ui/UserAvatarImage'
 import styles from './ParentProfilePage.module.css'
 
 type FormValues = { displayName: string; bio: string }
@@ -32,13 +33,6 @@ export function ParentProfilePage() {
   })
 
   if (!user) return null
-  const initials = user.profile.displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-
   const submit = handleSubmit((values) =>
     save.mutate({
       displayName: values.displayName.trim(),
@@ -56,7 +50,7 @@ export function ParentProfilePage() {
 
         <div className={styles.identity}>
           <div className={styles.avatar} aria-hidden="true">
-            {user.profile.avatarUrl ? <img src={user.profile.avatarUrl} alt="" /> : initials || 'O'}
+            <UserAvatarImage avatarUrl={user.profile.avatarUrl} displayName={user.profile.displayName} />
           </div>
           <AvatarEditor hasAvatar={Boolean(user.profile.avatarUrl)} />
         </div>

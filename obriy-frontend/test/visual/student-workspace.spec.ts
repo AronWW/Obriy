@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const viewports = [
   { name: 'desktop-day-en', width: 1440, height: 900, theme: 'day', language: 'en' },
@@ -18,6 +18,11 @@ for (const viewport of viewports) {
       name: viewport.language === 'en' ? 'Overview' : 'Огляд',
     })).toBeVisible()
     await expect(page.getByText(viewport.language === 'en' ? 'Revise chronology' : 'Повторити хронологію')).toBeVisible()
+    const progressCard = page.getByLabel(
+      viewport.language === 'en' ? 'XP and level progress' : 'Прогрес XP і рівня',
+    )
+    await expect(progressCard).toBeVisible()
+    await expectProgressContentToFit(progressCard)
     await expectNoOverflow(page)
 
     await page.goto('/app/student/tasks?status=SCHEDULED')
@@ -87,6 +92,34 @@ async function prepareWorkspace(
       body: JSON.stringify(tasksFixture(language)),
     })
   })
+  await page.route('http://localhost:3000/gamification/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        progress: {
+          totalXp: 0,
+          level: 1,
+          levelStartXp: 0,
+          nextLevelXp: 500,
+          xpIntoLevel: 0,
+          xpForNextLevel: 500,
+        },
+        showcase: [],
+        badges: [],
+      }),
+    })
+  })
+  await page.route(
+    'http://localhost:3000/gamification/me/rewards/unseen',
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ xp: [], badges: [] }),
+      })
+    },
+  )
 }
 
 function work(language: 'en' | 'uk', scheduled = false) {
@@ -141,4 +174,31 @@ async function expectNoOverflow(page: Page) {
     scrollWidth: document.documentElement.scrollWidth,
   }))
   expect(dimensions.scrollWidth).toBe(dimensions.clientWidth)
+}
+
+async function expectProgressContentToFit(
+  progressCard: Locator,
+) {
+  const fits = await progressCard.evaluate((card) => {
+    const cardRect = card.getBoundingClientRect()
+    const medallion = card.firstElementChild
+    if (!(medallion instanceof HTMLElement)) return false
+    const medallionRect = medallion.getBoundingClientRect()
+    const isInside = (outer: DOMRect, inner: DOMRect) =>
+      inner.left >= outer.left - 1 &&
+      inner.right <= outer.right + 1 &&
+      inner.top >= outer.top - 1 &&
+      inner.bottom <= outer.bottom + 1
+
+    return (
+      [...medallion.querySelectorAll('strong, span')].every((element) =>
+        isInside(medallionRect, element.getBoundingClientRect()),
+      ) &&
+      [...card.querySelectorAll('strong, span')].every((element) =>
+        isInside(cardRect, element.getBoundingClientRect()),
+      )
+    )
+  })
+
+  expect(fits).toBe(true)
 }

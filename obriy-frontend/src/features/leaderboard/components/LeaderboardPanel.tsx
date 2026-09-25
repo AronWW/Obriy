@@ -2,6 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { Award, RefreshCw, Trophy, UsersRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { UserAvatarImage } from '../../../shared/ui/UserAvatarImage'
 import { Link } from 'react-router-dom'
 import { BadgeIcon } from '../../gamification'
 import {
@@ -249,11 +250,7 @@ function LeaderboardRow({
 function Avatar({ entry }: { entry: LeaderboardEntry }) {
   return (
     <span className={styles.avatar} aria-hidden="true">
-      {entry.avatarUrl ? (
-        <img alt="" src={entry.avatarUrl} />
-      ) : (
-        initials(entry.displayName)
-      )}
+      <UserAvatarImage avatarUrl={entry.avatarUrl} displayName={entry.displayName} />
     </span>
   )
 }
@@ -336,13 +333,4 @@ function formatDate(value: string | Date, language?: string): string {
     month: 'short',
     timeZone: 'Europe/Kyiv',
   }).format(new Date(value))
-}
-
-function initials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
 }

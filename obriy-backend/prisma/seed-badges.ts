@@ -1,10 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import {
-  BadgeCriteriaType,
-  Locale,
-  PrismaClient,
-} from '@prisma/client';
+import { BadgeCriteriaType, Locale, PrismaClient } from '@prisma/client';
+import { getDatabaseAdapterConfig } from './database-config';
 
 export const BUILT_IN_BADGES = [
   {
@@ -92,14 +89,17 @@ export async function seedBadges(prisma: BadgeSeeder): Promise<void> {
         isActive: true,
       },
     });
-    for (const [locale, translation] of Object.entries(badge.translations)) {
+    const translations = Object.entries(badge.translations) as Array<
+      [Locale, { name: string; description: string }]
+    >;
+    for (const [locale, translation] of translations) {
       await prisma.badgeTranslation.upsert({
         where: {
-          badgeId_locale: { badgeId: saved.id, locale: locale as Locale },
+          badgeId_locale: { badgeId: saved.id, locale },
         },
         create: {
           badgeId: saved.id,
-          locale: locale as Locale,
+          locale,
           ...translation,
         },
         update: translation,
@@ -109,10 +109,8 @@ export async function seedBadges(prisma: BadgeSeeder): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error('DATABASE_URL is required');
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: databaseUrl }),
+    adapter: new PrismaPg(getDatabaseAdapterConfig()),
   });
   try {
     await seedBadges(prisma);

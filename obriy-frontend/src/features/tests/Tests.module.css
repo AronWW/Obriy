@@ -12,25 +12,26 @@
 .intro,
 .editorHeader {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 22px;
-  margin-bottom: 26px;
+  margin-bottom: 30px;
 }
 
-.intro h1,
-.editorHeader h1 {
-  margin: 5px 0 7px;
-  font-family: 'Lora', serif;
-  font-size: clamp(1.8rem, 4vw, 2.45rem);
-  line-height: 1.1;
-}
-
-.intro > div > p:last-child,
-.editorHeader > div > p:last-child {
-  max-width: 690px;
+.intro h1 {
   margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 500;
+  line-height: 1.06;
+}
+
+.intro > div > p:last-child {
+  max-width: 690px;
+  margin: 14px 0 0;
   color: var(--copy);
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -294,12 +295,23 @@
 .editorHeader {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--line-soft);
 }
 
 .editorHeader h1 {
+  margin: 5px 0 7px;
+  font-family: 'Lora', serif;
   font-size: clamp(1.55rem, 3vw, 2.15rem);
+  line-height: 1.1;
+}
+
+.editorHeader > div > p:last-child {
+  max-width: 690px;
+  margin: 0;
+  color: var(--copy);
+  line-height: 1.6;
 }
 
 .labLayout {
@@ -1199,7 +1211,7 @@
   justify-items: center;
   gap: 13px;
   margin: 0 auto;
-  padding: 48px 28px 38px;
+  padding: 32px 28px;
   text-align: center;
 }
 .testStart > span {
@@ -1211,11 +1223,6 @@
   background: var(--panel-solid);
   border: 1px solid var(--line);
   border-radius: 16px;
-}
-.testStart h3 {
-  margin: 0;
-  font-family: 'Lora', serif;
-  font-size: 1.55rem;
 }
 .testStart > p {
   max-width: 560px;
@@ -2480,6 +2487,10 @@
 }
 
 @media (max-width: 440px) {
+  .intro h1 {
+    font-size: 2.15rem;
+  }
+
   .outlineItem {
     grid-template-columns: auto auto minmax(0, 1fr);
   }

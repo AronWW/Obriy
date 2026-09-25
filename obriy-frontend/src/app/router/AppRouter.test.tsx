@@ -173,11 +173,28 @@ describe('AppRouter auth boundaries', () => {
     })
   })
 
+  it('links the admin brand to the admin overview', async () => {
+    useSessionStore.setState({
+      user: { ...authenticatedUser, role: 'ADMIN' },
+    })
+
+    renderRouter('/app/admin')
+
+    expect(await screen.findByRole('link', { name: 'Obriy' })).toHaveAttribute(
+      'href',
+      '/app/admin',
+    )
+  })
+
   it('renders the student menu and opens its workspace routes', async () => {
     const user = userEvent.setup()
 
     renderRouter('/app/student')
 
+    expect(await screen.findByRole('link', { name: 'Obriy' })).toHaveAttribute(
+      'href',
+      '/app/student',
+    )
     expect(
       await screen.findByRole('heading', { name: 'Огляд', level: 1 }),
     ).toBeInTheDocument()
@@ -321,6 +338,10 @@ describe('AppRouter auth boundaries', () => {
 
     renderRouter('/app/teacher')
 
+    expect(await screen.findByRole('link', { name: 'Obriy' })).toHaveAttribute(
+      'href',
+      '/app/teacher',
+    )
     const expectedLinks = [
       ['Огляд', '/app/teacher'],
       ['Мої класи', '/app/teacher/classes'],
@@ -470,6 +491,8 @@ describe('AppRouter auth boundaries', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('700 XP')).toBeInTheDocument()
     expect(screen.getByText('Рівень')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Оформлення' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Хто бачить профіль' })).not.toBeInTheDocument()
   })
 
   it('lets a student join with a teacher code and refreshes the class view', async () => {
@@ -486,7 +509,9 @@ describe('AppRouter auth boundaries', () => {
     }
     server.use(
       http.get(`${API_BASE_URL}/classes/me`, () =>
-        HttpResponse.json(joined ? joinedClass : null),
+        joined
+          ? HttpResponse.json(joinedClass)
+          : new HttpResponse(null, { status: 200 }),
       ),
       http.get(`${API_BASE_URL}/classes/me/classmates`, () =>
         HttpResponse.json([]),
@@ -612,6 +637,9 @@ describe('AppRouter auth boundaries', () => {
 
     renderRouter('/app/parent')
 
+    expect(
+      await screen.findByRole('link', { name: 'Батьківський простір Obriy' }),
+    ).toHaveAttribute('href', '/app/parent')
     expect(
       await screen.findByRole('heading', {
         name: 'Підключіть профіль дитини',

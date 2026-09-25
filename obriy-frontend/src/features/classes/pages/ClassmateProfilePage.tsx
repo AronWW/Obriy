@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import {
   ArrowLeft,
   Award,
-  Brush,
   Compass,
   ShieldCheck,
   Sparkles,
@@ -10,6 +9,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { UserAvatarImage } from '../../../shared/ui/UserAvatarImage'
 import profileStyles from '../../student-profile/StudentProfilePage.module.css'
 import { getClassmateProfile } from '../api/classes.api'
 import styles from '../ClassesPage.module.css'
@@ -95,7 +95,7 @@ export function ClassmateProfilePage() {
 
         <GamificationProgressCard progress={profile.gamification.progress} />
 
-        <div className={profileStyles.profileBody}>
+        <div className={`${profileStyles.profileBody} ${styles.classmateProfileBody}`}>
           <main className={profileStyles.mainColumn}>
             <section className={profileStyles.profileSection}>
               <div className={profileStyles.sectionHeading}>
@@ -149,29 +149,6 @@ export function ClassmateProfilePage() {
               </button>
             </section>
           </main>
-
-          <div className={profileStyles.sideColumn}>
-            <section className={profileStyles.appearanceSection}>
-              <Brush size={19} aria-hidden="true" />
-              <h2>{t('studentProfile.appearance.title')}</h2>
-              <p>{t('studentProfile.appearance.description')}</p>
-              <div
-                className={profileStyles.appearancePreview}
-                aria-hidden="true"
-              >
-                <span />
-                <span />
-                <span />
-              </div>
-              <small>{t('studentProfile.appearance.unavailable')}</small>
-            </section>
-
-            <section className={profileStyles.visibilitySection}>
-              <ShieldCheck size={19} aria-hidden="true" />
-              <h2>{t('studentProfile.visibility.title')}</h2>
-              <p>{t('classes.student.profile.visibility')}</p>
-            </section>
-          </div>
         </div>
         {collectionOpen && (
           <BadgeCollectionDialog
@@ -191,17 +168,9 @@ function ProfileAvatar({
   avatarUrl: string | null
   displayName: string
 }) {
-  const initials = displayName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-
   return (
     <div className={profileStyles.avatar} aria-hidden="true">
-      {avatarUrl ? <img alt="" src={avatarUrl} /> : initials || 'O'}
+      <UserAvatarImage avatarUrl={avatarUrl} displayName={displayName} />
     </div>
   )
 }

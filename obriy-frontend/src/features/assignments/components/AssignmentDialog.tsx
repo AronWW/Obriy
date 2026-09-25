@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import styles from '../Assignments.module.css'
 
 interface AssignmentDialogProps {
@@ -8,6 +9,7 @@ interface AssignmentDialogProps {
   description?: string
   fullScreen?: boolean
   onClose: () => void
+  portal?: boolean
   title: string
   wide?: boolean
 }
@@ -18,6 +20,7 @@ export function AssignmentDialog({
   description,
   fullScreen = false,
   onClose,
+  portal = false,
   title,
   wide = false,
 }: AssignmentDialogProps) {
@@ -76,9 +79,9 @@ export function AssignmentDialog({
     }
   }, [])
 
-  return (
+  const dialog = (
     <div
-      className={styles.dialogBackdrop}
+      className={`${styles.dialogBackdrop} ${portal ? styles.dialogPortal : ''} ${portal && fullScreen ? styles.dialogPortalFullScreen : ''}`}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose()
@@ -113,4 +116,6 @@ export function AssignmentDialog({
       </section>
     </div>
   )
+
+  return portal ? createPortal(dialog, document.body) : dialog
 }

@@ -904,10 +904,6 @@ export class AuthService {
     profile: GoogleProfile,
     fallbackLocale: Locale,
   ): Promise<UserWithProfile> {
-    const avatarUpdate =
-      existingUser.profile?.avatarUrl || !profile.avatarUrl
-        ? {}
-        : { avatarUrl: profile.avatarUrl };
     const user = await tx.user.update({
       where: { id: existingUser.id },
       data: {
@@ -923,7 +919,9 @@ export class AuthService {
               avatarUrl: profile.avatarUrl,
               preferredLocale: fallbackLocale,
             },
-            update: avatarUpdate,
+            // A null avatar is an intentional user choice after removal.
+            // Google must not silently restore its profile photo on sign-in.
+            update: {},
           },
         },
       },

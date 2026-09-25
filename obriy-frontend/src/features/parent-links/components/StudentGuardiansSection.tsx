@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { UserAvatarImage } from '../../../shared/ui/UserAvatarImage'
 import { ApiError } from '../../../shared/api/api-client'
 import { parentLinksApi } from '../api/parent-links.api'
 import type { ParentInvitation } from '../model/parent-link.types'
@@ -259,17 +260,9 @@ function GuardianAvatar({
   avatarUrl: string | null
   displayName: string
 }) {
-  const initials = displayName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-
   return (
     <span className={styles.avatar} aria-hidden="true">
-      {avatarUrl ? <img alt="" src={avatarUrl} /> : initials || 'O'}
+      <UserAvatarImage avatarUrl={avatarUrl} displayName={displayName} />
     </span>
   )
 }

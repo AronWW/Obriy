@@ -125,7 +125,7 @@ export function TeacherAssignmentsPage() {
               {t('maps.sandbox.open')}
             </Link>
             <button
-              className={styles.primaryButton}
+              className={`${styles.primaryButton} teacher-create-action`}
               onClick={() => setShowTypePicker(true)}
               type="button"
             >

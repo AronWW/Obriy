@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import type { PrivateProfile } from '../auth/model/auth.types'
 import { useSessionStore } from '../auth/model/session.store'
 import { ApiError } from '../../shared/api/api-client'
+import { UserAvatarImage } from '../../shared/ui/UserAvatarImage'
 import { updateTeacherProfile, type UpdateTeacherProfileInput } from './api/teacher-profile.api'
 import styles from './TeacherProfilePage.module.css'
 import { AvatarEditor, SecuritySection } from '../profile'
@@ -18,18 +19,6 @@ function toFormValues(user: PrivateProfile): TeacherProfileFormValues {
     subjectArea: user.profile.subjectArea ?? '',
     bio: user.profile.bio ?? '',
   }
-}
-
-function getInitials(name: string): string {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.slice(0, 1).toUpperCase())
-    .join('')
-
-  return initials || 'O'
 }
 
 export function TeacherProfilePage() {
@@ -108,11 +97,7 @@ export function TeacherProfilePage() {
 
         <div className={styles.identity}>
           <div className={styles.avatar} aria-hidden="true">
-            {user.profile.avatarUrl ? (
-              <img alt="" src={user.profile.avatarUrl} />
-            ) : (
-              getInitials(displayName)
-            )}
+            <UserAvatarImage avatarUrl={user.profile.avatarUrl} displayName={displayName} />
           </div>
           <div>
             <p className={styles.identityName}>{displayName}</p>

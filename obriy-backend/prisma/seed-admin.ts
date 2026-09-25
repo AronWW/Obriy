@@ -7,9 +7,9 @@ import {
   PASSWORD_MIN_LENGTH,
   PASSWORD_PATTERN,
 } from '../src/common/validation/password.validation';
+import { getDatabaseAdapterConfig } from './database-config';
 
 async function main(): Promise<void> {
-  const databaseUrl = requiredEnvironment('DATABASE_URL');
   const email = requiredEnvironment('ADMIN_EMAIL').trim().toLowerCase();
   const password = requiredEnvironment('ADMIN_PASSWORD');
   const displayName = process.env.ADMIN_DISPLAY_NAME?.trim() || 'Obriy Admin';
@@ -17,7 +17,7 @@ async function main(): Promise<void> {
   assertPassword(password);
 
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: databaseUrl }),
+    adapter: new PrismaPg(getDatabaseAdapterConfig()),
   });
 
   try {

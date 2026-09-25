@@ -236,10 +236,11 @@ export function TeacherMapPointAssignmentEditorPage() {
 
   return (
     <section className={styles.page}>
+      <div className={styles.content}>
       <header className={styles.editorHeader}>
         <button
           aria-label={t('assignments.common.back')}
-          className={styles.iconButton}
+          className={`${styles.iconButton} ${styles.editorBackButton}`}
           onClick={() => requestLeave('/app/teacher/tasks')}
           type="button"
         >
@@ -484,7 +485,7 @@ export function TeacherMapPointAssignmentEditorPage() {
 
             <section className={styles.editorSection}>
               <label className={styles.field}>
-                <span>{t('assignments.editor.fields.explanation')}</span>
+                <span>{t('assignments.editor.feedback.label')}</span>
                 <textarea
                   maxLength={50_000}
                   onChange={(event) =>
@@ -518,7 +519,7 @@ export function TeacherMapPointAssignmentEditorPage() {
                 />
               </label>
               <label className={styles.field}>
-                <span>{t('assignments.editor.settings.passing')}</span>
+                <span>{t('assignments.editor.settings.passingPercent')}</span>
                 <input
                   max="100"
                   min="0"
@@ -563,6 +564,7 @@ export function TeacherMapPointAssignmentEditorPage() {
           </aside>
         </div>
       </fieldset>
+      </div>
 
       {showDiscardDialog && (
         <AssignmentConfirmDialog

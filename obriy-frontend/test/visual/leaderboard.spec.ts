@@ -36,6 +36,35 @@ test('student leaderboard remains usable on mobile in English night mode', async
   })
 })
 
+test('student leaderboard no-class action stays aligned on mobile', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await prepareSession(page, 'STUDENT', 'uk', 'day')
+  await page.route('**/leaderboard/me**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        class: null,
+        period: { type: 'WEEK', startAt: null, endAt: null },
+        entries: [],
+        selfEntry: null,
+        nextCursor: null,
+      }),
+    })
+  })
+
+  await page.goto('/app/student/leaderboard')
+
+  const action = page.getByRole('link', { name: 'Перейти до класів' })
+  await expect(action).toBeVisible()
+  await expect(action).toHaveCSS('display', 'flex')
+  await expect(action).toHaveCSS('align-items', 'center')
+  await expect(action).toHaveCSS('justify-content', 'center')
+  await expectNoHorizontalOverflow(page)
+})
+
 test('teacher opens the class leaderboard inside analytics at 1024px', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1024, height: 900 })
   await prepareSession(page, 'TEACHER', 'en', 'day')

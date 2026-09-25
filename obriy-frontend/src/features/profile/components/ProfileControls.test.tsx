@@ -107,7 +107,7 @@ describe('profile controls', () => {
     const user = userEvent.setup()
     renderControl(<SecuritySection />)
 
-    await user.click(screen.getByRole('button', { name: 'Send email to create a password' }))
+    await user.click(screen.getByRole('button', { name: 'Send password setup email' }))
     await waitFor(() => expect(called).toBe(true))
     expect(await screen.findByText('Email sent. Check your inbox.')).toBeInTheDocument()
   })

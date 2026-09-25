@@ -59,7 +59,24 @@ for (const viewport of viewports) {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.getByRole('button', { name: 'Start' }).click()
     const dialog = page.getByRole('dialog', { name: 'Map point check' })
+    await expect(dialog).toBeVisible()
+    expect(await dialog.evaluate((element) => element.parentElement?.parentElement === document.body)).toBe(true)
+    const introBox = await dialog.boundingBox()
+    expect(introBox).not.toBeNull()
+    expect(introBox!.x).toBeGreaterThanOrEqual(0)
+    expect(introBox!.x + introBox!.width).toBeLessThanOrEqual(viewport.width)
+    expect(introBox!.y + introBox!.height).toBeLessThanOrEqual(viewport.height)
+    await page.screenshot({
+      path: testInfo.outputPath(`map-point-intro-${viewport.name}.png`),
+      fullPage: false,
+    })
     await dialog.getByRole('button', { name: 'Start' }).click()
+
+    const runnerBox = await dialog.boundingBox()
+    expect(runnerBox).not.toBeNull()
+    expect(runnerBox!.x).toBeGreaterThanOrEqual(0)
+    expect(runnerBox!.x + runnerBox!.width).toBeLessThanOrEqual(viewport.width)
+    expect(runnerBox!.y + runnerBox!.height).toBeLessThanOrEqual(viewport.height)
 
     const mapRegion = dialog.getByRole('region', {
       name: 'Map for the student answer',
@@ -81,7 +98,7 @@ for (const viewport of viewports) {
 
     await page.screenshot({
       path: testInfo.outputPath(`map-point-student-${viewport.name}.png`),
-      fullPage: true,
+      fullPage: false,
     })
   })
 }

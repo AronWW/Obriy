@@ -75,7 +75,7 @@ export function TeacherTestsPage() {
             <p>{t('tests.library.description')}</p>
           </div>
           <button
-            className={styles.primaryButton}
+            className={`${styles.primaryButton} teacher-create-action`}
             onClick={() => navigate('/app/teacher/tests/new')}
             type="button"
           >

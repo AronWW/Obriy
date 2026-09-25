@@ -64,7 +64,7 @@ export function TeacherClassesPage() {
             <p>{t('classes.teacher.description')}</p>
           </div>
           <button
-            className={styles.primaryButton}
+            className={`${styles.primaryButton} teacher-create-action`}
             type="button"
             onClick={() => {
               setCreatedInvite(null)

@@ -27,6 +27,27 @@ describe('Gamification components', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '200')
   })
 
+  it('renders the compact progress copy in Ukrainian', async () => {
+    await i18n.changeLanguage('uk')
+    render(
+      <GamificationProgressCard
+        compact
+        progress={{
+          totalXp: 0,
+          level: 1,
+          levelStartXp: 0,
+          nextLevelXp: 500,
+          xpIntoLevel: 0,
+          xpForNextLevel: 500,
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Рівень')).toBeInTheDocument()
+    expect(screen.getByText('0 XP')).toBeInTheDocument()
+    expect(screen.getByText('Ще 500 XP до наступного рівня')).toBeInTheDocument()
+  })
+
   it('limits the editable showcase to three earned badges', async () => {
     const user = userEvent.setup()
     const onSave = vi.fn()

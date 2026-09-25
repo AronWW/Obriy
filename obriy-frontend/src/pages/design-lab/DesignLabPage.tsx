@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { useState, type ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useSessionStore } from '../../features/auth/model/session.store'
 import { GamificationRewardNotifier } from '../../features/gamification'
 import { ChatUnreadBadge } from '../../features/chat'
@@ -141,6 +141,8 @@ export function DesignLabPage() {
       : role === 'TEACHER'
         ? teacherNavigationItems
         : designNavigationItems
+  const roleHomePath =
+    role === 'TEACHER' ? '/app/teacher' : '/app/student'
 
   return (
     <div
@@ -157,9 +159,17 @@ export function DesignLabPage() {
 
       <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.sidebarHeader}>
-          <a href="#overview" onClick={() => setIsSidebarOpen(false)}>
+          <Link
+            to={roleHomePath}
+            onClick={(event) => {
+              if (requestWorkspaceNavigation(roleHomePath)) {
+                event.preventDefault()
+              }
+              setIsSidebarOpen(false)
+            }}
+          >
             <BrandLogo large />
-          </a>
+          </Link>
           <button className={styles.sidebarClose} type="button" onClick={() => setIsSidebarOpen(false)} aria-label={t('navigation.closeMenu')}>
             <X size={19} />
           </button>

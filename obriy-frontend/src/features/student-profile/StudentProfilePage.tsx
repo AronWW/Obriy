@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { UserAvatarImage } from '../../shared/ui/UserAvatarImage'
 import { useSessionStore } from '../auth/model/session.store'
 import { ApiError } from '../../shared/api/api-client'
 import {
@@ -409,17 +410,9 @@ function StudentAvatar({
   avatarUrl: string | null
   displayName: string
 }) {
-  const initials = displayName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-
   return (
     <div className={styles.avatar} aria-hidden="true">
-      {avatarUrl ? <img alt="" src={avatarUrl} /> : initials || 'O'}
+      <UserAvatarImage avatarUrl={avatarUrl} displayName={displayName} />
     </div>
   )
 }

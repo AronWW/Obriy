@@ -46,6 +46,11 @@ import { TestsService } from './tests.service';
     TeacherTestReleasesService,
     TestReleaseLifecycleService,
   ],
-  exports: [TestsService, LessonTestsService, TestReleaseLifecycleService],
+  exports: [
+    TestsService,
+    LessonTestsService,
+    StudentTestsService,
+    TestReleaseLifecycleService,
+  ],
 })
 export class TestsModule {}

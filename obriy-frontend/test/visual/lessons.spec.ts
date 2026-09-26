@@ -55,85 +55,6 @@ const classrooms = [
   classroom('class-8a', '8-А'),
 ]
 
-const lessonAssignments = [
-  {
-    id: 'task-causes',
-    lessonId: 'lesson-revolution',
-    assignmentId: 'assignment-causes',
-    revisionId: 'revision-causes-v1',
-    revisionVersion: 1,
-    type: 'WRITTEN',
-    contentLocale: 'UK',
-    maxPoints: 5,
-    passingPercent: 60,
-    hasUpdate: false,
-    activeReleaseCount: 1,
-    releaseCount: 1,
-    linkedAt: '2026-08-01T10:15:00.000Z',
-    title: 'Поясніть причини революції',
-    prompt:
-      'Назвіть дві передумови Української революції та коротко поясніть їхній вплив.',
-    position: 0,
-    isRequired: true,
-    createdAt: '2026-08-01T10:15:00.000Z',
-    updatedAt: '2026-08-01T10:15:00.000Z',
-  },
-  {
-    id: 'task-source',
-    lessonId: 'lesson-revolution',
-    assignmentId: 'assignment-source',
-    revisionId: 'revision-source-v1',
-    revisionVersion: 1,
-    type: 'WRITTEN',
-    contentLocale: 'UK',
-    maxPoints: 5,
-    passingPercent: 60,
-    hasUpdate: false,
-    activeReleaseCount: 0,
-    releaseCount: 0,
-    linkedAt: '2026-08-01T10:20:00.000Z',
-    title: 'Проаналізуйте джерело',
-    prompt: 'Сформулюйте головну думку наведеного уривка.',
-    position: 1,
-    isRequired: true,
-    createdAt: '2026-08-01T10:20:00.000Z',
-    updatedAt: '2026-08-01T10:20:00.000Z',
-  },
-]
-
-const assignmentReviews = [
-  {
-    id: 'submission-sofia',
-    attemptId: 'submission-sofia',
-    releaseId: 'release-causes-9a',
-    assignmentId: 'assignment-causes',
-    type: 'WRITTEN',
-    assignmentTitle: 'Поясніть причини революції',
-    prompt: 'Назвіть дві передумови та коротко поясніть їхній вплив.',
-    responseText:
-      'Національний рух посилився, а падіння імперії створило можливість відновити державність.',
-    attemptNumber: 1,
-    maxPoints: 5,
-    passingPercent: 60,
-    scorePoints: null,
-    scorePercent: null,
-    isPassed: null,
-    taskId: 'task-causes',
-    taskTitle: 'Поясніть причини революції',
-    taskPosition: 0,
-    taskIsRequired: true,
-    answerText:
-      'Національний рух посилився, а падіння імперії створило можливість відновити державність.',
-    status: 'AWAITING_REVIEW',
-    teacherComment: null,
-    submittedAt: '2026-08-01T13:10:00.000Z',
-    reviewedAt: null,
-    updatedAt: '2026-08-01T13:10:00.000Z',
-    student: { id: 'student-sofia', displayName: 'Софія Марченко' },
-    class: { id: 'class-9a', name: '9-А · Історичні дослідники' },
-  },
-]
-
 test('teacher lesson library uses large horizontal rows on desktop day', async ({
   page,
 }, testInfo) => {
@@ -208,20 +129,20 @@ test('lesson editor and class assignment stay usable on mobile night', async ({
       body: JSON.stringify(classrooms),
     })
   })
-  await page.route('**/lessons/lesson-revolution/assignments', async (route) => {
+  await page.route('**/lessons/lesson-revolution/tests', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(lessonAssignments),
+      body: JSON.stringify([]),
     })
   })
   await page.route(
-    '**/lessons/lesson-revolution/assignment-attempts',
+    '**/lessons/lesson-revolution/test-attempts**',
     async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(assignmentReviews),
+        body: JSON.stringify({ items: [], nextCursor: null }),
       })
     },
   )
@@ -252,19 +173,11 @@ test('lesson editor and class assignment stay usable on mobile night', async ({
     page.getByRole('button', { name: 'Зберегти зміни' }).first(),
   ).toBeVisible()
   await expect(
-    page.getByRole('heading', { name: 'Завдання уроку', level: 2 }),
+    page.getByRole('heading', { name: 'Тести уроку', level: 2 }),
   ).toBeVisible()
-  await expect(
-    page
-      .getByLabel('Завдання уроку')
-      .getByRole('heading', {
-        name: 'Поясніть причини революції',
-        level: 3,
-      }),
-  ).toBeVisible()
-  await expect(page.getByText('Софія Марченко')).toBeVisible()
-  await expect(page.locator('#lesson-assignments-title')).toBeVisible()
-  await expect(page.locator('#lesson-reviews-title')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Спроби учнів', level: 2 })).toBeVisible()
+  await expect(page.locator('#lesson-tests-title')).toBeVisible()
+  await expect(page.locator('#test-reviews-title')).toBeVisible()
 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'night')
   const classHeadingBox = await page

@@ -72,6 +72,17 @@ export function LoginPage() {
           error.retryAfterSeconds ?? 60,
         )
         navigate('/auth/check-email', { replace: true, state: verification })
+        return
+      }
+      if (
+        error instanceof ApiError &&
+        error.code === 'USER_SUSPENDED' &&
+        error.suspensionAccessToken
+      ) {
+        navigate('/auth/suspended', {
+          replace: true,
+          state: { suspensionAccessToken: error.suspensionAccessToken },
+        })
       }
     },
   })

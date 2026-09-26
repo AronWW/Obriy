@@ -6,6 +6,8 @@ interface ApiErrorPayload {
   email?: string
   message?: string | string[]
   retryAfterSeconds?: number
+  suspensionAccessToken?: string
+  nextAppealAt?: string
 }
 
 interface ApiRequestOptions extends Omit<RequestInit, 'body'> {
@@ -18,6 +20,8 @@ export class ApiError extends Error {
   readonly code: string
   readonly email?: string
   readonly retryAfterSeconds?: number
+  readonly suspensionAccessToken?: string
+  readonly nextAppealAt?: string
 
   constructor(
     status: number,
@@ -25,6 +29,8 @@ export class ApiError extends Error {
     message: string,
     retryAfterSeconds?: number,
     email?: string,
+    suspensionAccessToken?: string,
+    nextAppealAt?: string,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -32,6 +38,8 @@ export class ApiError extends Error {
     this.code = code
     this.retryAfterSeconds = retryAfterSeconds
     this.email = email
+    this.suspensionAccessToken = suspensionAccessToken
+    this.nextAppealAt = nextAppealAt
   }
 }
 
@@ -121,6 +129,8 @@ function createApiError(status: number, payload: unknown): ApiError {
     message,
     payload.retryAfterSeconds,
     payload.email,
+    payload.suspensionAccessToken,
+    payload.nextAppealAt,
   )
 }
 

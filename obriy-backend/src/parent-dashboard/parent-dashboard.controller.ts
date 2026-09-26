@@ -7,7 +7,12 @@ import {
   ParentChildOverviewDto,
   ParentChildProgressDto,
   ParentDashboardDto,
+  ParentLessonProgressDto,
 } from './dto/parent-dashboard.dto';
+import {
+  StudentLessonTestDto,
+  StudentTestAttemptDto,
+} from '../tests/dto/student-test.dto';
 import { ParentDashboardService } from './parent-dashboard.service';
 
 @UseGuards(JwtAuthGuard)
@@ -39,5 +44,35 @@ export class ParentDashboardController {
     @Param('childId') childId: string,
   ): Promise<ParentChildProgressDto> {
     return this.dashboard.getChildProgress(user, childId);
+  }
+
+  @ApiOkResponse({ type: ParentLessonProgressDto })
+  @Get('children/:childId/lessons/:lessonId')
+  getChildLesson(
+    @CurrentUser() user: AuthUser,
+    @Param('childId') childId: string,
+    @Param('lessonId') lessonId: string,
+  ): Promise<ParentLessonProgressDto> {
+    return this.dashboard.getChildLesson(user, childId, lessonId);
+  }
+
+  @ApiOkResponse({ type: StudentLessonTestDto })
+  @Get('children/:childId/test-releases/:releaseId')
+  getChildTestRelease(
+    @CurrentUser() user: AuthUser,
+    @Param('childId') childId: string,
+    @Param('releaseId') releaseId: string,
+  ): Promise<StudentLessonTestDto> {
+    return this.dashboard.getChildTestRelease(user, childId, releaseId);
+  }
+
+  @ApiOkResponse({ type: StudentTestAttemptDto })
+  @Get('children/:childId/test-attempts/:attemptId')
+  getChildTestAttempt(
+    @CurrentUser() user: AuthUser,
+    @Param('childId') childId: string,
+    @Param('attemptId') attemptId: string,
+  ): Promise<StudentTestAttemptDto> {
+    return this.dashboard.getChildTestAttempt(user, childId, attemptId);
   }
 }

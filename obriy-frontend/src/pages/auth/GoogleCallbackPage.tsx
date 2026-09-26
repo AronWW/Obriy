@@ -14,7 +14,7 @@ import styles from './AuthFlowPage.module.css'
 type GoogleCallback =
   | { type: 'EXCHANGE'; code: string }
   | { type: 'REGISTRATION'; code: string }
-  | { type: 'ERROR'; code: string }
+  | { type: 'ERROR'; code: string; suspensionAccessToken?: string }
   | { type: 'INVALID' }
 
 export function GoogleCallbackPage() {
@@ -36,6 +36,33 @@ export function GoogleCallbackPage() {
     retry: false,
     staleTime: Number.POSITIVE_INFINITY,
   })
+
+  useEffect(() => {
+    if (
+      callback.type === 'ERROR' &&
+      callback.code === 'USER_SUSPENDED' &&
+      callback.suspensionAccessToken
+    ) {
+      navigate('/auth/suspended', {
+        replace: true,
+        state: { suspensionAccessToken: callback.suspensionAccessToken },
+      })
+    }
+  }, [callback, navigate])
+
+  useEffect(() => {
+    const error = exchangeQuery.error
+    if (
+      error instanceof ApiError &&
+      error.code === 'USER_SUSPENDED' &&
+      error.suspensionAccessToken
+    ) {
+      navigate('/auth/suspended', {
+        replace: true,
+        state: { suspensionAccessToken: error.suspensionAccessToken },
+      })
+    }
+  }, [exchangeQuery.error, navigate])
 
   useEffect(() => {
     if (window.location.search) {
@@ -158,7 +185,11 @@ function GoogleErrorView({ code }: { code: string }) {
 function parseCallback(searchParams: URLSearchParams): GoogleCallback {
   const error = searchParams.get('error')?.trim()
   if (error) {
-    return { type: 'ERROR', code: error }
+    return {
+      type: 'ERROR',
+      code: error,
+      suspensionAccessToken: searchParams.get('suspension')?.trim() || undefined,
+    }
   }
 
   const registrationCode = searchParams.get('registration')?.trim()

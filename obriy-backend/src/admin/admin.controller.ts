@@ -21,6 +21,8 @@ import {
   AdminPageQueryDto,
   AdminReasonDto,
   AdminUsersQueryDto,
+  AdminAppealsQueryDto,
+  AdminAppealDecisionDto,
 } from './dto/admin-input.dto';
 import {
   AdminAuditLogPageDto,
@@ -31,6 +33,8 @@ import {
   AdminUserPageDto,
   LessonModerationCaseDto,
   LessonModerationCasePageDto,
+  AdminSuspensionAppealDto,
+  AdminSuspensionAppealPageDto,
 } from './dto/admin-output.dto';
 
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -78,6 +82,43 @@ export class AdminController {
     @Body() dto: AdminReasonDto,
   ) {
     return this.admin.restoreUser(actor, userId, dto);
+  }
+
+  @Get('suspension-appeals')
+  @ApiOkResponse({ type: AdminSuspensionAppealPageDto })
+  appeals(
+    @CurrentUser() actor: AuthUser,
+    @Query() query: AdminAppealsQueryDto,
+  ) {
+    return this.admin.listSuspensionAppeals(actor, query);
+  }
+
+  @Get('suspension-appeals/:appealId')
+  @ApiOkResponse({ type: AdminSuspensionAppealDto })
+  appeal(@CurrentUser() actor: AuthUser, @Param('appealId') appealId: string) {
+    return this.admin.getSuspensionAppeal(actor, appealId);
+  }
+
+  @Post('suspension-appeals/:appealId/approve')
+  @HttpCode(200)
+  @ApiOkResponse({ type: AdminSuspensionAppealDto })
+  approveAppeal(
+    @CurrentUser() actor: AuthUser,
+    @Param('appealId') appealId: string,
+    @Body() dto: AdminAppealDecisionDto,
+  ) {
+    return this.admin.resolveSuspensionAppeal(actor, appealId, dto, true);
+  }
+
+  @Post('suspension-appeals/:appealId/reject')
+  @HttpCode(200)
+  @ApiOkResponse({ type: AdminSuspensionAppealDto })
+  rejectAppeal(
+    @CurrentUser() actor: AuthUser,
+    @Param('appealId') appealId: string,
+    @Body() dto: AdminAppealDecisionDto,
+  ) {
+    return this.admin.resolveSuspensionAppeal(actor, appealId, dto, false);
   }
 
   @Get('classes')

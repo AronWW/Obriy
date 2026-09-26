@@ -9,7 +9,7 @@ import i18n from '../../i18n/config'
 import { API_BASE_URL } from '../../shared/config/env'
 import { server } from '../../test/server'
 import { useSessionStore } from '../auth/model/session.store'
-import { AdminDashboardPage, AdminUserDetailPage } from './AdminPages'
+import { AdminAppealsPage, AdminDashboardPage, AdminUserDetailPage } from './AdminPages'
 
 describe('Admin console', () => {
   beforeEach(async () => {
@@ -18,7 +18,7 @@ describe('Admin console', () => {
   })
 
   it('shows platform counters from the protected dashboard', async () => {
-    server.use(http.get(`${API_BASE_URL}/admin/dashboard`, () => HttpResponse.json({ users: 12, students: 7, teachers: 2, parents: 2, pendingUsers: 1, suspendedUsers: 1, newUsersLast30Days: 4, classes: 3, publishedLessons: 8, publishedReleases: 6, messagesLast30Days: 19, openModerationCases: 2 })))
+    server.use(http.get(`${API_BASE_URL}/admin/dashboard`, () => HttpResponse.json({ users: 12, students: 7, teachers: 2, parents: 2, pendingUsers: 1, suspendedUsers: 1, newUsersLast30Days: 4, classes: 3, publishedLessons: 8, publishedReleases: 6, messagesLast30Days: 19, openModerationCases: 2, pendingSuspensionAppeals: 1 })))
     renderPage('/app/admin', <Route path="/app/admin" element={<AdminDashboardPage />} />)
     expect(await screen.findByRole('heading', { name: 'Platform overview' })).toBeInTheDocument()
     expect(await screen.findByText('Open cases')).toBeInTheDocument()
@@ -44,6 +44,21 @@ describe('Admin console', () => {
     await user.click(confirm)
     expect(await screen.findByText('SUSPENDED')).toBeInTheDocument()
     expect(receivedReason).toBe('Repeated harmful conduct in class materials.')
+  })
+
+  it('reviews a pending suspension appeal from the admin queue', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.get(`${API_BASE_URL}/admin/suspension-appeals`, () => HttpResponse.json({
+        items: [{ id: 'appeal-1', userId: 'user-1', displayName: 'Teacher One', email: 'teacher@example.com', role: 'TEACHER', userStatus: 'SUSPENDED', status: 'PENDING', suspensionReason: 'Repeated harmful conduct.', suspendedAt: '2026-09-20T10:00:00.000Z', message: 'Please review the context of this incident.', resolutionNote: null, reviewedAt: null, createdAt: '2026-09-21T10:00:00.000Z' }],
+        nextCursor: null,
+      })),
+    )
+    renderPage('/app/admin/appeals', <Route path="/app/admin/appeals" element={<AdminAppealsPage />} />)
+    expect(await screen.findByRole('heading', { name: 'Suspension appeals' })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Details' }))
+    expect(screen.getByText('Please review the context of this incident.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Approve and restore' })).toBeInTheDocument()
   })
 })
 

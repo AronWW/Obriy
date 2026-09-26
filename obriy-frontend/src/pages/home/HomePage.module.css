@@ -181,7 +181,7 @@
 
 .title {
   display: flex;
-  height: 142px;
+  min-height: 142px;
   max-width: 900px;
   flex-direction: column;
   align-items: center;
@@ -217,7 +217,7 @@
 
 .description {
   display: flex;
-  height: 58px;
+  min-height: 58px;
   max-width: 680px;
   align-items: center;
   justify-content: center;
@@ -381,7 +381,7 @@
 
 .sectionIntro h2 {
   display: flex;
-  height: 110px;
+  min-height: 110px;
   flex-direction: column;
 }
 
@@ -390,7 +390,7 @@
 }
 
 .sectionIntro > p:last-child {
-  height: 55px;
+  min-height: 55px;
 }
 
 .sectionIntro h2,
@@ -594,7 +594,7 @@
 
 .journeyChapter h3 {
   display: flex;
-  height: 78px;
+  min-height: 78px;
   align-items: center;
   max-width: 440px;
   margin: 0;
@@ -607,7 +607,7 @@
 }
 
 .journeyChapter p {
-  height: 78px;
+  min-height: 78px;
   max-width: 470px;
   margin: 15px 0 0;
   color: var(--color-text-soft);
@@ -620,7 +620,7 @@
   top: 112px;
   grid-column: 2;
   grid-row: 1;
-  height: calc(100vh - 150px);
+  height: calc(100lvh - 150px);
   min-height: 620px;
   max-height: 760px;
   overflow: hidden;
@@ -840,11 +840,11 @@
 }
 
 .rolesHeader h2 {
-  height: 54px;
+  min-height: 54px;
 }
 
 .rolesHeader > p:last-child {
-  height: 55px;
+  min-height: 55px;
 }
 
 .rolesLayout {
@@ -1032,7 +1032,7 @@
 
 .roleDetails {
   position: relative;
-  height: 540px;
+  min-height: 540px;
   min-height: 0;
   overflow: hidden;
   border-left: 1px solid var(--color-border-strong);
@@ -1068,7 +1068,7 @@
 
 .roleDetails h3 {
   display: flex;
-  height: 82px;
+  min-height: 82px;
   align-items: center;
   margin: 0;
   color: var(--color-text);
@@ -1080,7 +1080,7 @@
 }
 
 .roleDescription {
-  height: 76px;
+  min-height: 76px;
   margin: 10px 0 0;
   color: var(--color-text-soft);
   font-size: 15px;
@@ -1089,7 +1089,7 @@
 
 .roleDetails ul {
   display: grid;
-  height: 150px;
+  min-height: 150px;
   align-content: start;
   gap: 12px;
   padding: 0;
@@ -1373,13 +1373,13 @@
   }
 
   .title {
-    height: 98px;
+    min-height: 98px;
     max-width: 620px;
     font-size: 38px;
   }
 
   .description {
-    height: 82px;
+    min-height: 82px;
     max-width: 520px;
     font-size: 15px;
   }
@@ -1406,7 +1406,7 @@
   }
 
   .sectionIntro h2 {
-    height: 132px;
+    min-height: 132px;
   }
 
   .sectionIntro > p:last-child,
@@ -1415,7 +1415,7 @@
   }
 
   .sectionIntro > p:last-child {
-    height: 78px;
+    min-height: 78px;
   }
 
   .journeyVisual {
@@ -1427,14 +1427,17 @@
   }
 
   .rolesHeader h2 {
-    height: 87px;
+    min-height: 87px;
   }
 
   .rolesHeader > p:last-child {
-    height: 78px;
+    min-height: 78px;
   }
 
   .roleDial {
+    position: sticky;
+    z-index: 8;
+    top: calc(var(--site-header-height) + 8px);
     display: grid;
     width: 100%;
     height: auto;
@@ -1464,27 +1467,30 @@
   }
 
   .roleDetails {
-    height: 620px;
-    min-height: 0;
+    min-height: 620px;
     padding: 0;
+    overflow: visible;
     border-top: 1px solid var(--color-border-strong);
     border-left: 0;
   }
 
   .roleDetailContent {
-    inset: 36px 0 0;
+    position: relative;
+    inset: auto;
+    min-height: 620px;
+    padding-top: 36px;
   }
 
   .roleDetails h3 {
-    height: 108px;
+    min-height: 108px;
   }
 
   .roleDescription {
-    height: 100px;
+    min-height: 100px;
   }
 
   .roleDetails ul {
-    height: 156px;
+    min-height: 156px;
   }
 
   .rolesClosure {
@@ -1510,7 +1516,7 @@
   }
 
   .title {
-    height: 74px;
+    min-height: 74px;
     font-size: 30px;
   }
 
@@ -1542,22 +1548,21 @@
   }
 
   .journeyChapter p {
-    height: 104px;
+    min-height: 104px;
   }
 
   .roleDial {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .roleButton {
-    justify-content: flex-start;
-    min-height: 52px;
-    padding: 0 15px;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 7px;
   }
 
   .roleDetails {
-    height: 620px;
-    min-height: 0;
+    min-height: 620px;
   }
 
   .roleDetails h3 {
@@ -1580,12 +1585,12 @@
   }
 
   .title {
-    height: 68px;
+    min-height: 68px;
     font-size: 27px;
   }
 
   .description {
-    height: 92px;
+    min-height: 92px;
   }
 }
 

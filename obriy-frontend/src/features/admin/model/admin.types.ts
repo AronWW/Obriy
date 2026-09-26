@@ -21,6 +21,23 @@ export interface AdminDashboard {
   publishedReleases: number
   messagesLast30Days: number
   openModerationCases: number
+  pendingSuspensionAppeals: number
+}
+
+export interface AdminSuspensionAppeal {
+  id: string
+  userId: string
+  displayName: string
+  email: string
+  role: AdminUserRole
+  userStatus: AdminUserStatus
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  suspensionReason: string
+  suspendedAt: string
+  message: string
+  resolutionNote: string | null
+  reviewedAt: string | null
+  createdAt: string
 }
 
 export interface AdminUser {

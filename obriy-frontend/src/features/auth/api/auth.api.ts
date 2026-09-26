@@ -11,6 +11,7 @@ import type {
   RegisterInput,
   ResendVerificationInput,
   ResetPasswordInput,
+  SuspensionContext,
   VerifyEmailInput,
 } from '../model/auth.types'
 import { API_BASE_URL } from '../../../shared/config/env'
@@ -97,5 +98,22 @@ export const authApi = {
     }
 
     return url.toString()
+  },
+
+  suspensionContext(suspensionAccessToken: string): Promise<SuspensionContext> {
+    return apiRequest<SuspensionContext>('/auth/suspension-context', {
+      method: 'POST',
+      body: { suspensionAccessToken },
+    })
+  },
+
+  submitSuspensionAppeal(
+    suspensionAccessToken: string,
+    message: string,
+  ): Promise<SuspensionContext> {
+    return apiRequest<SuspensionContext>('/auth/suspension-appeals', {
+      method: 'POST',
+      body: { suspensionAccessToken, message },
+    })
   },
 }

@@ -70,3 +70,18 @@ export interface CompleteGoogleRegistrationInput {
   preferredLocale: Locale
   role: RegistrableRole
 }
+
+export type SuspensionAppealStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface SuspensionContext {
+  reason: string
+  suspendedAt: string
+  canAppeal: boolean
+  nextAppealAt: string | null
+  appeal: {
+    status: SuspensionAppealStatus
+    submittedAt: string
+    resolutionNote: string | null
+    reviewedAt: string | null
+  } | null
+}

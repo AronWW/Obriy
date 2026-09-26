@@ -1,0 +1,22 @@
+.page { display: grid; width: min(100%, 1040px); gap: 22px; margin: 0 auto; padding: 28px 0 64px; }
+.back { display: inline-flex; width: fit-content; align-items: center; gap: 7px; color: var(--color-accent); font-size: 13px; font-weight: 700; text-decoration: none; }
+.hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 24px; background: var(--color-surface-raised); border: 1px solid var(--color-border); }
+.hero span { color: var(--color-accent-hover); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.hero h1 { margin: 7px 0 0; color: var(--color-text); font: 600 clamp(30px, 5vw, 46px)/1.1 var(--font-display); }
+.hero p { max-width: 70ch; margin: 10px 0 0; color: var(--color-text-soft); line-height: 1.6; }
+.hero > small { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--color-text-soft); }
+.result { display: grid; min-width: 112px; justify-items: end; }
+.result strong { font: 600 31px var(--font-display); }
+.result small { color: var(--color-text-soft); }
+.article, .tests, .question { padding: 24px; background: color-mix(in srgb, var(--color-surface-solid), transparent 3%); border: 1px solid var(--color-border); box-shadow: var(--shadow-surface); }
+.article { color: var(--color-text); font-size: 16px; line-height: 1.8; }
+.article p { margin: 0 0 1.25em; }.article p:last-child { margin-bottom: 0; }
+.tests h2 { margin: 0 0 16px; font: 600 22px var(--font-display); }
+.tests > a { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; color: inherit; border-top: 1px solid var(--color-border); text-decoration: none; }
+.tests > a span { display: grid; gap: 4px; }.tests > a small { color: var(--color-text-faint); }.tests > a:hover strong { color: var(--color-accent-hover); }
+.questions { display: grid; gap: 18px; }.question { display: grid; gap: 17px; }.question > header { display: grid; grid-template-columns: 34px 1fr auto; gap: 13px; align-items: start; }.question > header > span { display: grid; width: 32px; height: 32px; place-items: center; color: var(--color-accent); border: 1px solid var(--color-border-strong); border-radius: 50%; }.question h2 { margin: 0; font: 600 21px var(--font-display); }.question header p { margin: 5px 0 0; color: var(--color-text-soft); line-height: 1.55; }.question header b { font-size: 12px; white-space: nowrap; }
+.instructions { margin: 0; padding: 12px 14px; color: var(--color-text-soft); background: color-mix(in srgb, var(--color-accent), transparent 93%); border-left: 2px solid var(--color-accent); line-height: 1.55; }
+.promptImage { width: min(100%, 720px); max-height: 440px; object-fit: contain; background: var(--color-surface); border: 1px solid var(--color-border); }
+.optionList, .columns ul { display: grid; gap: 8px; padding-left: 24px; margin: 0; }.optionList li, .columns li { padding: 8px 10px; background: var(--color-surface-raised); border: 1px solid var(--color-border); }.columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }.fillText { padding: 16px; background: var(--color-surface-raised); line-height: 1.8; }.map { min-height: 420px; overflow: hidden; border: 1px solid var(--color-border); }
+.answer { display: grid; gap: 10px; padding: 16px; background: color-mix(in srgb, var(--color-info), transparent 92%); border: 1px solid var(--color-border); }.answer h3 { margin: 0; font-size: 14px; }.answer pre { max-width: 100%; margin: 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--color-text); font: 13px/1.55 var(--font-body); }.answerMeta { display: flex; justify-content: space-between; gap: 12px; color: var(--color-text-soft); font-size: 12px; }.answer details summary { cursor: pointer; color: var(--color-accent-hover); font-weight: 700; }.noAnswer { margin: 0; color: var(--color-text-faint); }.state { display: grid; min-height: 260px; place-content: center; justify-items: center; gap: 12px; }.state button { padding: 9px 14px; cursor: pointer; }
+@media (max-width: 720px) { .page { padding-inline: 14px; }.hero { display: grid; }.result { justify-items: start; }.question > header { grid-template-columns: 32px 1fr; }.question > header > b { grid-column: 2; }.columns { grid-template-columns: 1fr; }.map { min-height: 340px; } }

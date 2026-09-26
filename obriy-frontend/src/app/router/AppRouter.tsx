@@ -12,6 +12,8 @@ import { ParentChildPage } from '../../features/parent/pages/ParentChildPage'
 import { ParentConnectPage } from '../../features/parent/pages/ParentConnectPage'
 import { ParentHubPage } from '../../features/parent/pages/ParentHubPage'
 import { ParentProgressPage } from '../../features/parent/pages/ParentProgressPage'
+import { ParentLessonDetailPage } from '../../features/parent/pages/ParentLessonDetailPage'
+import { ParentTestDetailPage } from '../../features/parent/pages/ParentTestDetailPage'
 import { ParentInviteLandingPage } from '../../features/parent-links/pages/ParentInviteLandingPage'
 import {
   ClassmateProfilePage,
@@ -27,6 +29,7 @@ import { StudentAchievementsPage } from '../../features/gamification'
 import { ChatWorkspacePage, ParentChatPage } from '../../features/chat'
 import {
   AdminAuditPage,
+  AdminAppealsPage,
   AdminClassDetailPage,
   AdminClassesPage,
   AdminDashboardPage,
@@ -60,6 +63,7 @@ import { GoogleCallbackPage } from '../../pages/auth/GoogleCallbackPage'
 import { LoginPage } from '../../pages/auth/LoginPage'
 import { RegisterPage } from '../../pages/auth/RegisterPage'
 import { ResetPasswordPage } from '../../pages/auth/ResetPasswordPage'
+import { SuspendedAccountPage } from '../../pages/auth/SuspendedAccountPage'
 import { RoleSelectionPage } from '../../pages/auth/RoleSelectionPage'
 import { VerifyEmailPage } from '../../pages/auth/VerifyEmailPage'
 import { DesignLabPage } from '../../pages/design-lab/DesignLabPage'
@@ -91,6 +95,7 @@ export function AppRouter() {
           <Route path="register/:role" element={<RegisterPage />} />
           <Route path="check-email" element={<CheckEmailPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="suspended" element={<SuspendedAccountPage />} />
         </Route>
         <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
@@ -187,6 +192,8 @@ export function AppRouter() {
               path="child/:childId/progress"
               element={<ParentProgressPage />}
             />
+            <Route path="child/:childId/lessons/:lessonId" element={<ParentLessonDetailPage />} />
+            <Route path="child/:childId/tests/:releaseId" element={<ParentTestDetailPage />} />
             <Route path="child/:childId/messages" element={<ParentChatPage />} />
             <Route path="child/:childId/messages/:conversationId" element={<ParentChatPage />} />
             <Route path="connect" element={<ParentConnectPage />} />
@@ -201,6 +208,7 @@ export function AppRouter() {
             <Route path="classes/:classId" element={<AdminClassDetailPage />} />
             <Route path="moderation" element={<AdminModerationPage />} />
             <Route path="moderation/:caseId" element={<AdminModerationDetailPage />} />
+            <Route path="appeals" element={<AdminAppealsPage />} />
             <Route path="audit" element={<AdminAuditPage />} />
             <Route path="profile" element={<AdminProfilePage />} />
           </Route>

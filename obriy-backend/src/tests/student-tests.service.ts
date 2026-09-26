@@ -339,6 +339,102 @@ export class StudentTestsService {
     );
   }
 
+  async getParentRelease(
+    user: AuthUser,
+    childId: string,
+    releaseId: string,
+  ): Promise<StudentLessonTestDto> {
+    this.assertParent(user);
+    await this.releaseLifecycle.synchronizeRelease(releaseId);
+    const release = await this.findParentAccessibleRelease(
+      user.id,
+      childId,
+      releaseId,
+    );
+    const state = await this.prisma.testStudentState.findUnique({
+      where: { releaseId_studentId: { releaseId, studentId: childId } },
+      select: {
+        status: true,
+        attempts: {
+          where: { submittedAt: { not: null } },
+          orderBy: { attemptNumber: 'desc' },
+          take: 1,
+          select: attemptSelect,
+        },
+      },
+    });
+    return this.toReleaseDto(
+      release,
+      this.resolveStudentStatus(release, state?.status, new Date()),
+      state?.attempts[0] ?? null,
+      childId,
+      true,
+      { childId, releaseId },
+    );
+  }
+
+  async getParentAttempt(
+    user: AuthUser,
+    childId: string,
+    attemptId: string,
+  ): Promise<StudentTestAttemptDto> {
+    this.assertParent(user);
+    const attempt = await this.prisma.testAttempt.findFirst({
+      where: {
+        id: attemptId,
+        submittedAt: { not: null },
+        studentState: {
+          studentId: childId,
+          student: { childLinks: { some: { parentId: user.id } } },
+          release: {
+            status: {
+              in: [
+                TestReleaseStatus.SCHEDULED,
+                TestReleaseStatus.ACTIVE,
+                TestReleaseStatus.CLOSED,
+              ],
+            },
+            lessonId: { not: null },
+            class: {
+              students: {
+                some: {
+                  id: childId,
+                  childLinks: { some: { parentId: user.id } },
+                },
+              },
+            },
+            lesson: {
+              moderationStatus: LessonModerationStatus.CLEAR,
+            },
+          },
+        },
+      },
+      select: {
+        ...attemptSelect,
+        studentState: {
+          select: {
+            release: { select: studentReleaseSelect },
+          },
+        },
+      },
+    });
+    if (!attempt) throw this.attemptNotFound();
+    const published = await this.prisma.classLesson.findUnique({
+      where: {
+        classId_lessonId: {
+          classId: attempt.studentState.release.classId,
+          lessonId: attempt.studentState.release.lessonId!,
+        },
+      },
+      select: { publishedAt: true },
+    });
+    if (!published?.publishedAt) throw this.attemptNotFound();
+    return this.toAttemptDto(
+      attempt,
+      this.canRevealSolutions(attempt.studentState.release, attempt),
+    );
+  }
+
   async startAttempt(
     user: AuthUser,
     releaseId: string,
@@ -750,6 +846,49 @@ export class StudentTestsService {
     return release;
   }
 
+  private async findParentAccessibleRelease(
+    parentId: string,
+    childId: string,
+    releaseId: string,
+  ): Promise<StudentReleaseRecord> {
+    const release = await this.prisma.testRelease.findFirst({
+      where: {
+        id: releaseId,
+        status: {
+          in: [
+            TestReleaseStatus.SCHEDULED,
+            TestReleaseStatus.ACTIVE,
+            TestReleaseStatus.CLOSED,
+          ],
+        },
+        lessonId: { not: null },
+        class: {
+          students: {
+            some: {
+              id: childId,
+              childLinks: { some: { parentId } },
+            },
+          },
+        },
+        lesson: {
+          moderationStatus: LessonModerationStatus.CLEAR,
+        },
+      },
+      select: studentReleaseSelect,
+    });
+    if (!release) throw this.releaseNotFound();
+    const published = await this.prisma.classLesson.findFirst({
+      where: {
+        classId: release.classId,
+        lessonId: release.lessonId ?? undefined,
+        publishedAt: { not: null },
+      },
+      select: { lessonId: true },
+    });
+    if (!published) throw this.releaseNotFound();
+    return release;
+  }
+
   private async findAccessibleSubmissionAttempt(
     transaction: Prisma.TransactionClient,
     studentId: string,
@@ -1062,6 +1201,7 @@ export class StudentTestsService {
     attempt: AttemptRecord | null,
     studentId: string,
     revealItems: boolean,
+    parentMapContext?: { childId: string; releaseId: string },
   ): StudentLessonTestDto {
     const items = [...release.revision.items];
     if (release.revision.shuffleItems) {
@@ -1108,6 +1248,7 @@ export class StudentTestsService {
                   ? this.toStudentMapPreset(
                       item.assignmentRevision.mapPreset,
                       attempt?.id,
+                      parentMapContext,
                     )
                   : null,
               }),
@@ -1162,10 +1303,19 @@ export class StudentTestsService {
   private toStudentMapPreset(
     preset: Parameters<typeof toMapPresetDto>[0],
     attemptId?: string,
+    parentContext?: { childId: string; releaseId: string },
   ) {
     const dto = toMapPresetDto(preset);
-    if (dto.sourceType === MapPresetSourceType.CUSTOM_GEOJSON && attemptId) {
-      dto.geojsonUrl = `${dto.geojsonUrl}?attemptId=${encodeURIComponent(attemptId)}`;
+    if (dto.sourceType === MapPresetSourceType.CUSTOM_GEOJSON) {
+      if (parentContext) {
+        const query = new URLSearchParams({
+          childId: parentContext.childId,
+          releaseId: parentContext.releaseId,
+        });
+        dto.geojsonUrl = `${dto.geojsonUrl}?${query.toString()}`;
+      } else if (attemptId) {
+        dto.geojsonUrl = `${dto.geojsonUrl}?attemptId=${encodeURIComponent(attemptId)}`;
+      }
     }
     return dto;
   }
@@ -1237,9 +1387,49 @@ export class StudentTestsService {
           typeof gradingData.matches === 'boolean' ? gradingData.matches : null,
       };
     }
-    if (answer.testItem.assignment.type !== AssignmentType.MAP_POINT) {
-      return null;
+    const type = answer.testItem.assignment.type;
+    const config = this.toJsonObject(
+      answer.testItem.assignmentRevision.solution?.gradingConfig ?? null,
+    );
+    if (
+      type === AssignmentType.SINGLE_CHOICE ||
+      type === AssignmentType.MULTIPLE_CHOICE
+    ) {
+      return {
+        correctOptionIds: this.stringArray(config.correctOptionIds),
+        scoringMode: config.scoringMode ?? null,
+      };
     }
+    if (type === AssignmentType.MATCHING) {
+      return {
+        matches: Array.isArray(config.matches) ? config.matches : [],
+        scoringMode: config.scoringMode ?? null,
+      };
+    }
+    if (type === AssignmentType.ORDERING) {
+      return {
+        correctOrderIds: this.stringArray(config.correctOrderIds),
+        scoringMode: config.scoringMode ?? null,
+      };
+    }
+    if (type === AssignmentType.CATEGORIZATION) {
+      return {
+        assignments: Array.isArray(config.assignments)
+          ? config.assignments
+          : [],
+        scoringMode: config.scoringMode ?? null,
+      };
+    }
+    if (type === AssignmentType.FILL_BLANKS) {
+      return {
+        blanks: Array.isArray(config.blanks) ? config.blanks : [],
+        scoringMode: config.scoringMode ?? null,
+      };
+    }
+    if (type === AssignmentType.IMAGE_HOTSPOT) {
+      return { target: this.isRecord(config.target) ? config.target : null };
+    }
+    if (type !== AssignmentType.MAP_POINT) return null;
     const parsed = mapPointPublishSolutionSchema.safeParse(
       answer.testItem.assignmentRevision.solution?.gradingConfig,
     );
@@ -1286,6 +1476,12 @@ export class StudentTestsService {
 
   private numberOrNull(value: unknown): number | null {
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  }
+
+  private stringArray(value: unknown): string[] {
+    return Array.isArray(value)
+      ? value.filter((entry): entry is string => typeof entry === 'string')
+      : [];
   }
 
   private toStudentPublicConfig(
@@ -1463,6 +1659,15 @@ export class StudentTestsService {
       throw new ForbiddenException({
         code: 'ROLE_FORBIDDEN',
         message: 'Only students can complete tests',
+      });
+    }
+  }
+
+  private assertParent(user: AuthUser): void {
+    if (user.role !== UserRole.PARENT) {
+      throw new ForbiddenException({
+        code: 'PARENT_ONLY',
+        message: 'Parent role required',
       });
     }
   }

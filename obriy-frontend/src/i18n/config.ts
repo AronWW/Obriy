@@ -175,7 +175,7 @@ const resources = {
             discover: {
               title: 'Навчайся у власному темпі',
               description:
-                'Проходь двомовні уроки, виконуй інтерактивні завдання та закріплюй знання у зручному темпі.',
+                'Проходь уроки, виконуй тести й інтерактивні завдання та закріплюй знання у зручному темпі.',
             },
             interact: {
               title: 'Створюй матеріали для класу',
@@ -185,7 +185,7 @@ const resources = {
             grow: {
               title: 'Відстежуй прогрес і досягнення',
               description:
-                'Стеж за уроками, XP і відзнаками. Вчителі та батьки бачать доступну їм динаміку навчання.',
+                'Стеж за уроками, XP і відзнаками. Учителі бачать результати класу, а батьки — навчальний прогрес дитини.',
             },
           },
           atlas: {
@@ -205,17 +205,17 @@ const resources = {
             title: 'Досліджуй історію через дію',
             description:
               'Рухайся від теми до теми у власному темпі й бач, як кожна відповідь формує твій прогрес.',
-            benefit1: 'Інтерактивні уроки, квести та завдання на карті',
+            benefit1: 'Уроки, тести та інтерактивні завдання на карті',
             benefit2: 'XP, рівні, бейджі й особистий маршрут навчання',
             benefit3: 'Прогрес класу, рейтинг і спільна робота',
             action: 'Стати дослідником',
           },
           teacher: {
-            label: 'Вчитель',
+            label: 'Учитель',
             title: 'Створюй маршрути для класу',
             description:
               'Перетворюй навчальну програму на послідовність зрозумілих завдань і бач реальну картину прогресу.',
-            benefit1: 'Конструктор уроків, тестів і запитань на карті',
+            benefit1: 'Створення уроків, завдань, тестів і навчальних релізів',
             benefit2: 'Керування класом та доступом учнів',
             benefit3: 'Аналітика результатів без ручного зведення',
             action: 'Створити шлях класу',
@@ -225,9 +225,9 @@ const resources = {
             title: 'Бачте шлях дитини без зайвого контролю',
             description:
               'Під’єднайте одну або кількох дітей за безпечним запрошенням і переглядайте лише їхній навчальний прогрес.',
-            benefit1: 'Read-only огляд уроків і виконаних завдань',
-            benefit2: 'Динаміка XP, рівнів і відкритих досягнень',
-            benefit3: 'Окремий простір для кожної прив’язаної дитини',
+            benefit1: 'Безпечний перегляд уроків, матеріалів і тестів',
+            benefit2: 'Дедлайни, результати та історія спроб дитини',
+            benefit3: 'Перегляд навчальної переписки без можливості втручання',
             action: 'Створити акаунт батьків',
           },
         },
@@ -2981,7 +2981,7 @@ const resources = {
             discover: {
               title: 'Learn at your own pace',
               description:
-                'Complete bilingual lessons, solve interactive activities, and reinforce knowledge at a comfortable pace.',
+                'Complete lessons, tests, and interactive activities at a comfortable pace.',
             },
             interact: {
               title: 'Create materials for your class',
@@ -2991,7 +2991,7 @@ const resources = {
             grow: {
               title: 'Track progress and achievements',
               description:
-                'Track lessons, XP, and badges. Teachers and parents see the learning progress available to them.',
+                'Track lessons, XP, and badges. Teachers see class results, while parents follow their child’s learning progress.',
             },
           },
           atlas: {
@@ -3011,7 +3011,7 @@ const resources = {
             title: 'Explore history through action',
             description:
               'Move from topic to topic at your own pace and see how every answer shapes your progress.',
-            benefit1: 'Interactive lessons, quests, and map challenges',
+            benefit1: 'Lessons, tests, and interactive map challenges',
             benefit2: 'XP, levels, badges, and a personal learning route',
             benefit3: 'Class progress, leaderboard, and collaboration',
             action: 'Become an explorer',
@@ -3021,7 +3021,7 @@ const resources = {
             title: 'Create routes for your class',
             description:
               'Turn the curriculum into a clear sequence of challenges and see the real picture of class progress.',
-            benefit1: 'A builder for lessons, quizzes, and map questions',
+            benefit1: 'Create lessons, assignments, tests, and learning releases',
             benefit2: 'Class management and controlled student access',
             benefit3: 'Result analytics without manual spreadsheets',
             action: 'Create a class route',
@@ -3031,9 +3031,9 @@ const resources = {
             title: 'See your child’s path without overstepping',
             description:
               'Connect one or more children through a secure invitation and view only their learning progress.',
-            benefit1: 'Read-only overview of lessons and completed work',
-            benefit2: 'XP, level, and achievement development',
-            benefit3: 'A separate view for every connected child',
+            benefit1: 'Safe access to lessons, materials, and tests',
+            benefit2: 'Deadlines, results, and attempt history',
+            benefit3: 'Read-only access to the child’s learning conversations',
             action: 'Create a parent account',
           },
         },

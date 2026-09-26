@@ -10,6 +10,7 @@ import type { PrismaService } from '../../../prisma/prisma.service';
 import { AdminService } from '../../../src/admin/admin.service';
 import type { AuthUser } from '../../../src/common/types/auth-user.type';
 import type { NotificationsService } from '../../../src/notifications/notifications.service';
+import type { MailService } from '../../../src/mail/mail.service';
 
 describe('AdminService moderation and access rules', () => {
   const admin: AuthUser = {
@@ -27,6 +28,7 @@ describe('AdminService moderation and access rules', () => {
     {} as PrismaService,
     { emit: jest.fn() } as unknown as EventEmitter2,
     { createMany: jest.fn() } as unknown as NotificationsService,
+    { sendSuspensionAppealDecision: jest.fn() } as unknown as MailService,
   );
 
   const transition = (

@@ -15,7 +15,7 @@ test('desktop journey and role selection end at the compact footer', async ({
   })
 
   await page.locator('#roles').scrollIntoViewIfNeeded()
-  await page.getByRole('button', { name: 'Вчитель' }).click()
+  await page.getByRole('button', { name: 'Учитель' }).click()
   await expect(page.getByRole('heading', { name: 'Створюй маршрути для класу' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Учень' })).toHaveCSS(
     'color',

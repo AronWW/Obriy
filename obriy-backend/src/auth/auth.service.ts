@@ -31,6 +31,7 @@ import { GoogleProfile } from './types/google-profile.type';
 import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { authEvents } from './auth.events';
+import { SuspensionAppealsService } from './suspension-appeals.service';
 
 type TokenPair = {
   accessToken: string;
@@ -64,6 +65,7 @@ export class AuthService {
     private readonly i18n: I18nService,
     private readonly oauthStateService: OAuthStateService,
     private readonly events: EventEmitter2,
+    private readonly suspensionAppeals: SuspensionAppealsService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthMessageDto> {
@@ -179,10 +181,7 @@ export class AuthService {
     }
 
     if (user.status === UserStatus.SUSPENDED) {
-      throw new ForbiddenException({
-        code: 'USER_SUSPENDED',
-        message: this.t('auth.errors.userSuspended'),
-      });
+      return this.suspensionAppeals.throwSuspended(user);
     }
 
     if (user.status === UserStatus.PENDING || !user.emailVerifiedAt) {
@@ -701,6 +700,10 @@ export class AuthService {
       });
     }
 
+    if (storedCode.user.status === UserStatus.SUSPENDED) {
+      return this.suspensionAppeals.throwSuspended(storedCode.user);
+    }
+
     const tokens = await this.issueTokenPair(storedCode.user);
     return {
       accessToken: tokens.accessToken,
@@ -882,10 +885,7 @@ export class AuthService {
 
     const existingUser = userByGoogleId ?? userByEmail;
     if (existingUser?.status === UserStatus.SUSPENDED) {
-      throw new ForbiddenException({
-        code: 'USER_SUSPENDED',
-        message: this.t('auth.errors.userSuspended'),
-      });
+      return this.suspensionAppeals.throwSuspended(existingUser);
     }
 
     if (existingUser?.googleId && existingUser.googleId !== profile.googleId) {

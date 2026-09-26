@@ -1,5 +1,5 @@
 import { authorizedRequest } from '../../auth/model/session.service'
-import type { AdminAuditLog, AdminClass, AdminClassDetail, AdminDashboard, AdminUser, CursorPage, LessonModerationCase } from '../model/admin.types'
+import type { AdminAuditLog, AdminClass, AdminClassDetail, AdminDashboard, AdminSuspensionAppeal, AdminUser, CursorPage, LessonModerationCase } from '../model/admin.types'
 
 function queryString(values: Record<string, string | undefined>) {
   const query = new URLSearchParams()
@@ -21,4 +21,8 @@ export const adminApi = {
   moderate: (id: string, action: string, reason: string, expectedEditVersion: number) =>
     authorizedRequest<LessonModerationCase>(`/admin/moderation/lessons/${id}/${action}`, { method: 'POST', body: { reason, expectedEditVersion } }),
   audit: (filters: Record<string, string | undefined>) => authorizedRequest<CursorPage<AdminAuditLog>>(`/admin/audit-logs${queryString(filters)}`),
+  appeals: (filters: Record<string, string | undefined>) => authorizedRequest<CursorPage<AdminSuspensionAppeal>>(`/admin/suspension-appeals${queryString(filters)}`),
+  appeal: (id: string) => authorizedRequest<AdminSuspensionAppeal>(`/admin/suspension-appeals/${id}`),
+  resolveAppeal: (id: string, action: 'approve' | 'reject', resolutionNote: string) =>
+    authorizedRequest<AdminSuspensionAppeal>(`/admin/suspension-appeals/${id}/${action}`, { method: 'POST', body: { resolutionNote } }),
 }

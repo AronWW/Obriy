@@ -5,6 +5,7 @@ import {
   LessonReportCategory,
   UserRole,
   UserStatus,
+  SuspensionAppealStatus,
 } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
@@ -66,6 +67,21 @@ export class AdminAuditQueryDto extends AdminPageQueryDto {
   @IsOptional()
   @IsEnum(AdminAuditAction)
   action?: AdminAuditAction;
+}
+
+export class AdminAppealsQueryDto extends AdminPageQueryDto {
+  @ApiPropertyOptional({ enum: SuspensionAppealStatus })
+  @IsOptional()
+  @IsEnum(SuspensionAppealStatus)
+  status?: SuspensionAppealStatus;
+}
+
+export class AdminAppealDecisionDto {
+  @ApiProperty({ minLength: 10, maxLength: 1000 })
+  @IsString()
+  @MinLength(10)
+  @MaxLength(1000)
+  resolutionNote: string;
 }
 
 export class AdminReasonDto {

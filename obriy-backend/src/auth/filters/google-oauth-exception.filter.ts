@@ -11,6 +11,7 @@ import { AuthCookieService } from '../auth-cookie.service';
 
 type ErrorBody = {
   code?: unknown;
+  suspensionAccessToken?: unknown;
 };
 
 @Catch()
@@ -29,6 +30,10 @@ export class GoogleOAuthExceptionFilter implements ExceptionFilter {
       this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
     const redirectUrl = new URL('/auth/google/callback', frontendUrl);
     redirectUrl.searchParams.set('error', this.getSafeCode(exception, request));
+    const suspensionAccessToken = this.getSuspensionToken(exception);
+    if (suspensionAccessToken) {
+      redirectUrl.searchParams.set('suspension', suspensionAccessToken);
+    }
     response.redirect(redirectUrl.toString());
   }
 
@@ -50,5 +55,13 @@ export class GoogleOAuthExceptionFilter implements ExceptionFilter {
     return typeof code === 'string' && /^[A-Z0-9_]+$/.test(code)
       ? code
       : 'GOOGLE_OAUTH_FAILED';
+  }
+
+  private getSuspensionToken(exception: unknown): string | null {
+    if (!(exception instanceof HttpException)) return null;
+    const body: unknown = exception.getResponse();
+    if (typeof body !== 'object' || body === null) return null;
+    const token = (body as ErrorBody).suspensionAccessToken;
+    return typeof token === 'string' ? token : null;
   }
 }

@@ -150,14 +150,14 @@ export function ChildProgressView({
           {progress.lessons.map((lesson) => (
             <section className={styles.lesson} key={lesson.id}>
               <header className={styles.lessonHeader}>
-                <div><span>{t('parentLearning.progress.lesson', { number: lesson.position })}</span><h2>{lesson.title}</h2></div>
+                <div><span>{t('parentLearning.progress.lesson', { number: lesson.position })}</span><h2><Link className={styles.lessonLink} to={`/app/parent/child/${child.id}/lessons/${lesson.id}`}>{lesson.title}</Link></h2>{lesson.summary && <p className={styles.lessonSummary}>{lesson.summary}</p>}</div>
                 <div className={styles.rowActions}>
                   <LessonReportDialog submit={(input) => reportParentLesson(child.id, lesson.id, input)} />
                   <div className={styles.lessonMetric}><strong>{percent(lesson.completionPercent)}</strong><small>{t('parentLearning.metrics.progress')}</small></div>
                 </div>
               </header>
               {lesson.tests.length === 0 ? <p className={styles.lessonEmpty}>{t('parentLearning.progress.noTests')}</p> : (
-                <div className={styles.testList}>{lesson.tests.map((test) => <TestProgress key={test.releaseId} test={test} />)}</div>
+                <div className={styles.testList}>{lesson.tests.map((test) => <TestProgress childId={child.id} key={test.releaseId} test={test} />)}</div>
               )}
             </section>
           ))}
@@ -247,8 +247,9 @@ function WorkRow({ item }: { item: ParentWorkItem }) {
   )
 }
 
-function TestProgress({ test }: { test: ParentTestProgress }) {
-  const { t } = useTranslation()
+function TestProgress({ childId, test }: { childId: string; test: ParentTestProgress }) {
+  const { i18n, t } = useTranslation()
+  const detailsLabel = i18n.resolvedLanguage === 'en' ? 'Open test details' : 'Переглянути тест'
   return (
     <details className={styles.test}>
       <summary>
@@ -256,8 +257,9 @@ function TestProgress({ test }: { test: ParentTestProgress }) {
         <div className={styles.testScore}><Status status={test.status} /><b>{percent(test.scorePercent)}</b>{test.bestPercent !== null && test.bestPercent !== test.scorePercent && <small>{t('parentLearning.progress.best', { score: percent(test.bestPercent) })}</small>}<ChevronDown size={17} /></div>
       </summary>
       <div className={styles.testDetails}>
+        <Link className={styles.testLink} to={`/app/parent/child/${childId}/tests/${test.releaseId}`}>{detailsLabel}</Link>
         <dl><div><dt>{t('parentLearning.progress.deadline')}</dt><dd>{test.dueAt ? formatDate(test.dueAt) : '—'}</dd></div><div><dt>{t('parentLearning.progress.attempts')}</dt><dd>{test.attemptCount}</dd></div><div><dt>{t('parentLearning.progress.currentPoints')}</dt><dd>{test.scorePoints === null ? '—' : `${test.scorePoints}/${test.maxPoints}`}</dd></div></dl>
-        {test.attempts.length > 0 && <div className={styles.attempts}><h3>{t('parentLearning.progress.attemptHistory')}</h3>{test.attempts.map((attempt) => <div className={styles.attempt} key={attempt.attemptNumber}><span>{t('parentLearning.progress.attempt', { number: attempt.attemptNumber })}</span><Status status={attempt.status} /><b>{percent(attempt.scorePercent)}</b><time dateTime={attempt.gradedAt ?? attempt.submittedAt ?? attempt.startedAt}>{formatDate(attempt.gradedAt ?? attempt.submittedAt ?? attempt.startedAt)}</time></div>)}</div>}
+        {test.attempts.length > 0 && <div className={styles.attempts}><h3>{t('parentLearning.progress.attemptHistory')}</h3>{test.attempts.map((attempt) => attempt.id ? <Link className={styles.attempt} key={attempt.id} to={`/app/parent/child/${childId}/tests/${test.releaseId}?attempt=${attempt.id}`}><span>{t('parentLearning.progress.attempt', { number: attempt.attemptNumber })}</span><Status status={attempt.status} /><b>{percent(attempt.scorePercent)}</b><time dateTime={attempt.gradedAt ?? attempt.submittedAt ?? attempt.startedAt}>{formatDate(attempt.gradedAt ?? attempt.submittedAt ?? attempt.startedAt)}</time></Link> : <div className={styles.attempt} key={attempt.attemptNumber}><span>{t('parentLearning.progress.attempt', { number: attempt.attemptNumber })}</span><Status status={attempt.status} /><b>{percent(attempt.scorePercent)}</b><time dateTime={attempt.gradedAt ?? attempt.submittedAt ?? attempt.startedAt}>{formatDate(attempt.gradedAt ?? attempt.submittedAt ?? attempt.startedAt)}</time></div>)}</div>}
       </div>
     </details>
   )

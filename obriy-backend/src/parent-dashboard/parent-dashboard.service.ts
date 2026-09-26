@@ -14,6 +14,11 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../common/types/auth-user.type';
 import { TestReleaseLifecycleService } from '../tests/test-release-lifecycle.service';
+import { StudentTestsService } from '../tests/student-tests.service';
+import {
+  StudentLessonTestDto,
+  StudentTestAttemptDto,
+} from '../tests/dto/student-test.dto';
 import {
   ParentAttemptDto,
   ParentAttentionReason,
@@ -72,6 +77,10 @@ const releaseSelect = {
     select: {
       id: true,
       title: true,
+      summary: true,
+      content: true,
+      contentLocale: true,
+      estimatedMinutes: true,
       classLinks: {
         select: { classId: true, position: true, publishedAt: true },
       },
@@ -89,6 +98,7 @@ const detailReleaseSelect = {
         orderBy: [{ attemptNumber: 'desc' as const }, { id: 'desc' as const }],
         select: {
           attemptNumber: true,
+          id: true,
           status: true,
           maxPoints: true,
           scorePoints: true,
@@ -110,6 +120,10 @@ const classLessonSelect = {
     select: {
       id: true,
       title: true,
+      summary: true,
+      content: true,
+      contentLocale: true,
+      estimatedMinutes: true,
       testLinks: { select: { testId: true, position: true } },
     },
   },
@@ -137,6 +151,7 @@ export class ParentDashboardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly releaseLifecycle: TestReleaseLifecycleService,
+    private readonly studentTests: StudentTestsService,
   ) {}
 
   async getDashboard(user: AuthUser): Promise<ParentDashboardDto> {
@@ -250,6 +265,46 @@ export class ParentDashboardService {
         this.toLessonProgress(link, releases, child.id),
       ),
     });
+  }
+
+  async getChildLesson(
+    user: AuthUser,
+    childId: string,
+    lessonId: string,
+  ): Promise<ParentLessonProgressDto> {
+    const child = await this.findLinkedChild(user, childId);
+    if (!child.studentClass) throw this.lessonNotFound();
+    await this.releaseLifecycle.synchronizeClass(child.studentClass.id);
+    const [classLesson, releases] = await this.prisma.$transaction([
+      this.prisma.classLesson.findFirst({
+        where: {
+          classId: child.studentClass.id,
+          lessonId,
+          publishedAt: { not: null },
+          lesson: { moderationStatus: LessonModerationStatus.CLEAR },
+        },
+        select: classLessonSelect,
+      }),
+      this.findDetailReleases(child.studentClass.id, child.id),
+    ]);
+    if (!classLesson) throw this.lessonNotFound();
+    return this.toLessonProgress(classLesson, releases, child.id);
+  }
+
+  getChildTestRelease(
+    user: AuthUser,
+    childId: string,
+    releaseId: string,
+  ): Promise<StudentLessonTestDto> {
+    return this.studentTests.getParentRelease(user, childId, releaseId);
+  }
+
+  getChildTestAttempt(
+    user: AuthUser,
+    childId: string,
+    attemptId: string,
+  ): Promise<StudentTestAttemptDto> {
+    return this.studentTests.getParentAttempt(user, childId, attemptId);
   }
 
   private async findLinkedChild(
@@ -489,6 +544,10 @@ export class ParentDashboardService {
       id: link.lesson.id,
       title: link.lesson.title,
       position: link.position,
+      summary: link.lesson.summary,
+      content: link.lesson.content,
+      contentLocale: link.lesson.contentLocale,
+      estimatedMinutes: link.lesson.estimatedMinutes,
       requiredTestCount: required.length,
       completedRequiredCount: required.filter(
         ({ dto }) => dto.status === TestStudentStatus.COMPLETED,
@@ -517,6 +576,7 @@ export class ParentDashboardService {
       attempts: (state?.attempts ?? []).map(
         (attempt) =>
           new ParentAttemptDto({
+            id: attempt.id,
             attemptNumber: attempt.attemptNumber,
             status: attempt.status,
             maxPoints: Number(attempt.maxPoints),
@@ -618,5 +678,12 @@ export class ParentDashboardService {
         message: 'Only parents can use the parent dashboard',
       });
     }
+  }
+
+  private lessonNotFound(): NotFoundException {
+    return new NotFoundException({
+      code: 'PARENT_LESSON_NOT_FOUND',
+      message: 'Published lesson not found',
+    });
   }
 }

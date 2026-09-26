@@ -10,6 +10,7 @@ import type { PrismaService } from '../../../prisma/prisma.service';
 import type { AuthUser } from '../../../src/common/types/auth-user.type';
 import { ParentDashboardService } from '../../../src/parent-dashboard/parent-dashboard.service';
 import type { TestReleaseLifecycleService } from '../../../src/tests/test-release-lifecycle.service';
+import type { StudentTestsService } from '../../../src/tests/student-tests.service';
 
 describe('ParentDashboardService', () => {
   const parent: AuthUser = {
@@ -29,6 +30,7 @@ describe('ParentDashboardService', () => {
       .fn()
       .mockResolvedValue({ activated: 0, closed: 0 }),
   } as unknown as TestReleaseLifecycleService;
+  const studentTests = {} as StudentTestsService;
 
   beforeEach(() => {
     jest.useFakeTimers().setSystemTime(new Date('2026-09-11T12:00:00.000Z'));
@@ -60,6 +62,7 @@ describe('ParentDashboardService', () => {
     const result = await new ParentDashboardService(
       prisma,
       lifecycle,
+      studentTests,
     ).getChildOverview(parent, child.id);
 
     expect(result.child.metrics).toEqual({
@@ -86,17 +89,18 @@ describe('ParentDashboardService', () => {
       parentChild: { findFirst: jest.fn().mockResolvedValue(null) },
     } as unknown as PrismaService;
     await expect(
-      new ParentDashboardService(prisma, lifecycle).getChildOverview(
-        parent,
-        'other-child',
-      ),
+      new ParentDashboardService(
+        prisma,
+        lifecycle,
+        studentTests,
+      ).getChildOverview(parent, 'other-child'),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('rejects non-parent roles before querying child data', async () => {
     const prisma = {} as PrismaService;
     await expect(
-      new ParentDashboardService(prisma, lifecycle).getDashboard({
+      new ParentDashboardService(prisma, lifecycle, studentTests).getDashboard({
         ...parent,
         role: UserRole.TEACHER,
       }),

@@ -10,6 +10,7 @@ import {
   MapPresetSourceType,
   MapPresetStatus,
   Prisma,
+  TestReleaseStatus,
   UserRole,
 } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
@@ -257,6 +258,8 @@ export class MapPresetsService {
     user: AuthUser,
     presetId: string,
     attemptId?: string,
+    releaseId?: string,
+    childId?: string,
   ): Promise<string> {
     const preset = await this.prisma.mapPreset.findUnique({
       where: { id: presetId },
@@ -288,6 +291,50 @@ export class MapPresetsService {
         select: { id: true },
       });
       allowed = Boolean(attempt);
+    }
+    if (!allowed && user.role === UserRole.PARENT && releaseId && childId) {
+      const release = await this.prisma.testRelease.findFirst({
+        where: {
+          id: releaseId,
+          status: {
+            in: [
+              TestReleaseStatus.SCHEDULED,
+              TestReleaseStatus.ACTIVE,
+              TestReleaseStatus.CLOSED,
+            ],
+          },
+          lessonId: { not: null },
+          class: {
+            students: {
+              some: {
+                id: childId,
+                childLinks: { some: { parentId: user.id } },
+              },
+            },
+          },
+          lesson: {
+            moderationStatus: 'CLEAR',
+          },
+          revision: {
+            items: {
+              some: { assignmentRevision: { mapPresetId: presetId } },
+            },
+          },
+        },
+        select: { classId: true, lessonId: true },
+      });
+      if (release?.lessonId) {
+        const published = await this.prisma.classLesson.findUnique({
+          where: {
+            classId_lessonId: {
+              classId: release.classId,
+              lessonId: release.lessonId,
+            },
+          },
+          select: { publishedAt: true },
+        });
+        allowed = Boolean(published?.publishedAt);
+      }
     }
     if (!allowed) throw this.notFound();
     return this.storage.deliveryUrl(preset.storageKey);

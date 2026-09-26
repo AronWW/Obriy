@@ -211,6 +211,8 @@ enum LessonReportCategory {
 enum AdminAuditAction {
   USER_SUSPENDED
   USER_RESTORED
+  SUSPENSION_APPEAL_APPROVED
+  SUSPENSION_APPEAL_REJECTED
   LESSON_HIDDEN
   LESSON_REPORT_DISMISSED
   LESSON_CHANGES_REQUESTED
@@ -220,8 +222,15 @@ enum AdminAuditAction {
 
 enum AdminAuditTargetType {
   USER
+  SUSPENSION_APPEAL
   LESSON
   MODERATION_CASE
+}
+
+enum SuspensionAppealStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model User {
@@ -265,6 +274,8 @@ model User {
   subjectLessonReports    LessonReport[]           @relation("LessonReportSubjectStudent")
   reviewedModerationCases LessonModerationCase[]   @relation("LessonModerationReviewer")
   adminAuditLogs          AdminAuditLog[]          @relation("AdminAuditActor")
+  suspensionAppeals       SuspensionAppeal[]       @relation("SuspensionAppealUser")
+  reviewedAppeals         SuspensionAppeal[]       @relation("SuspensionAppealReviewer")
   studentClassId          String?
   studentClass            Class?                   @relation("ClassStudents", fields: [studentClassId], references: [id], onDelete: SetNull)
 
@@ -479,11 +490,34 @@ model AdminAuditLog {
   metadata   Json?
   createdAt  DateTime             @default(now())
 
-  actor User @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  actor                    User               @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  sourceSuspensionAppeals  SuspensionAppeal[] @relation("SuspensionAppealSourceAudit")
 
   @@index([actorId, createdAt, id])
   @@index([action, createdAt, id])
   @@index([targetType, targetId, createdAt])
+}
+
+model SuspensionAppeal {
+  id                   String                 @id @default(uuid())
+  userId               String
+  suspensionAuditLogId String
+  status               SuspensionAppealStatus @default(PENDING)
+  message              String                 @db.Text
+  resolutionNote       String?                @db.Text
+  reviewedById         String?
+  reviewedAt           DateTime?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  user               User          @relation("SuspensionAppealUser", fields: [userId], references: [id], onDelete: Cascade)
+  suspensionAuditLog AdminAuditLog @relation("SuspensionAppealSourceAudit", fields: [suspensionAuditLogId], references: [id], onDelete: Restrict)
+  reviewedBy         User?         @relation("SuspensionAppealReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt, id])
+  @@index([suspensionAuditLogId, createdAt])
+  @@index([status, createdAt, id])
+  @@index([reviewedById, reviewedAt])
 }
 
 model ClassLesson {

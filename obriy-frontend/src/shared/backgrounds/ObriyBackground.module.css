@@ -1,10 +1,17 @@
 .background {
   position: fixed;
   z-index: 0;
-  inset: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 100vh;
+  height: 100lvh;
   overflow: hidden;
   pointer-events: none;
   isolation: isolate;
+  contain: paint;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .layer {
@@ -609,6 +616,26 @@
 @keyframes vesselBob { 0%, 100% { transform: translateY(0) rotate(-0.35deg); } 50% { transform: translateY(-2px) rotate(0.35deg); } }
 
 @media (max-width: 760px) {
+  .layer,
+  .dayScene,
+  .coastalHorizon,
+  .lighthouseScene,
+  .atlas {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
+  .noise {
+    display: none;
+  }
+
+  .cloud,
+  .celestialSun,
+  .lighthouseGlow,
+  .lighthouseLamp {
+    filter: none;
+  }
+
   .dayScene {
     left: 50%;
     width: 1180px;

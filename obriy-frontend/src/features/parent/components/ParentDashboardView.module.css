@@ -43,6 +43,9 @@
 .lessonList, .testList { display: grid; gap: 14px; }
 .lessonHeader { display: flex; justify-content: space-between; gap: 18px; align-items: center; padding: 19px 21px; border-bottom: 1px solid var(--color-border); }
 .lessonHeader span { color: var(--color-text-faint); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.lessonLink, .testLink { color: inherit; text-decoration: none; }
+.lessonLink:hover, .testLink:hover { color: var(--color-accent-hover); }
+.lessonSummary { max-width: 66ch; margin: 6px 0 0; color: var(--color-text-soft); font-size: 13px; line-height: 1.5; }
 .lessonMetric { display: grid; justify-items: end; }
 .lessonMetric strong { font-family: var(--font-display); font-size: 22px; }
 .lessonMetric small { color: var(--color-text-faint); font-size: 10px; }
@@ -64,6 +67,7 @@
 .attempts { display: grid; gap: 8px; }
 .attempts h3 { margin: 0; font-size: 12px; }
 .attempt { display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px; align-items: center; padding: 9px 11px; background: color-mix(in srgb, var(--color-surface), transparent 8%); }
+.attempt { color: inherit; text-decoration: none; }
 .attempt time { color: var(--color-text-faint); font-size: 10px; }
 .state, .emptyPanel { display: grid; max-width: 680px; min-height: 230px; gap: 11px; place-content: center; justify-items: center; margin: 40px auto; padding: 36px; text-align: center; background: var(--color-surface-raised); border: 1px solid var(--color-border); }
 .state h1, .emptyPanel h2 { margin: 0; }

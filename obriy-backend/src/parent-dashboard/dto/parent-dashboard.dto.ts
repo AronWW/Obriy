@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  Locale,
   TestAttemptStatus,
   TestReleaseStatus,
   TestStudentStatus,
@@ -184,6 +185,9 @@ export class ParentChildOverviewDto {
 }
 
 export class ParentAttemptDto {
+  @ApiProperty()
+  id: string;
+
   @ApiProperty({ minimum: 1 })
   attemptNumber: number;
 
@@ -230,6 +234,18 @@ export class ParentTestProgressDto extends ParentWorkItemDto {
 }
 
 export class ParentLessonProgressDto extends ParentLessonRefDto {
+  @ApiPropertyOptional({ nullable: true })
+  summary: string | null;
+
+  @ApiProperty()
+  content: string;
+
+  @ApiProperty({ enum: Locale })
+  contentLocale: Locale;
+
+  @ApiPropertyOptional({ nullable: true })
+  estimatedMinutes: number | null;
+
   @ApiProperty({ minimum: 0 })
   requiredTestCount: number;
 

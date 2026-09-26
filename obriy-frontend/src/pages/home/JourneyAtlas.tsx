@@ -74,6 +74,9 @@ export function JourneyAtlas() {
   const routeNodeRefs = useRef<Array<SVGGElement | null>>([])
   const routeMarkerRef = useRef<SVGGElement>(null)
   const routeLengthRef = useRef(0)
+  const routePointsRef = useRef<Array<{ x: number; y: number }>>([])
+  const pendingProgressRef = useRef(0)
+  const animationFrameRef = useRef<number | null>(null)
   const nodeProgressRef = useRef<number[]>([...fallbackNodeProgress])
   const activeStepRef = useRef(reduceMotion ? steps.length - 1 : -1)
   const [activeStep, setActiveStep] = useState(
@@ -100,8 +103,18 @@ export function JourneyAtlas() {
     }
 
     const progress = clampProgress(rawProgress)
-    const totalLength = routeLengthRef.current || path.getTotalLength()
-    const markerPoint = path.getPointAtLength(totalLength * progress)
+    const points = routePointsRef.current
+    const pointPosition = progress * Math.max(points.length - 1, 0)
+    const pointIndex = Math.floor(pointPosition)
+    const start = points[pointIndex]
+    const end = points[Math.min(pointIndex + 1, points.length - 1)]
+    const ratio = pointPosition - pointIndex
+    const markerPoint = start && end
+      ? {
+          x: start.x + (end.x - start.x) * ratio,
+          y: start.y + (end.y - start.y) * ratio,
+        }
+      : path.getPointAtLength(routeLengthRef.current * progress)
     marker.setAttribute(
       'transform',
       `translate(${markerPoint.x.toFixed(4)} ${markerPoint.y.toFixed(4)})`,
@@ -129,6 +142,11 @@ export function JourneyAtlas() {
 
     const totalLength = path.getTotalLength()
     routeLengthRef.current = totalLength
+    const routeSampleCount = 4096
+    routePointsRef.current = Array.from({ length: routeSampleCount + 1 }, (_, index) => {
+      const point = path.getPointAtLength((totalLength * index) / routeSampleCount)
+      return { x: point.x, y: point.y }
+    })
 
     let cumulativeLength = 0
     const nodeProgresses = routeSegmentRefs.current
@@ -154,9 +172,24 @@ export function JourneyAtlas() {
 
   useMotionValueEvent(routeProgress, 'change', (progress) => {
     if (!reduceMotion) {
-      updateRoutePresentation(progress)
+      pendingProgressRef.current = progress
+      if (animationFrameRef.current === null) {
+        animationFrameRef.current = window.requestAnimationFrame(() => {
+          animationFrameRef.current = null
+          updateRoutePresentation(pendingProgressRef.current)
+        })
+      }
     }
   })
+
+  useLayoutEffect(
+    () => () => {
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(animationFrameRef.current)
+      }
+    },
+    [],
+  )
 
   return (
     <section id="journey" className={styles.journeySection} aria-labelledby="journey-title">

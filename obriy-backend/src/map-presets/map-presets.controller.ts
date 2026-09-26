@@ -92,8 +92,18 @@ export class MapPresetsController {
     @CurrentUser() user: AuthUser,
     @Param('presetId') presetId: string,
     @Query('attemptId') attemptId?: string,
+    @Query('releaseId') releaseId?: string,
+    @Query('childId') childId?: string,
   ) {
-    return { url: await this.maps.deliveryUrl(user, presetId, attemptId) };
+    return {
+      url: await this.maps.deliveryUrl(
+        user,
+        presetId,
+        attemptId,
+        releaseId,
+        childId,
+      ),
+    };
   }
 
   @ApiOkResponse({ type: MapPresetDto })

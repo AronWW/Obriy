@@ -1,4 +1,4 @@
-import { ClipboardCheck, Gauge, History, Menu, School, Shield, User, Users, X } from 'lucide-react'
+import { ClipboardCheck, FileWarning, Gauge, History, Menu, School, Shield, User, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet } from 'react-router-dom'
@@ -12,6 +12,7 @@ const items = [
   { to: '/app/admin/users', icon: Users },
   { to: '/app/admin/classes', icon: School },
   { to: '/app/admin/moderation', icon: ClipboardCheck },
+  { to: '/app/admin/appeals', icon: FileWarning },
   { to: '/app/admin/audit', icon: History },
   { to: '/app/admin/profile', icon: User },
 ]

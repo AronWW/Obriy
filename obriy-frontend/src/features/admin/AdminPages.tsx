@@ -9,7 +9,7 @@ import { AvatarEditor, SecuritySection, profileApi } from '../profile'
 import { UserAvatarImage } from '../../shared/ui/UserAvatarImage'
 import { adminApi } from './api/admin.api'
 import { adminCopy } from './admin.copy'
-import type { LessonModerationCase } from './model/admin.types'
+import type { AdminSuspensionAppeal, LessonModerationCase } from './model/admin.types'
 import styles from './Admin.module.css'
 
 function useCopy() {
@@ -45,6 +45,7 @@ export function AdminDashboardPage() {
     [c.users, query.data.users], [c.students, query.data.students], [c.teacher, query.data.teachers],
     [c.classes, query.data.classes], [c.lessons, query.data.publishedLessons], [c.tests, query.data.publishedReleases],
     [c.openCases, query.data.openModerationCases], [c.messages, query.data.messagesLast30Days],
+    [document.documentElement.lang === 'en' ? 'Pending appeals' : 'Апеляції на розгляді', query.data.pendingSuspensionAppeals],
     [c.newUsers, query.data.newUsersLast30Days], [c.pending, query.data.pendingUsers], [c.suspended, query.data.suspendedUsers],
   ] : []
   return <section className={styles.page}><Header index={0} /><QueryState query={query} />{query.data && <div className={styles.metrics}>{metrics.map(([label, value]) => <article className={styles.metric} key={String(label)}><span>{label}</span><strong>{value}</strong></article>)}</div>}</section>
@@ -92,6 +93,49 @@ export function AdminModerationDetailPage() {
   const labels:Record<string,string>={hide:c.hide,dismiss:c.dismiss,'request-changes':c.requestChanges,approve:c.approve,remove:c.remove}
   return <section className={styles.page}><Link className={styles.button} to="/app/admin/moderation"><ArrowLeft size={15}/>{c.back}</Link><Header index={3}/><QueryState query={query}/>{item&&<><div className={styles.detailCard}><h2>{item.lessonTitle}</h2><p className={styles.muted}>{c.teacher}: {item.teacherName}</p><div className={styles.rowActions}>{buttons.map(kind=><button className={kind==='remove'?styles.danger:kind==='approve'?styles.primary:styles.button} key={kind} onClick={()=>setIntent(kind)}>{labels[kind]}</button>)}</div>{item.resolutionNote&&<p><strong>{c.moderationReason}:</strong> {item.resolutionNote}</p>}</div><div className={styles.detailGrid}><article className={styles.detailCard}><h2>{c.original}</h2><div className={styles.snapshot}>{snapshot(item.initialSnapshot,c.snapshotEmpty)}</div></article><article className={styles.detailCard}><h2>{c.current}</h2><div className={styles.snapshot}>{snapshot(item.currentSnapshot,c.snapshotEmpty)}</div></article></div><article className={styles.detailCard}><h2>{c.reports} ({item.reports.length})</h2>{item.reports.map(report=><div className={styles.report} key={report.id}><strong>{report.category.replaceAll('_',' ')}</strong><p>{report.details}</p><small>{report.reporterName} · {report.reporterRole} · {report.subjectStudentName} · {report.className} · {date(report.createdAt)}</small></div>)}</article></>}{intent&&<ReasonDialog title={labels[intent]} pending={action.isPending} error={action.isError} onClose={()=>setIntent(null)} onSubmit={reason=>action.mutate({kind:intent,reason})}/>}</section>
 }
+
+export function AdminAppealsPage() {
+  const c = useCopy()
+  const { i18n } = useTranslation()
+  const labels = i18n.resolvedLanguage === 'en' ? appealEn : appealUk
+  const [params, setParams] = useSearchParams()
+  const status = params.get('status') ?? 'PENDING'
+  const [selected, setSelected] = useState<AdminSuspensionAppeal | null>(null)
+  const [decision, setDecision] = useState<'approve' | 'reject' | null>(null)
+  const client = useQueryClient()
+  const query = useInfiniteQuery({
+    queryKey: ['admin', 'appeals', status],
+    initialPageParam: '',
+    queryFn: ({ pageParam }) => adminApi.appeals({ cursor: pageParam || undefined, status: status || undefined }),
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+  })
+  const action = useMutation({
+    mutationFn: ({ appeal, kind, note }: { appeal: AdminSuspensionAppeal; kind: 'approve' | 'reject'; note: string }) => adminApi.resolveAppeal(appeal.id, kind, note),
+    onSuccess: () => {
+      setDecision(null)
+      setSelected(null)
+      void client.invalidateQueries({ queryKey: ['admin', 'appeals'] })
+      void client.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+    },
+  })
+  const items = query.data?.pages.flatMap((page) => page.items) ?? []
+  const updateStatus = (value: string) => {
+    const next = new URLSearchParams(params)
+    if (value) next.set('status', value)
+    else next.delete('status')
+    setParams(next, { replace: true })
+  }
+  return <section className={styles.page}>
+    <Header index={6} actions={<div className={styles.filters}><select aria-label={c.status} value={status} onChange={(event) => updateStatus(event.target.value)}><option value="">{c.all}</option>{['PENDING', 'APPROVED', 'REJECTED'].map((value) => <option key={value}>{value}</option>)}</select></div>} />
+    <QueryState query={query} />
+    {!query.isLoading && <div className={styles.panel}><table className={styles.table}><thead><tr><th>{c.name}</th><th>{c.role}</th><th>{labels.suspended}</th><th>{c.status}</th><th>{c.joined}</th><th /></tr></thead><tbody>{items.map((item) => <tr key={item.id}><td><strong>{item.displayName}</strong><div className={styles.muted}>{item.email}</div></td><td>{item.role}</td><td>{item.suspensionReason}</td><td><Badge value={item.status} /></td><td>{date(item.createdAt)}</td><td><button className={styles.button} onClick={() => setSelected(item)}>{c.details}</button></td></tr>)}</tbody></table>{items.length === 0 && <div className={styles.state}>{c.empty}</div>}{query.hasNextPage && <div className={styles.loadMore}><button className={styles.button} onClick={() => void query.fetchNextPage()}>{c.loadMore}</button></div>}</div>}
+    {selected && !decision && <div className={styles.dialogBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null) }}><article className={styles.dialog} role="dialog" aria-modal="true"><h2>{selected.displayName}</h2><p><strong>{labels.suspended}:</strong> {selected.suspensionReason}</p><p><strong>{labels.appeal}:</strong> {selected.message}</p>{selected.resolutionNote && <p><strong>{labels.decision}:</strong> {selected.resolutionNote}</p>}<div className={styles.dialogActions}><button className={styles.quiet} onClick={() => setSelected(null)}>{c.cancel}</button>{selected.status === 'PENDING' && <><button className={styles.danger} onClick={() => setDecision('reject')}>{labels.reject}</button><button className={styles.primary} onClick={() => setDecision('approve')}>{labels.approve}</button></>}</div></article></div>}
+    {selected && decision && <ReasonDialog title={decision === 'approve' ? labels.approve : labels.reject} pending={action.isPending} error={action.isError} onClose={() => setDecision(null)} onSubmit={(note) => action.mutate({ appeal: selected, kind: decision, note })} />}
+  </section>
+}
+
+const appealUk = { suspended: 'Причина блокування', appeal: 'Звернення користувача', decision: 'Рішення', approve: 'Схвалити й відновити', reject: 'Відхилити' }
+const appealEn = { suspended: 'Suspension reason', appeal: 'User appeal', decision: 'Decision', approve: 'Approve and restore', reject: 'Reject' }
 
 function allowedActions(item: LessonModerationCase) {
   if (item.status==='REPORTED') return ['hide','dismiss','request-changes','remove']

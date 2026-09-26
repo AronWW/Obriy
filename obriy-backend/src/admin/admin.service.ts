@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -12,15 +13,18 @@ import {
   LessonModerationCaseStatus,
   LessonModerationStatus,
   LessonStatus,
+  Locale,
   NotificationType,
   Prisma,
   TestReleaseStatus,
   UserRole,
   UserStatus,
+  SuspensionAppealStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { authEvents } from '../auth/auth.events';
 import type { AuthUser } from '../common/types/auth-user.type';
+import { MailService } from '../mail/mail.service';
 import {
   type CreateNotificationInput,
   NotificationsService,
@@ -32,6 +36,8 @@ import type {
   AdminPageQueryDto,
   AdminReasonDto,
   AdminUsersQueryDto,
+  AdminAppealsQueryDto,
+  AdminAppealDecisionDto,
   ReportLessonDto,
   ResubmitLessonModerationDto,
 } from './dto/admin-input.dto';
@@ -50,6 +56,8 @@ import {
   LessonReportDto,
   LessonReportReceiptDto,
   TeacherLessonModerationDto,
+  AdminSuspensionAppealDto,
+  AdminSuspensionAppealPageDto,
 } from './dto/admin-output.dto';
 
 const ACTIVE_CASE_STATUSES = [
@@ -143,12 +151,38 @@ type PageCursor = { createdAt: string; id: string };
 type ModerationAction =
   'hide' | 'dismiss' | 'request-changes' | 'approve' | 'remove';
 
+const suspensionAppealSelect = {
+  id: true,
+  userId: true,
+  status: true,
+  message: true,
+  resolutionNote: true,
+  reviewedAt: true,
+  createdAt: true,
+  suspensionAuditLog: { select: { reason: true, createdAt: true } },
+  user: {
+    select: {
+      email: true,
+      role: true,
+      status: true,
+      profile: { select: { displayName: true, preferredLocale: true } },
+    },
+  },
+} satisfies Prisma.SuspensionAppealSelect;
+
+type SuspensionAppealRecord = Prisma.SuspensionAppealGetPayload<{
+  select: typeof suspensionAppealSelect;
+}>;
+
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly events: EventEmitter2,
     private readonly notifications: NotificationsService,
+    private readonly mail: MailService,
   ) {}
 
   async dashboard(user: AuthUser): Promise<AdminDashboardDto> {
@@ -167,6 +201,7 @@ export class AdminService {
       publishedReleases,
       messagesLast30Days,
       openModerationCases,
+      pendingSuspensionAppeals,
     ] = await this.prisma.$transaction([
       this.prisma.user.count(),
       this.prisma.user.count({ where: { role: UserRole.STUDENT } }),
@@ -204,6 +239,9 @@ export class AdminService {
       this.prisma.lessonModerationCase.count({
         where: { status: { in: [...ACTIVE_CASE_STATUSES] } },
       }),
+      this.prisma.suspensionAppeal.count({
+        where: { status: SuspensionAppealStatus.PENDING },
+      }),
     ]);
     return new AdminDashboardDto({
       users,
@@ -218,6 +256,7 @@ export class AdminService {
       publishedReleases,
       messagesLast30Days,
       openModerationCases,
+      pendingSuspensionAppeals,
     });
   }
 
@@ -322,7 +361,7 @@ export class AdminService {
   ): Promise<AdminUserDto> {
     this.assertAdmin(user);
     const reason = dto.reason.trim();
-    const updated = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
       const target = await tx.user.findUnique({
         where: { id: userId },
@@ -348,10 +387,180 @@ export class AdminService {
           metadata: { restoredStatus: nextStatus },
         },
       });
-      return tx.user.findUnique({ where: { id: userId }, select: userSelect });
+      const pendingAppeal = await tx.suspensionAppeal.findFirst({
+        where: { userId, status: SuspensionAppealStatus.PENDING },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        select: { id: true },
+      });
+      if (pendingAppeal) {
+        await tx.suspensionAppeal.update({
+          where: { id: pendingAppeal.id },
+          data: {
+            status: SuspensionAppealStatus.APPROVED,
+            resolutionNote: reason,
+            reviewedById: user.id,
+            reviewedAt: new Date(),
+          },
+        });
+        await tx.adminAuditLog.create({
+          data: {
+            actorId: user.id,
+            action: AdminAuditAction.SUSPENSION_APPEAL_APPROVED,
+            targetType: AdminAuditTargetType.SUSPENSION_APPEAL,
+            targetId: pendingAppeal.id,
+            reason,
+            metadata: { userId, resolvedByManualRestore: true },
+          },
+        });
+      }
+      return {
+        record: await tx.user.findUnique({
+          where: { id: userId },
+          select: userSelect,
+        }),
+        resolvedAppeal: Boolean(pendingAppeal),
+      };
     });
-    if (!updated) throw this.notFound('USER_NOT_FOUND', 'User not found');
-    return this.toUserDto(updated);
+    if (!result.record) throw this.notFound('USER_NOT_FOUND', 'User not found');
+    if (result.resolvedAppeal) {
+      await this.sendAppealDecision(result.record, true, reason);
+    }
+    return this.toUserDto(result.record);
+  }
+
+  async listSuspensionAppeals(
+    user: AuthUser,
+    query: AdminAppealsQueryDto,
+  ): Promise<AdminSuspensionAppealPageDto> {
+    this.assertAdmin(user);
+    const cursor = this.decodeCursor(query.cursor);
+    const search = query.search?.trim();
+    const records = await this.prisma.suspensionAppeal.findMany({
+      where: {
+        status: query.status,
+        ...(search
+          ? {
+              OR: [
+                {
+                  user: {
+                    email: { contains: search, mode: 'insensitive' as const },
+                  },
+                },
+                {
+                  user: {
+                    profile: {
+                      displayName: {
+                        contains: search,
+                        mode: 'insensitive' as const,
+                      },
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
+        ...(cursor ? this.beforeCursor(cursor) : {}),
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: query.limit + 1,
+      select: suspensionAppealSelect,
+    });
+    const items = records.slice(0, query.limit);
+    return new AdminSuspensionAppealPageDto({
+      items: items.map((record) => this.toSuspensionAppealDto(record)),
+      nextCursor:
+        records.length > query.limit ? this.cursorFor(items.at(-1)) : null,
+    });
+  }
+
+  async getSuspensionAppeal(
+    user: AuthUser,
+    appealId: string,
+  ): Promise<AdminSuspensionAppealDto> {
+    this.assertAdmin(user);
+    const record = await this.prisma.suspensionAppeal.findUnique({
+      where: { id: appealId },
+      select: suspensionAppealSelect,
+    });
+    if (!record)
+      throw this.notFound('SUSPENSION_APPEAL_NOT_FOUND', 'Appeal not found');
+    return this.toSuspensionAppealDto(record);
+  }
+
+  async resolveSuspensionAppeal(
+    actor: AuthUser,
+    appealId: string,
+    dto: AdminAppealDecisionDto,
+    approved: boolean,
+  ): Promise<AdminSuspensionAppealDto> {
+    this.assertAdmin(actor);
+    const resolutionNote = dto.resolutionNote.trim();
+    const record = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "SuspensionAppeal" WHERE "id" = ${appealId} FOR UPDATE`;
+      const appeal = await tx.suspensionAppeal.findUnique({
+        where: { id: appealId },
+        select: { id: true, userId: true, status: true },
+      });
+      if (!appeal)
+        throw this.notFound('SUSPENSION_APPEAL_NOT_FOUND', 'Appeal not found');
+      if (appeal.status !== SuspensionAppealStatus.PENDING) {
+        throw this.conflict(
+          'SUSPENSION_APPEAL_ALREADY_RESOLVED',
+          'Appeal is already resolved',
+        );
+      }
+      const target = await tx.user.findUnique({
+        where: { id: appeal.userId },
+        select: { status: true, emailVerifiedAt: true },
+      });
+      if (!target) throw this.notFound('USER_NOT_FOUND', 'User not found');
+      if (approved && target.status !== UserStatus.SUSPENDED) {
+        throw this.conflict('USER_NOT_SUSPENDED', 'User is not suspended');
+      }
+      const now = new Date();
+      await tx.suspensionAppeal.update({
+        where: { id: appealId },
+        data: {
+          status: approved
+            ? SuspensionAppealStatus.APPROVED
+            : SuspensionAppealStatus.REJECTED,
+          resolutionNote,
+          reviewedById: actor.id,
+          reviewedAt: now,
+        },
+      });
+      if (approved) {
+        await tx.user.update({
+          where: { id: appeal.userId },
+          data: {
+            status: target.emailVerifiedAt
+              ? UserStatus.ACTIVE
+              : UserStatus.PENDING,
+          },
+        });
+      }
+      await tx.adminAuditLog.create({
+        data: {
+          actorId: actor.id,
+          action: approved
+            ? AdminAuditAction.SUSPENSION_APPEAL_APPROVED
+            : AdminAuditAction.SUSPENSION_APPEAL_REJECTED,
+          targetType: AdminAuditTargetType.SUSPENSION_APPEAL,
+          targetId: appealId,
+          reason: resolutionNote.slice(0, 500),
+          metadata: { userId: appeal.userId },
+        },
+      });
+      const saved = await tx.suspensionAppeal.findUnique({
+        where: { id: appealId },
+        select: suspensionAppealSelect,
+      });
+      if (!saved)
+        throw this.notFound('SUSPENSION_APPEAL_NOT_FOUND', 'Appeal not found');
+      return saved;
+    });
+    await this.sendAppealDecision(record.user, approved, resolutionNote);
+    return this.toSuspensionAppealDto(record);
   }
 
   async listClasses(
@@ -1096,6 +1305,45 @@ export class AdminService {
     return value && typeof value === 'object' && !Array.isArray(value)
       ? value
       : null;
+  }
+
+  private toSuspensionAppealDto(
+    record: SuspensionAppealRecord,
+  ): AdminSuspensionAppealDto {
+    return new AdminSuspensionAppealDto({
+      id: record.id,
+      userId: record.userId,
+      displayName: record.user.profile?.displayName ?? 'User',
+      email: record.user.email,
+      role: record.user.role,
+      userStatus: record.user.status,
+      status: record.status,
+      suspensionReason: record.suspensionAuditLog.reason,
+      suspendedAt: record.suspensionAuditLog.createdAt,
+      message: record.message,
+      resolutionNote: record.resolutionNote,
+      reviewedAt: record.reviewedAt,
+      createdAt: record.createdAt,
+    });
+  }
+
+  private async sendAppealDecision(
+    user: { email: string; profile: { preferredLocale: Locale } | null },
+    approved: boolean,
+    resolutionNote: string,
+  ): Promise<void> {
+    try {
+      await this.mail.sendSuspensionAppealDecision(
+        user.email,
+        approved,
+        resolutionNote,
+        user.profile?.preferredLocale ?? Locale.UK,
+      );
+    } catch (error: unknown) {
+      this.logger.error(
+        `Could not send suspension appeal decision to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
   private beforeCursor(cursor: PageCursor) {

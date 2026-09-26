@@ -132,7 +132,7 @@ test('student lesson reader stays focused and readable on mobile night', async (
     })
   })
   await page.route(
-    '**/classes/me/lessons/lesson-revolution/assignments',
+    '**/classes/me/lessons/lesson-revolution/tests',
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -140,25 +140,20 @@ test('student lesson reader stays focused and readable on mobile night', async (
         body: JSON.stringify([
           {
             releaseId: 'release-causes',
-            assignmentId: 'assignment-causes',
-            revisionId: 'revision-causes',
-            type: 'WRITTEN',
+            testId: 'test-causes',
+            testRevisionId: 'test-revision-causes',
             title: 'Причини революції',
-            prompt:
-              'Назвіть дві причини революції та коротко поясніть їхній вплив.',
+            description: 'Перевірте розуміння основних причин революції.',
             instructions: null,
-            publicConfig: {
-              responseMode: 'LONG',
-              minLength: 0,
-              maxLength: 5000,
-              allowAttachments: false,
-              rubric: [],
-            },
             maxPoints: 5,
             passingPercent: 60,
             isRequired: true,
+            maxAttempts: 1,
+            timeLimitSeconds: null,
             dueAt: null,
             stateStatus: 'NOT_STARTED',
+            itemCount: 1,
+            items: [],
             attempt: null,
           },
         ]),
@@ -180,7 +175,7 @@ test('student lesson reader stays focused and readable on mobile night', async (
   await expect(page.getByText('Олена Коваль')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Текст уроку' })).toBeVisible()
   await expect(
-    page.getByRole('heading', { name: 'Завдання до уроку', level: 2 }),
+    page.getByRole('heading', { name: 'Тести до уроку', level: 2 }),
   ).toBeVisible()
   await expect(
     page.getByRole('heading', { name: 'Причини революції' }),

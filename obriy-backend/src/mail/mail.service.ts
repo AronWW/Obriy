@@ -53,6 +53,44 @@ export class MailService {
     );
   }
 
+  async sendSuspensionAppealDecision(
+    email: string,
+    approved: boolean,
+    resolutionNote: string,
+    locale: Locale,
+  ): Promise<void> {
+    const uk = locale !== Locale.EN;
+    const title = approved
+      ? uk
+        ? 'Апеляцію схвалено'
+        : 'Appeal approved'
+      : uk
+        ? 'Апеляцію відхилено'
+        : 'Appeal rejected';
+    const description = approved
+      ? uk
+        ? 'Доступ до вашого акаунта Obriy відновлено.'
+        : 'Access to your Obriy account has been restored.'
+      : uk
+        ? 'Адміністратор розглянув звернення, але акаунт залишається заблокованим.'
+        : 'An administrator reviewed the appeal, but the account remains suspended.';
+    const noteLabel = uk
+      ? 'Відповідь адміністрації'
+      : 'Administration response';
+    const safeTitle = this.escapeHtml(title);
+    const safeDescription = this.escapeHtml(description);
+    const safeNote = this.escapeHtml(resolutionNote);
+    await this.send(
+      email,
+      {
+        subject: `Obriy — ${title}`,
+        text: `${description}\n\n${noteLabel}: ${resolutionNote}`,
+        html: `<!doctype html><html lang="${uk ? 'uk' : 'en'}"><body style="margin:0;background:#f4f6f8;font-family:Arial,sans-serif;color:#17202a"><div style="max-width:560px;margin:0 auto;padding:40px 20px"><div style="background:#fff;border:1px solid #dfe4ea;border-radius:8px;padding:32px"><div style="font-size:20px;font-weight:700;margin-bottom:24px">Obriy</div><h1 style="font-size:24px;margin:0 0 12px">${safeTitle}</h1><p style="font-size:16px;line-height:1.5">${safeDescription}</p><p style="font-size:14px;line-height:1.6;padding:14px;background:#f7f8fa"><strong>${this.escapeHtml(noteLabel)}:</strong><br>${safeNote}</p></div></div></body></html>`,
+      },
+      locale,
+    );
+  }
+
   private async send(
     to: string,
     content: MailContent,
@@ -156,5 +194,19 @@ export class MailService {
 
   private extractLink(text: string): string {
     return text.match(/https?:\/\/\S+/)?.[0] ?? 'no link';
+  }
+
+  private escapeHtml(value: string): string {
+    return value.replace(
+      /[&<>'"]/g,
+      (char) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;',
+        })[char] ?? char,
+    );
   }
 }

@@ -72,6 +72,7 @@ export interface ParentChildOverview {
 }
 
 export interface ParentAttempt {
+  id: string
   attemptNumber: number
   status: 'IN_PROGRESS' | 'AWAITING_REVIEW' | 'GRADED' | 'RETURNED' | 'EXPIRED' | 'CANCELLED'
   maxPoints: number
@@ -89,6 +90,10 @@ export interface ParentTestProgress extends ParentWorkItem {
 }
 
 export interface ParentLessonProgress extends ParentLessonRef {
+  summary: string | null
+  content: string
+  contentLocale: 'UK' | 'EN'
+  estimatedMinutes: number | null
   requiredTestCount: number
   completedRequiredCount: number
   completionPercent: number | null

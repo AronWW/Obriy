@@ -9,6 +9,7 @@ import {
   Locale,
   UserRole,
   UserStatus,
+  SuspensionAppealStatus,
 } from '@prisma/client';
 
 export class AdminDashboardDto {
@@ -24,7 +25,37 @@ export class AdminDashboardDto {
   @ApiProperty() publishedReleases: number;
   @ApiProperty() messagesLast30Days: number;
   @ApiProperty() openModerationCases: number;
+  @ApiProperty() pendingSuspensionAppeals: number;
   constructor(data: AdminDashboardDto) {
+    Object.assign(this, data);
+  }
+}
+
+export class AdminSuspensionAppealDto {
+  @ApiProperty() id: string;
+  @ApiProperty() userId: string;
+  @ApiProperty() displayName: string;
+  @ApiProperty() email: string;
+  @ApiProperty({ enum: UserRole }) role: UserRole;
+  @ApiProperty({ enum: UserStatus }) userStatus: UserStatus;
+  @ApiProperty({ enum: SuspensionAppealStatus }) status: SuspensionAppealStatus;
+  @ApiProperty() suspensionReason: string;
+  @ApiProperty({ type: String, format: 'date-time' }) suspendedAt: Date;
+  @ApiProperty() message: string;
+  @ApiPropertyOptional({ nullable: true }) resolutionNote: string | null;
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  reviewedAt: Date | null;
+  @ApiProperty({ type: String, format: 'date-time' }) createdAt: Date;
+  constructor(data: AdminSuspensionAppealDto) {
+    Object.assign(this, data);
+  }
+}
+
+export class AdminSuspensionAppealPageDto {
+  @ApiProperty({ type: AdminSuspensionAppealDto, isArray: true })
+  items: AdminSuspensionAppealDto[];
+  @ApiPropertyOptional({ nullable: true }) nextCursor: string | null;
+  constructor(data: AdminSuspensionAppealPageDto) {
     Object.assign(this, data);
   }
 }

@@ -47,6 +47,12 @@ import { AuthErrorDto } from './dto/auth-error.dto';
 import { AuthCookieService } from './auth-cookie.service';
 import { CompleteGoogleRegistrationDto } from './dto/complete-google-registration.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import {
+  SubmitSuspensionAppealDto,
+  SuspensionContextDto,
+  SuspensionTokenDto,
+} from './dto/suspension-appeal.dto';
+import { SuspensionAppealsService } from './suspension-appeals.service';
 
 type CookieRequest = Request & {
   cookies?: unknown;
@@ -63,7 +69,24 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
     private readonly authCookieService: AuthCookieService,
+    private readonly suspensionAppeals: SuspensionAppealsService,
   ) {}
+
+  @ApiOperation({ summary: 'Get safe context for a suspended account' })
+  @ApiOkResponse({ type: SuspensionContextDto })
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('suspension-context')
+  suspensionContext(@Body() dto: SuspensionTokenDto) {
+    return this.suspensionAppeals.context(dto);
+  }
+
+  @ApiOperation({ summary: 'Submit an appeal for the current suspension' })
+  @ApiCreatedResponse({ type: SuspensionContextDto })
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('suspension-appeals')
+  submitSuspensionAppeal(@Body() dto: SubmitSuspensionAppealDto) {
+    return this.suspensionAppeals.submit(dto);
+  }
 
   @ApiOperation({ summary: 'Register a student, teacher, or parent account' })
   @ApiCreatedResponse({ type: AuthMessageDto })

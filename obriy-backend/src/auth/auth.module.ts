@@ -13,6 +13,7 @@ import { OAuthStateService } from './oauth-state.service';
 import { AuthTokenCleanupService } from './auth-token-cleanup.service';
 import { GoogleOAuthExceptionFilter } from './filters/google-oauth-exception.filter';
 import { AuthCookieService } from './auth-cookie.service';
+import { SuspensionAppealsService } from './suspension-appeals.service';
 
 @Module({
   imports: [
@@ -32,6 +33,8 @@ import { AuthCookieService } from './auth-cookie.service';
     AuthTokenCleanupService,
     GoogleOAuthExceptionFilter,
     AuthCookieService,
+    SuspensionAppealsService,
   ],
+  exports: [SuspensionAppealsService],
 })
 export class AuthModule {}

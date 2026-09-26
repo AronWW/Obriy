@@ -50,9 +50,9 @@ describe('LoginPage', () => {
 
     renderLoginPage()
 
-    await user.type(screen.getByLabelText('Електронна пошта'), 'student@example.com')
-    await user.type(screen.getByLabelText('Пароль'), 'Secret1234')
-    await user.click(screen.getByRole('button', { name: 'Увійти' }))
+    await user.type(document.querySelector<HTMLInputElement>('#login-email')!, 'student@example.com')
+    await user.type(document.querySelector<HTMLInputElement>('#login-password')!, 'Secret1234')
+    await user.click(document.querySelector<HTMLButtonElement>('form button[type="submit"]')!)
 
     expect(await screen.findByText('Protected workspace')).toBeInTheDocument()
     expect(useSessionStore.getState().status).toBe('authenticated')
@@ -95,6 +95,30 @@ describe('LoginPage', () => {
     expect(url.searchParams.get('locale')).toBe('UK')
     expect(url.searchParams.has('role')).toBe(false)
   })
+
+  it('opens the suspension context instead of hiding the account reason', async () => {
+    server.use(
+      http.post(`${API_BASE_URL}/auth/login`, () =>
+        HttpResponse.json(
+          {
+            statusCode: 403,
+            code: 'USER_SUSPENDED',
+            message: 'The account is suspended.',
+            suspensionAccessToken: 'suspension-token',
+          },
+          { status: 403 },
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+    renderLoginPage()
+
+    await user.type(screen.getByLabelText('Електронна пошта'), 'student@example.com')
+    await user.type(screen.getByLabelText('Пароль'), 'Secret1234')
+    await user.click(screen.getByRole('button', { name: 'Увійти' }))
+
+    expect(await screen.findByText('Suspension screen')).toBeInTheDocument()
+  })
 })
 
 function renderLoginPage() {
@@ -108,6 +132,7 @@ function renderLoginPage() {
         <Routes>
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/app" element={<div>Protected workspace</div>} />
+          <Route path="/auth/suspended" element={<div>Suspension screen</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,

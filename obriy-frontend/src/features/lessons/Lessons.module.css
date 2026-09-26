@@ -4,7 +4,8 @@
 }
 
 .content {
-  width: min(100%, 1120px);
+  width: min(100%, 1240px);
+  margin-inline: auto;
 }
 
 .editorContent {

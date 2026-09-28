@@ -1,75 +1,39 @@
-# React + TypeScript + Vite
+# Obriy Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React application for [Obriy](https://obriy.me/), a history learning platform with separate workspaces for students, teachers, parents and administrators.
 
-Currently, two official plugins are available:
+See the [project README](../README.md) for features, screenshots and full local setup.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Development
 
-## React Compiler
+Use Node.js 22 and npm 11. Create `.env` from `.env.example` and set `VITE_API_URL` to the backend URL. Start the backend before using authenticated features.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The development server runs at [localhost:5173](http://localhost:5173).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Structure
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- `src/app`: providers and routing.
+- `src/features`: role workspaces and feature-specific API, state and UI.
+- `src/pages`: public and authentication pages, plus the shared student/teacher layout.
+- `src/shared`: API utilities, navigation, backgrounds and reusable controls.
+- `src/i18n`: Ukrainian and English interface translations.
+- `test/visual`: Playwright browser tests.
+- `public/maps`: built-in boundary snapshots and their attribution.
 
+TanStack Query handles server data, Zustand holds session state, and React Hook Form with Zod validates forms. CSS Modules and shared CSS variables define day and night themes. MapLibre and Terra Draw power the map editor.
+
+## Checks
+
+```sh
+npm run lint
+npm test
+npm run build
+npm run test:visual
 ```
+
+Playwright uses Microsoft Edge. Its configuration starts Vite when needed and reuses an existing server at `http://127.0.0.1:5173`.

@@ -72,6 +72,7 @@ async function prepareAnalytics(
 ) {
   await page.addInitScript(
     ({ selectedLanguage, selectedTheme }) => {
+      localStorage.setItem('obriy-night-default-v1', 'done')
       localStorage.setItem('obriy-theme', selectedTheme)
       localStorage.setItem('obriy-language', selectedLanguage)
       localStorage.setItem('obriy-has-session', '1')

@@ -218,7 +218,7 @@ const resources = {
             benefit1: 'Створення уроків, завдань, тестів і навчальних релізів',
             benefit2: 'Керування класом та доступом учнів',
             benefit3: 'Аналітика результатів без ручного зведення',
-            action: 'Створити шлях класу',
+            action: 'Створити акаунт вчителя',
           },
           parent: {
             label: 'Батьки',
@@ -3024,7 +3024,7 @@ const resources = {
             benefit1: 'Create lessons, assignments, tests, and learning releases',
             benefit2: 'Class management and controlled student access',
             benefit3: 'Result analytics without manual spreadsheets',
-            action: 'Create a class route',
+            action: 'Create a teacher account',
           },
           parent: {
             label: 'Parent',

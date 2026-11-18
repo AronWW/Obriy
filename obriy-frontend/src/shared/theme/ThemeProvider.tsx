@@ -1,21 +1,28 @@
 import {
   useCallback,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type PropsWithChildren,
 } from 'react'
 import { ThemeContext, type Theme } from './theme-context'
 const STORAGE_KEY = 'obriy-theme'
+const NIGHT_DEFAULT_MIGRATION_KEY = 'obriy-night-default-v1'
 
 function getInitialTheme(): Theme {
-  return localStorage.getItem(STORAGE_KEY) === 'night' ? 'night' : 'day'
+  if (localStorage.getItem(NIGHT_DEFAULT_MIGRATION_KEY) !== 'done') {
+    localStorage.setItem(STORAGE_KEY, 'night')
+    localStorage.setItem(NIGHT_DEFAULT_MIGRATION_KEY, 'done')
+    return 'night'
+  }
+
+  return localStorage.getItem(STORAGE_KEY) === 'day' ? 'day' : 'night'
 }
 
 export function ThemeProvider({ children }: PropsWithChildren) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.documentElement.dataset.theme = theme
     document.documentElement.style.colorScheme = theme === 'night' ? 'dark' : 'light'
     localStorage.setItem(STORAGE_KEY, theme)

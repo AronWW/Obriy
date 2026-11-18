@@ -12,6 +12,7 @@ for (const viewport of viewports) {
     test(`${theme} theme fits ${viewport.name}`, async ({ page }, testInfo) => {
       await page.setViewportSize(viewport)
       await page.addInitScript((selectedTheme) => {
+        localStorage.setItem('obriy-night-default-v1', 'done')
         localStorage.setItem('obriy-theme', selectedTheme)
         localStorage.setItem('obriy-language', 'uk')
         localStorage.setItem('obriy-has-session', '1')
@@ -96,6 +97,7 @@ test('student mobile drawer exposes the placeholder routes', async ({
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.addInitScript(() => {
+    localStorage.setItem('obriy-night-default-v1', 'done')
     localStorage.setItem('obriy-theme', 'day')
     localStorage.setItem('obriy-language', 'uk')
     localStorage.setItem('obriy-has-session', '1')
@@ -133,6 +135,7 @@ test('teacher desktop menu exposes its English placeholder routes', async ({
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.addInitScript(() => {
+    localStorage.setItem('obriy-night-default-v1', 'done')
     localStorage.setItem('obriy-theme', 'day')
     localStorage.setItem('obriy-language', 'en')
     localStorage.setItem('obriy-has-session', '1')

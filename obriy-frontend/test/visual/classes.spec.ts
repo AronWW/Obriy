@@ -136,6 +136,7 @@ async function prepareSession(
   theme: 'day' | 'night',
 ) {
   await page.addInitScript((selectedTheme) => {
+    localStorage.setItem('obriy-night-default-v1', 'done')
     localStorage.setItem('obriy-theme', selectedTheme)
     localStorage.setItem('obriy-language', 'uk')
     localStorage.setItem('obriy-has-session', '1')

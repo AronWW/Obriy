@@ -32,7 +32,6 @@
   }
 }
 
-:root,
 :root[data-theme='day'] {
   --color-bg: #cbdee8;
   --color-bg-deep: #86a9bf;
@@ -60,6 +59,7 @@
   --backdrop-blur: 16px;
 }
 
+:root,
 :root[data-theme='night'] {
   --color-bg: #07111d;
   --color-bg-deep: #0b1a2a;

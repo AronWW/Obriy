@@ -1032,8 +1032,7 @@
 
 .roleDetails {
   position: relative;
-  min-height: 540px;
-  min-height: 0;
+  min-height: 560px;
   overflow: hidden;
   border-left: 1px solid var(--color-border-strong);
 }
@@ -1112,7 +1111,7 @@
 }
 
 .roleAction {
-  width: 260px;
+  width: min(100%, 300px);
   color: var(--color-accent-text);
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
@@ -1261,6 +1260,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
+    isolation: isolate;
   }
 
   .journeyVisual {
@@ -1270,9 +1270,25 @@
     grid-column: 1;
     grid-row: 1;
     width: min(620px, 100%);
-    height: clamp(320px, 48svh, 500px);
-    min-height: 0;
+    height: clamp(480px, calc(100svh - var(--site-header-height) - 22px), 720px);
+    min-height: 480px;
     margin: 0 auto;
+  }
+
+  .journeyVisual > svg {
+    inset: 5% 7% auto;
+    width: 86%;
+    height: 51%;
+  }
+
+  .atlasLabelStart {
+    top: 4%;
+  }
+
+  .atlasLabelFinish {
+    top: 55%;
+    right: 17%;
+    bottom: auto;
   }
 
   .journeyChapters {
@@ -1281,23 +1297,61 @@
     display: block;
     grid-column: 1;
     grid-row: 1;
+    width: min(620px, 100%);
+    margin: 0 auto;
     pointer-events: none;
   }
 
   .journeyChapter {
-    height: max(560px, 76vh);
-    height: max(560px, 76svh);
+    height: clamp(480px, calc(100svh - var(--site-header-height) - 22px), 720px);
     align-content: end;
-    padding: 42px 0 44px 42px;
+    padding: 0 clamp(12px, 4vw, 24px) 24px;
+    border-left: 0;
+  }
+
+  .journeyChapter::before {
+    display: none;
   }
 
   .journeyChapter[data-state='active'] {
-    background: linear-gradient(
-      180deg,
-      transparent 42%,
-      color-mix(in srgb, var(--color-surface-solid), transparent 18%) 64%,
-      var(--color-surface-solid) 100%
-    );
+    background: none;
+  }
+
+  .chapterCard {
+    width: 100%;
+    padding: 18px 22px 20px;
+    background: rgb(10 26 43 / 92%);
+    border: 1px solid rgb(224 178 103 / 58%);
+    border-radius: 8px;
+    box-shadow: 0 18px 42px rgb(0 0 0 / 28%);
+    backdrop-filter: blur(14px);
+  }
+
+  :global(:root[data-theme='day']) .chapterCard {
+    background: rgb(239 229 211 / 94%);
+    border-color: rgb(169 109 45 / 82%);
+  }
+
+  .chapterNumber {
+    margin-bottom: 8px;
+  }
+
+  .chapterIcon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 10px;
+  }
+
+  .journeyChapter h3 {
+    min-height: 2.5em;
+    font-size: clamp(25px, 3.6vw, 30px);
+  }
+
+  .journeyChapter p {
+    min-height: 4.65em;
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.55;
   }
 
   .rolesLayout {
@@ -1311,7 +1365,7 @@
 
   .roleDetails {
     width: min(620px, 100%);
-    min-height: 0;
+    min-height: 560px;
     margin: 0 auto;
   }
 }
@@ -1416,10 +1470,6 @@
 
   .sectionIntro > p:last-child {
     min-height: 78px;
-  }
-
-  .journeyVisual {
-    height: clamp(300px, 46svh, 420px);
   }
 
   .rolesHeader {
@@ -1535,20 +1585,17 @@
     display: flex;
   }
 
-  .journeyVisual {
-    height: clamp(270px, 42svh, 350px);
-  }
-
   .journeyChapter {
-    padding-left: 32px;
+    padding-right: 12px;
+    padding-left: 12px;
   }
 
   .journeyChapter h3 {
-    font-size: 27px;
+    font-size: 25px;
   }
 
   .journeyChapter p {
-    min-height: 104px;
+    font-size: 13.5px;
   }
 
   .roleDial {
@@ -1571,6 +1618,31 @@
 
   .roleAction {
     width: 100%;
+  }
+}
+
+@media (max-width: 720px) and (max-height: 650px) {
+  .journeyVisual > svg {
+    top: 5%;
+    height: 34%;
+  }
+
+  .atlasLabelFinish {
+    top: 34%;
+  }
+
+  .journeyChapter {
+    padding-bottom: 14px;
+  }
+
+  .chapterCard {
+    padding: 14px 18px 16px;
+  }
+
+  .chapterIcon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 8px;
   }
 }
 

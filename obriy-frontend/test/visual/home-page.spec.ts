@@ -1,5 +1,22 @@
 import { expect, test, type Page } from '@playwright/test'
 
+test('night theme is the default and an old day preference is migrated once', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'night')
+
+  await page.evaluate(() => {
+    localStorage.setItem('obriy-theme', 'day')
+    localStorage.removeItem('obriy-night-default-v1')
+  })
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'night')
+
+  await page.getByRole('button', { name: 'Увімкнути денну тему' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'day')
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'day')
+})
+
 test('desktop journey and role selection end at the compact footer', async ({
   page,
 }, testInfo) => {
@@ -17,6 +34,10 @@ test('desktop journey and role selection end at the compact footer', async ({
   await page.locator('#roles').scrollIntoViewIfNeeded()
   await page.getByRole('button', { name: 'Учитель' }).click()
   await expect(page.getByRole('heading', { name: 'Створюй маршрути для класу' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Створити акаунт вчителя' })).toHaveAttribute(
+    'href',
+    '/auth/register/teacher',
+  )
   await expect(page.getByRole('button', { name: 'Учень' })).toHaveCSS(
     'color',
     'rgb(23, 49, 67)',
@@ -220,6 +241,59 @@ test('mobile journey keeps the active route and copy in one scene', async ({
 })
 
 for (const viewport of [
+  { name: 'small phone', width: 320, height: 568 },
+  { name: 'tablet', width: 768, height: 900 },
+]) {
+  test(`compact journey keeps route and all cards readable on ${viewport.name}`, async ({ page }, testInfo) => {
+    await prepareHome(page, 'night')
+    await page.setViewportSize({ width: viewport.width, height: viewport.height })
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await page.goto('/')
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' })
+
+    const routeSetup = await page.locator('#journey-stage').evaluate((element) => ({
+      approach: Number(element.getAttribute('data-node-approach')),
+      nodeProgresses: Array.from(element.querySelectorAll('[data-route-node]')).map((node) =>
+        Number((node as SVGElement).dataset.progress),
+      ),
+    }))
+
+    for (const [index, nodeProgress] of routeSetup.nodeProgresses.entries()) {
+      await scrollJourneyToProgress(page, nodeProgress - routeSetup.approach + 0.012)
+      await expect(page.locator(`[data-chapter-index="${index}"]`)).toHaveAttribute(
+        'data-state',
+        'active',
+      )
+
+      const geometry = await page.evaluate((chapterIndex) => {
+        const header = document.querySelector('header')!.getBoundingClientRect()
+        const route = document.querySelector('#journey-route-visual')!.getBoundingClientRect()
+        const card = document.querySelector(`[data-chapter-card="${chapterIndex}"]`)!.getBoundingClientRect()
+        const marker = document.querySelector('#journey-route-marker')!.getBoundingClientRect()
+        return {
+          headerBottom: header.bottom,
+          routeTop: route.top,
+          routeBottom: route.bottom,
+          cardTop: card.top,
+          cardBottom: card.bottom,
+          markerBottom: marker.bottom,
+          documentWidth: document.documentElement.scrollWidth,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
+        }
+      }, index)
+
+      expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth)
+      expect(geometry.routeTop).toBeGreaterThanOrEqual(geometry.headerBottom - 1)
+      expect(geometry.routeBottom).toBeLessThanOrEqual(geometry.viewportHeight + 1)
+      expect(geometry.cardTop).toBeGreaterThan(geometry.markerBottom + 8)
+      expect(geometry.cardBottom).toBeLessThanOrEqual(geometry.viewportHeight + 1)
+      await page.screenshot({ path: testInfo.outputPath(`${viewport.name}-${index + 1}.png`) })
+    }
+  })
+}
+
+for (const viewport of [
   { name: 'desktop', width: 1440, height: 900 },
   { name: 'mobile', width: 390, height: 844 },
 ]) {
@@ -274,6 +348,11 @@ for (const viewport of [
           role,
         )
         await expect(page.locator('[data-role-content]')).toHaveCount(1)
+        if (role === 'teacher') {
+          await expect(page.getByRole('link', {
+            name: language === 'uk' ? 'Створити акаунт вчителя' : 'Create a teacher account',
+          })).toBeVisible()
+        }
 
         const geometry = await readRolePanelGeometry(page)
         expect(geometry.overflowElements).toEqual([])
@@ -342,8 +421,9 @@ async function scrollJourneyToProgress(page: Page, targetProgress: number) {
 
     const stageRect = stage.getBoundingClientRect()
     const stageTop = stageRect.top + window.scrollY
-    const animationStart = stageTop - window.innerHeight * 0.7
-    const animationEnd = stageTop + stageRect.height - window.innerHeight * 0.45
+    const compact = window.matchMedia('(max-width: 920px)').matches
+    const animationStart = stageTop - window.innerHeight * (compact ? 0.55 : 0.7)
+    const animationEnd = stageTop + stageRect.height - window.innerHeight * (compact ? 0.32 : 0.45)
     const scrollTop = animationStart + (animationEnd - animationStart) * progress
 
     window.scrollTo({ top: scrollTop, behavior: 'auto' })
@@ -529,6 +609,7 @@ async function readElementBox(locator: ReturnType<Page['locator']>) {
 async function prepareHome(page: Page, theme: 'day' | 'night') {
   await page.addInitScript((selectedTheme) => {
     localStorage.clear()
+    localStorage.setItem('obriy-night-default-v1', 'done')
     localStorage.setItem('obriy-theme', selectedTheme)
     localStorage.setItem('obriy-language', 'uk')
   }, theme)

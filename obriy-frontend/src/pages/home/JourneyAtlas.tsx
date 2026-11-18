@@ -6,7 +6,7 @@ import {
   useScroll,
   useSpring,
 } from 'motion/react'
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './HomePage.module.css'
 
@@ -74,7 +74,6 @@ export function JourneyAtlas() {
   const routeNodeRefs = useRef<Array<SVGGElement | null>>([])
   const routeMarkerRef = useRef<SVGGElement>(null)
   const routeLengthRef = useRef(0)
-  const routePointsRef = useRef<Array<{ x: number; y: number }>>([])
   const pendingProgressRef = useRef(0)
   const animationFrameRef = useRef<number | null>(null)
   const nodeProgressRef = useRef<number[]>([...fallbackNodeProgress])
@@ -82,9 +81,10 @@ export function JourneyAtlas() {
   const [activeStep, setActiveStep] = useState(
     reduceMotion ? steps.length - 1 : -1,
   )
+  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 920px)').matches)
   const { scrollYProgress } = useScroll({
     target: stageRef,
-    offset: ['start 70%', 'end 45%'],
+    offset: compact ? ['start 55%', 'end 32%'] : ['start 70%', 'end 45%'],
   })
   const routeProgress = useSpring(scrollYProgress, {
     damping: 36,
@@ -93,6 +93,13 @@ export function JourneyAtlas() {
     restDelta: 0.0005,
     restSpeed: 0.0005,
   })
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 920px)')
+    const updateCompact = () => setCompact(media.matches)
+    media.addEventListener('change', updateCompact)
+    return () => media.removeEventListener('change', updateCompact)
+  }, [])
 
   const updateRoutePresentation = useCallback((rawProgress: number) => {
     const path = routePathRef.current
@@ -103,18 +110,7 @@ export function JourneyAtlas() {
     }
 
     const progress = clampProgress(rawProgress)
-    const points = routePointsRef.current
-    const pointPosition = progress * Math.max(points.length - 1, 0)
-    const pointIndex = Math.floor(pointPosition)
-    const start = points[pointIndex]
-    const end = points[Math.min(pointIndex + 1, points.length - 1)]
-    const ratio = pointPosition - pointIndex
-    const markerPoint = start && end
-      ? {
-          x: start.x + (end.x - start.x) * ratio,
-          y: start.y + (end.y - start.y) * ratio,
-        }
-      : path.getPointAtLength(routeLengthRef.current * progress)
+    const markerPoint = path.getPointAtLength(routeLengthRef.current * progress)
     marker.setAttribute(
       'transform',
       `translate(${markerPoint.x.toFixed(4)} ${markerPoint.y.toFixed(4)})`,
@@ -142,12 +138,6 @@ export function JourneyAtlas() {
 
     const totalLength = path.getTotalLength()
     routeLengthRef.current = totalLength
-    const routeSampleCount = 4096
-    routePointsRef.current = Array.from({ length: routeSampleCount + 1 }, (_, index) => {
-      const point = path.getPointAtLength((totalLength * index) / routeSampleCount)
-      return { x: point.x, y: point.y }
-    })
-
     let cumulativeLength = 0
     const nodeProgresses = routeSegmentRefs.current
       .map((segment) => segment?.getTotalLength() ?? 0)

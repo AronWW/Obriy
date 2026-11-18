@@ -7,6 +7,7 @@ test('parent invitation landing stays clear before authentication', async ({
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.addInitScript(() => {
+    localStorage.setItem('obriy-night-default-v1', 'done')
     localStorage.setItem('obriy-theme', 'night')
     localStorage.setItem('obriy-language', 'uk')
   })
@@ -69,6 +70,7 @@ test('parent confirms only the invited child inside the compact shell', async ({
 
 async function prepareParentSession(page: Page) {
   await page.addInitScript((token) => {
+    localStorage.setItem('obriy-night-default-v1', 'done')
     localStorage.setItem('obriy-theme', 'day')
     localStorage.setItem('obriy-language', 'uk')
     localStorage.setItem('obriy-has-session', '1')

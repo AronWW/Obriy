@@ -36,6 +36,7 @@ for (const viewport of viewports) {
 
 async function prepareAdmin(page: Page, theme: 'day' | 'night', language: 'en' | 'uk') {
   await page.addInitScript(({ selectedTheme, selectedLanguage }) => {
+    localStorage.setItem('obriy-night-default-v1', 'done')
     localStorage.setItem('obriy-theme', selectedTheme)
     localStorage.setItem('obriy-language', selectedLanguage)
     localStorage.setItem('obriy-has-session', '1')

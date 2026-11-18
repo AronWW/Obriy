@@ -19,6 +19,7 @@ for (const scenario of [
 
 async function prepare(page: Page, role: 'STUDENT' | 'TEACHER', theme: 'day' | 'night') {
   await page.addInitScript(({ theme }) => {
+    localStorage.setItem('obriy-night-default-v1', 'done')
     localStorage.setItem('obriy-theme', theme)
     localStorage.setItem('obriy-language', 'en')
     localStorage.setItem('obriy-has-session', '1')

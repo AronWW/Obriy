@@ -97,6 +97,7 @@ function rectanglesOverlap(
 
 async function prepareTeacherSession(page: Page) {
   await page.addInitScript(() => {
+    localStorage.setItem('obriy-night-default-v1', 'done')
     localStorage.setItem('obriy-theme', 'day')
     localStorage.setItem('obriy-language', 'en')
     localStorage.setItem('obriy-has-session', '1')
